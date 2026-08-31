@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Running AI</title>
+    <link rel="stylesheet" href="~/css/page-container.css" />
+    <link rel="stylesheet" href="~/css/auth-page.css" />
+    <link rel="stylesheet"
+          href="~/css/login.css"
+          asp-append-version="true" />
+</head>
+
+<body class="page-container">
+    <div class="auth-page-container">
+        <div class="inner-container">
+            <div class="left-container">
+                <h4 class="left-container-header">Login</h4>
+                <label class="left-container-text">Logge Dich bitte ein</label>
+            </div>
+            <div class="right-container">
+                <div class="auth-card">
+                    <div class="auth-card-body">
+                        @RenderBody()
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,55 +1,68 @@
-# Prerequisites
-*.d
+```gitignore
+# Build output
+[Bb]in/
+[Oo]bj/
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
 
-# Linker output
-*.ilk
-*.map
-*.exp
+# Visual Studio Code
+.vscode/
 
-# Precompiled Headers
-*.gch
-*.pch
+# JetBrains Rider / ReSharper
+.idea/
+*.sln.iml
+*.DotSettings.user
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+# Test results
+TestResults/
+*.trx
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# Build logs
+*.log
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# OS files
+.DS_Store
+Thumbs.db
 
-# debug information files
-*.dwo
+# Generated files
+GeneratedFiles/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# User-specific project files
+*.csproj.user
+*.csproj.userprefs
+
+# Publish output
+publish/
+PublishProfiles/
+
+# Azure / local development
+.azure/
+
+# dotnet tools
+.dotnet/

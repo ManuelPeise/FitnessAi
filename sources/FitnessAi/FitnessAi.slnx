@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/01 Core/">
+    <Project Path="Core.Api/Core.Api.csproj" Id="90510423-8910-451c-8f7b-5e9a362d0705" />
+    <Project Path="Core.Web/Core.Web.csproj" Id="fee47c71-5079-4d58-b315-949e15b12d00" />
+  </Folder>
+  <Folder Name="/02 Logic/">
+    <Project Path="Logic.Parsing/Logic.Parsing.csproj" Id="bbbf2838-6557-488b-88ca-b4deb49bddd3" />
+    <Project Path="Logic.Services/Logic.Services.csproj" Id="3a1a7bce-d000-40c0-8c2e-4d57529595bd" />
+    <Project Path="Logic.Shared/Logic.Shared.csproj" Id="fe5af7c0-3e26-406f-afd7-0a1955c1c679" />
+  </Folder>
+  <Folder Name="/03 Data/">
+    <Project Path="Data.Accessor/Data.Accessor.csproj" Id="3f94d0fc-1a29-41a3-b373-70c116a3191d" />
+    <Project Path="Data.Database/Data.Database.csproj" Id="0cb13ebe-2d4c-438e-b606-fadace381c45" />
+  </Folder>
+  <Folder Name="/04 Shared/">
+    <Project Path="Shared.Enums/Shared.Enums.csproj" Id="41e0c67a-2c0c-49af-8c24-51648e642294" />
+    <Project Path="Shared.Interfaces/Shared.Interfaces.csproj" Id="3b339eff-2fa1-4c9f-a181-8bbd93ce811a" />
+    <Project Path="Shared.Models/Shared.Models.csproj" Id="061eae29-1cc7-42e3-bf06-695e6955500d" />
+  </Folder>
+  <Folder Name="/05 Tests/">
+    <Project Path="AiUnitTests/AiUnitTests.csproj" Id="3e6ea694-d6ac-4e8a-9e89-3107ee2ae570" />
+  </Folder>
+</Solution>

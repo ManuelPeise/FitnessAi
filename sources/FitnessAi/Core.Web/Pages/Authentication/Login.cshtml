@@ -1,0 +1,30 @@
+﻿@page
+@model Login
+
+@{
+    Layout = "_AuthLayout";
+}
+
+<div class="login-form-container">
+    <form method="post">
+        <div class="login-form-group">
+            <label asp-for="Email">
+                E-Mail
+            </label>
+            <input asp-for="Email"
+                   type="email"
+                   autocomplete="email" />
+        </div>
+        <div class="login-form-group">
+            <label asp-for="Password">
+                Passwort
+            </label>
+            <input asp-for="Password"
+                   type="password"
+                   autocomplete="current-password" />
+        </div>
+        <button type="submit">
+            Login
+        </button>
+    </form>
+</div>
