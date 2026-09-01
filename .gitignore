@@ -1,4 +1,3 @@
-```gitignore
 # Build output
 [Bb]in/
 [Oo]bj/
@@ -66,3 +65,32 @@ PublishProfiles/
 
 # dotnet tools
 .dotnet/
+
+# ============================================================
+# React Native - HealthDataSyncClient
+# ============================================================
+
+apps/HealthDataSyncClient/node_modules/
+
+# Metro
+apps/HealthDataSyncClient/.metro-health-check*
+
+# Android / Gradle
+apps/HealthDataSyncClient/android/.gradle/
+apps/HealthDataSyncClient/android/.cxx/
+apps/HealthDataSyncClient/android/build/
+apps/HealthDataSyncClient/android/app/build/
+
+# Android local SDK configuration
+apps/HealthDataSyncClient/android/local.properties
+
+# Android generated native files
+apps/HealthDataSyncClient/android/app/.cxx/
+
+# iOS dependencies / build output
+apps/HealthDataSyncClient/ios/Pods/
+apps/HealthDataSyncClient/ios/build/
+apps/HealthDataSyncClient/ios/DerivedData/
+
+# React Native generated files
+apps/HealthDataSyncClient/.bundle/
