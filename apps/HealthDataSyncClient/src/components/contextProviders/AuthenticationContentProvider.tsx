@@ -17,6 +17,7 @@ type TokenResponse = {
 
 type AuthenticationContextResult = {
   isAuthenticated: boolean;
+  isInitializing: boolean;
   isLoading: boolean;
   handleLogin: (request: LoginRequest) => Promise<void>;
   handleLogout: () => Promise<void>;
@@ -29,6 +30,7 @@ const AuthenticationContext =
 
 const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
   const getTokens = React.useCallback(async () => {
@@ -42,25 +44,24 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const handleLogin = async (request: LoginRequest) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.sendRequest<LoginRequest, TokenResponse>(
-        {
-          serviceUrl: '/login',
-          method: 'POST',
-          body: request,
-        },
+      // const response = await apiClient.sendRequest<LoginRequest, TokenResponse>(
+      //   {
+      //     serviceUrl: '/login',
+      //     method: 'POST',
+      //     body: request,
+      //   },
+      // );
+
+      // if (response.data) {
+      //   const { token, refreshToken } = response.data;
+
+      await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, 'token');
+      await secureStorage.setItem(
+        SecureStorageKeys.REFRESH_TOKEN,
+        'refreshToken',
       );
 
-      if (response.data) {
-        const { token, refreshToken } = response.data;
-
-        await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, token);
-        await secureStorage.setItem(
-          SecureStorageKeys.REFRESH_TOKEN,
-          refreshToken,
-        );
-
-        setIsAuthenticated(true);
-      }
+      setIsAuthenticated(true);
     } finally {
       setIsLoading(false);
     }
@@ -79,15 +80,25 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
 
   React.useEffect(() => {
     const checkToken = async () => {
+      setIsInitializing(true);
+
       const tokenExists = await getTokens();
       setIsAuthenticated(tokenExists);
+
+      setIsInitializing(false);
     };
     checkToken();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <AuthenticationContext.Provider
-      value={{ isAuthenticated, isLoading, handleLogin, handleLogout }}
+      value={{
+        isAuthenticated,
+        isInitializing,
+        isLoading,
+        handleLogin,
+        handleLogout,
+      }}
     >
       {props.children}
     </AuthenticationContext.Provider>

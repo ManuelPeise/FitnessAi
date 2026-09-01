@@ -1,19 +1,22 @@
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+
 import { useAuthenticationContext } from '../hooks/useAuthenticationContext';
-import { Text, View } from 'react-native';
-import LoginScreen from '../screens/auth/LoginScreen';
+
+import AuthNavigator from './AuthNavigator';
+import TabNavigator from './TabNavigation';
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated } = useAuthenticationContext();
+  const { isAuthenticated, isInitializing } = useAuthenticationContext();
 
-  if (!isAuthenticated) {
-    return <LoginScreen />;
+  if (isInitializing) {
+    return null;
   }
 
   return (
-    <View>
-      <Text>Hello {isAuthenticated ? 'User' : 'Guest'}</Text>
-    </View>
+    <NavigationContainer>
+      {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+    </NavigationContainer>
   );
 };
 
