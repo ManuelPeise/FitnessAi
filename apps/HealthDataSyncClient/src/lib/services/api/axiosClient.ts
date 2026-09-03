@@ -6,10 +6,6 @@ type RefreshTokenResponse = {
   refreshToken?: string;
 };
 
-type RetriableRequestConfig = InternalAxiosRequestConfig & {
-  _retry?: boolean;
-};
-
 const ApiBaseUrl = 'http://localhost:5016/api/';
 
 export const apiClient: AxiosInstance = axios.create({

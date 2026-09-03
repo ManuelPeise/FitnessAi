@@ -4,7 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useAuthenticationContext } from '../hooks/useAuthenticationContext';
 
 import AuthNavigator from './AuthNavigator';
-import TabNavigator from './TabNavigation';
+import AppStackNavigator from './AppStackNavigator';
+import { HealthConnectProvider } from '../components/contextProviders/HealthConnectContextProvider';
 
 const AppNavigator: React.FC = () => {
   const { isAuthenticated, isInitializing } = useAuthenticationContext();
@@ -15,7 +16,9 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
+      <HealthConnectProvider>
+        {isAuthenticated ? <AppStackNavigator /> : <AuthNavigator />}
+      </HealthConnectProvider>
     </NavigationContainer>
   );
 };

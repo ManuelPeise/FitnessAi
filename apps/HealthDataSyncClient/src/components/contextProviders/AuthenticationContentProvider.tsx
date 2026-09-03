@@ -1,5 +1,4 @@
 import React from 'react';
-import apiClient from '../../lib/services/api/apiService';
 import {
   secureStorage,
   SecureStorageKeys,
@@ -10,10 +9,10 @@ type LoginRequest = {
   password: string;
 };
 
-type TokenResponse = {
-  token: string;
-  refreshToken: string;
-};
+// type TokenResponse = {
+//   token: string;
+//   refreshToken: string;
+// };
 
 type AuthenticationContextResult = {
   isAuthenticated: boolean;
@@ -43,6 +42,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
 
   const handleLogin = async (request: LoginRequest) => {
     setIsLoading(true);
+    console.log('Login request:', request);
     try {
       // const response = await apiClient.sendRequest<LoginRequest, TokenResponse>(
       //   {
