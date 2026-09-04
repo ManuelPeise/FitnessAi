@@ -1,6 +1,6 @@
 import React from 'react';
 
-type ComponentInitializazionProps<TModel = {}> = {
+type ComponentInitializazionProps<TModel = object> = {
   isInitialized: boolean;
   props: TModel;
 };

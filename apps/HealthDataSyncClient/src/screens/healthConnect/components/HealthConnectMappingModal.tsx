@@ -36,7 +36,7 @@ const HealthConnectMappingModal: React.FC<IProps> = props => {
 
   const canSave = React.useMemo((): boolean => {
     return isModified && selectedMapping.target.length > 0;
-  }, [isModified]);
+  }, [isModified, selectedMapping.target]);
   return (
     <Modal
       visible={visible}

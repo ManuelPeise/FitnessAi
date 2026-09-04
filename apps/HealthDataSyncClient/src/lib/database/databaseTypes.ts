@@ -5,25 +5,15 @@ export type HealthConnectMappingType =
 export type ScheduleSettingsType =
   | 'HealthConnectExerciseDataExport'
   | 'HealthConnectHealthDataExport';
-export type ScheduleInterval = 'Daily' | 'Weekly' | 'Monthly' | 'specificDay';
-export type ScheduleDay =
-  | 'Monday'
-  | 'Tuesday'
-  | 'Wednesday'
-  | 'Thursday'
-  | 'Friday'
-  | 'Saturday'
-  | 'Sunday';
 
-export type ScheduleHour = 0 | 6 | 12 | 18;
-
-export type ScheduleMinute = 0 | 15 | 30 | 45;
+export type ScheduleFrequency = 'daily' | 'hourly' | 'weekly';
 
 export type ApiAuthenticationTableEntry = {
   id: number;
   accessToken: string;
   refreshToken: string;
-  appIdentifier: string;
+  tokenExpiration: string;
+  appKey: string;
   created_at: string;
   updated_at: string;
 };
@@ -31,10 +21,12 @@ export type ApiAuthenticationTableEntry = {
 export type ScheduleSettingsTableEntry = {
   id: number;
   type: ScheduleSettingsType;
-  interval: ScheduleInterval;
-  specificDay?: ScheduleDay;
-  hour?: ScheduleHour;
-  minute?: ScheduleMinute;
+  isActive: boolean;
+  hour: number;
+  minute: number;
+  frequency: ScheduleFrequency;
+  dayOfWeek: number;
+  lastExecutedAt: string | null;
 };
 
 export type MappingTableEntry = {
@@ -61,7 +53,8 @@ CREATE TABLE IF NOT EXISTS api_authentication (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   access_token TEXT NOT NULL,
   refresh_token TEXT NOT NULL,
-  app_identifier TEXT NOT NULL,
+  token_expiration TEXT NOT NULL,
+  app_key TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -69,10 +62,14 @@ CREATE TABLE IF NOT EXISTS api_authentication (
 CREATE TABLE IF NOT EXISTS schedule_settings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   type TEXT NOT NULL CHECK (type IN ('HealthConnectExerciseDataExport', 'HealthConnectHealthDataExport')),
-  interval TEXT NOT NULL CHECK (interval IN ('Daily', 'Weekly', 'Monthly', 'specificDay')),
-  specific_day TEXT CHECK (specific_day IS NULL OR specific_day IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')),
-  hour INTEGER CHECK (hour IS NULL OR hour IN (0, 6, 12, 18)),
-  minute INTEGER CHECK (minute IS NULL OR minute IN (0, 15, 30, 45)),
+  is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
+  hour INTEGER NOT NULL DEFAULT 0,
+  minute INTEGER NOT NULL DEFAULT 0,
+  frequency TEXT NOT NULL DEFAULT 'daily' CHECK (frequency IN ('daily', 'hourly', 'weekly')),
+  day_of_week INTEGER NOT NULL DEFAULT 0,
+  last_executed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (type)
 );
 
@@ -88,9 +85,17 @@ BEGIN
 END;
 
 CREATE TRIGGER IF NOT EXISTS api_authentication_updated_at
-AFTER UPDATE OF access_token, refresh_token, app_identifier ON api_authentication
+AFTER UPDATE OF access_token, refresh_token, token_expiration, app_key ON api_authentication
 BEGIN
   UPDATE api_authentication
+  SET updated_at = CURRENT_TIMESTAMP
+  WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS schedule_settings_updated_at
+AFTER UPDATE OF type, is_active, hour, minute, frequency, day_of_week, last_executed_at ON schedule_settings
+BEGIN
+  UPDATE schedule_settings
   SET updated_at = CURRENT_TIMESTAMP
   WHERE id = NEW.id;
 END;

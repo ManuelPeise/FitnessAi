@@ -22,7 +22,7 @@ type AuthenticationContextResult = {
   handleLogout: () => Promise<void>;
 };
 
-interface IAuthContextProviderProps extends React.PropsWithChildren {}
+type IAuthContextProviderProps = React.PropsWithChildren;
 
 const AuthenticationContext =
   React.createContext<AuthenticationContextResult | null>(null);

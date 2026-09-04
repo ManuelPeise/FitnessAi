@@ -1,8 +1,10 @@
 import { open } from '@op-engineering/op-sqlite';
 import {
-  createDatabaseScript,
   HealthConnectMappingType,
   MappingTableEntry,
+  ScheduleFrequency,
+  ScheduleSettingsTableEntry,
+  ScheduleSettingsType,
 } from './databaseTypes';
 import { migrateDatabase } from './databaseMigration';
 
@@ -22,10 +24,72 @@ const mapMappingEntryRow = (
   target: String(row.target),
 });
 
+const mapScheduleRow = (
+  row: Record<string, unknown>,
+): ScheduleSettingsTableEntry => ({
+  id: Number(row.id),
+  type: row.type as ScheduleSettingsType,
+  isActive: Boolean(row.is_active),
+  hour: Number(row.hour),
+  minute: Number(row.minute),
+  frequency: row.frequency as ScheduleFrequency,
+  dayOfWeek: Number(row.day_of_week),
+  lastExecutedAt: row.last_executed_at ? String(row.last_executed_at) : null,
+});
+
 export const databaseAccessor = {
   initializeDatabase: async (): Promise<void> => {
-    await database.execute(createDatabaseScript);
     await migrateDatabase();
+  },
+  schedule: {
+    getSchedule: async (
+      type: ScheduleSettingsType,
+    ): Promise<ScheduleSettingsTableEntry | null> => {
+      const result = await database.execute(
+        'SELECT * FROM schedule_settings WHERE type = ?',
+        [type],
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return mapScheduleRow(result.rows[0]);
+    },
+    saveSchedule: async (
+      schedule: ScheduleSettingsTableEntry,
+    ): Promise<ScheduleSettingsTableEntry> => {
+      await database.execute(
+        `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(type) DO UPDATE SET
+           is_active = excluded.is_active,
+           hour = excluded.hour,
+           minute = excluded.minute,
+           frequency = excluded.frequency,
+           day_of_week = excluded.day_of_week,
+           last_executed_at = excluded.last_executed_at`,
+        [
+          schedule.type,
+          schedule.isActive ? 1 : 0,
+          schedule.hour,
+          schedule.minute,
+          schedule.frequency,
+          schedule.dayOfWeek,
+          schedule.lastExecutedAt,
+        ],
+      );
+
+      const persistedSchedule = await databaseAccessor.schedule.getSchedule(
+        schedule.type,
+      );
+
+      if (!persistedSchedule) {
+        throw new Error(`Failed to persist schedule '${schedule.type}'.`);
+      }
+
+      return persistedSchedule;
+    },
   },
   mappingTable: {
     getMappingEntries: async (

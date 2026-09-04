@@ -24,7 +24,7 @@ const apiService = {
     }
 
     const result: ApiResult<TResponse> = {
-      data: null as any,
+      data: null as unknown as TResponse,
     };
 
     try {
@@ -42,8 +42,9 @@ const apiService = {
 
       const data = (await response.json()) as TResponse;
       result.data = data;
-    } catch (error: any) {
-      result.error = error.message;
+    } catch (error) {
+      result.error =
+        error instanceof Error ? error.message : 'Unknown request error.';
     }
     return result;
   },

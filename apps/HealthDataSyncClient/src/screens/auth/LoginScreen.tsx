@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
+import { colorMap } from '../../lib/styles/colorMap';
 
 const LoginScreen: React.FC = () => {
   const { handleLogin } = useAuthenticationContext();
@@ -58,10 +59,7 @@ const LoginScreen: React.FC = () => {
       ) : (
         <TouchableOpacity
           onPress={onLogin}
-          style={[
-            styles.button,
-            isLoginDisabled && { backgroundColor: '#cccccc' },
-          ]}
+          style={[styles.button, isLoginDisabled && styles.buttonDisabled]}
           disabled={isLoginDisabled}
         >
           <Text style={styles.buttonText}>Sign in</Text>
@@ -90,15 +88,19 @@ const styles = StyleSheet.create({
   },
   error: {
     marginBottom: 12,
+    color: colorMap.error,
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: colorMap.primary,
     padding: 12,
     borderRadius: 6,
     alignItems: 'center',
   },
+  buttonDisabled: {
+    backgroundColor: colorMap.disabled,
+  },
   buttonText: {
-    color: '#fff',
+    color: colorMap.white,
     fontWeight: '600',
   },
 });

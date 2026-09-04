@@ -10,8 +10,8 @@ export const utils = {
   getSumOf: (numbers: number[]) => {
     return numbers.reduce((a, b) => a + b, 0);
   },
-  distinctBy: <T>(array: T[], keyFn: (item: T) => any): T[] => {
-    const seen = new Set();
+  distinctBy: <T>(array: T[], keyFn: (item: T) => unknown): T[] => {
+    const seen = new Set<unknown>();
     return array.filter(item => {
       const key = keyFn(item);
       if (seen.has(key)) {
