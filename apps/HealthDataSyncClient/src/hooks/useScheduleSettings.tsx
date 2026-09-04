@@ -23,6 +23,7 @@ type UseScheduleSettingsReturnType = {
   frequencyOptions: DropdownItem<ScheduleFrequency>[];
   hourOptions: DropdownItem<number>[];
   minuteOptions: DropdownItem<number>[];
+  reloadSchedule: () => Promise<void>;
   handleResetSchedule: () => void;
   handleSaveSchedule: () => Promise<void>;
   handleFrequencyChanged: (frequency: ScheduleFrequency) => void;
@@ -52,6 +53,8 @@ const createDefaultSchedule = (
   frequency: 'daily',
   dayOfWeek: 0,
   lastExecutedAt: null,
+  lastExecutionStatus: 'idle',
+  lastExecutionError: null,
 });
 
 /**
@@ -94,6 +97,29 @@ export const useScheduleSettings = (
   const [isSaving, setIsSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isSaved, setIsSaved] = React.useState(false);
+
+  const reloadSchedule = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setIsSaved(false);
+
+    try {
+      const storedSchedule =
+        await databaseAccessorRef.current.schedule.getSchedule(type);
+      const loadedSchedule = storedSchedule ?? createDefaultSchedule(type);
+
+      setState({
+        originalSchedule: loadedSchedule,
+        currentSchedule: loadedSchedule,
+      });
+    } catch (loadError) {
+      console.error('Failed to load the schedule.', loadError);
+      setError('The schedule could not be loaded.');
+      setState({ originalSchedule: null, currentSchedule: null });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [type]);
 
   const handleScheduleChange = React.useCallback(
     (partialSchedule: Partial<ScheduleSettingsTableEntry>) => {
@@ -212,46 +238,8 @@ export const useScheduleSettings = (
   );
 
   React.useEffect(() => {
-    let isActiveEffect = true;
-
-    const loadSchedule = async () => {
-      setIsLoading(true);
-      setError(null);
-      setIsSaved(false);
-
-      try {
-        const storedSchedule =
-          await databaseAccessorRef.current.schedule.getSchedule(type);
-        const loadedSchedule = storedSchedule ?? createDefaultSchedule(type);
-
-        if (!isActiveEffect) {
-          return;
-        }
-
-        setState({
-          originalSchedule: loadedSchedule,
-          currentSchedule: loadedSchedule,
-        });
-      } catch (loadError) {
-        console.error('Failed to load the schedule.', loadError);
-
-        if (isActiveEffect) {
-          setError('The schedule could not be loaded.');
-          setState({ originalSchedule: null, currentSchedule: null });
-        }
-      } finally {
-        if (isActiveEffect) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadSchedule();
-
-    return () => {
-      isActiveEffect = false;
-    };
-  }, [type]);
+    reloadSchedule();
+  }, [reloadSchedule]);
 
   return {
     schedule: state.currentSchedule,
@@ -264,6 +252,7 @@ export const useScheduleSettings = (
     frequencyOptions,
     hourOptions,
     minuteOptions,
+    reloadSchedule,
     handleFrequencyChanged,
     handleScheduleChange,
     handleResetSchedule,

@@ -208,7 +208,7 @@ Consequences for new code:
   `apiClient`, so it sends no auth header.
 - `useApi` fires a GET on mount unconditionally.
 - `databaseTypes.ts` DDL, `databaseMigration.ts` and the `schedule` accessor
-  agree on `schedule_settings` as of DB version 3 — keep them in sync when
+  agree on `schedule_settings` as of DB version 4 — keep them in sync when
   adding columns.
 - `useScheduleSettings` returns a nullable `schedule` plus `isLoading` /
   `isSaving` / `error`; the screen must guard the null case.

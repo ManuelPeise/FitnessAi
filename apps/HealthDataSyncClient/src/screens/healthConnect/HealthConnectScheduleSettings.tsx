@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { globalStyles } from '../../lib/styles/globalStyles';
 import type {
@@ -17,6 +18,7 @@ import { colorMap } from '../../lib/styles/colorMap';
 import Dropdown from '../../components/inputComponents/Dropdown';
 import ButtonComponent from '../../components/inputComponents/ButtonComponent';
 import SwitchComponent from '../../components/inputComponents/SwitchComponent';
+import { healthConnectScheduleExecutionService } from '../../lib/services/scheduler/healthConnectScheduleExecutionService';
 
 type ScheduleTab = {
   type: ScheduleSettingsType;
@@ -25,13 +27,18 @@ type ScheduleTab = {
 
 const scheduleTabs: ScheduleTab[] = [
   { type: 'HealthConnectExerciseDataExport', label: 'Exercise Data Export' },
-  { type: 'HealthConnectHealthDataExport', label: 'Health Data Export' },
 ];
 
 const HealthConnectScheduleSettings: React.FC = () => {
   const [type, setType] = React.useState<ScheduleSettingsType>(
     'HealthConnectExerciseDataExport',
   );
+  const [isExecuting, setIsExecuting] = React.useState(false);
+  const [executionFeedback, setExecutionFeedback] = React.useState<{
+    message: string;
+    kind: 'success' | 'error';
+  } | null>(null);
+  const [initialLoadDays, setInitialLoadDays] = React.useState('1');
 
   const {
     schedule,
@@ -44,6 +51,7 @@ const HealthConnectScheduleSettings: React.FC = () => {
     hourOptions,
     minuteOptions,
     dayOptions,
+    reloadSchedule,
     handleResetSchedule,
     handleSaveSchedule,
     handleFrequencyChanged,
@@ -52,7 +60,120 @@ const HealthConnectScheduleSettings: React.FC = () => {
 
   const isWeekly = schedule?.frequency === 'weekly';
   const isHourly = schedule?.frequency === 'hourly';
-  const isBusy = isLoading || isSaving;
+  const isBusy = isLoading || isSaving || isExecuting;
+
+  const handleExecuteNow = React.useCallback(async () => {
+    setExecutionFeedback(null);
+    setIsExecuting(true);
+
+    try {
+      const result = await healthConnectScheduleExecutionService.executeManually(
+        type,
+      );
+
+      await reloadSchedule();
+
+      if (!result.success) {
+        setExecutionFeedback({
+          kind: 'error',
+          message: result.message ?? 'Schedule execution failed.',
+        });
+        return;
+      }
+
+      setExecutionFeedback({
+        kind: 'success',
+        message:
+          result.pushedItems > 0
+            ? `Execution completed and pushed ${result.pushedItems} item(s).`
+            : 'Execution completed. No mapped data to push.',
+      });
+    } catch (executionError) {
+      console.error('Failed to execute schedule manually.', executionError);
+      setExecutionFeedback({
+        kind: 'error',
+        message: 'Schedule execution failed.',
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [reloadSchedule, type]);
+
+  const handleInitialLoadDaysChanged = React.useCallback((value: string) => {
+    const normalized = value.replace(/[^0-9]/g, '');
+    setInitialLoadDays(normalized);
+  }, []);
+
+  const parsedInitialLoadDays = React.useMemo(() => {
+    if (initialLoadDays.trim().length === 0) {
+      return null;
+    }
+
+    const value = Number(initialLoadDays);
+
+    if (!Number.isInteger(value)) {
+      return null;
+    }
+
+    return value;
+  }, [initialLoadDays]);
+
+  const isInitialLoadValid =
+    parsedInitialLoadDays != null &&
+    parsedInitialLoadDays >= 1 &&
+    parsedInitialLoadDays <= 365;
+
+  const handleInitialLoad = React.useCallback(async () => {
+    if (!isInitialLoadValid || parsedInitialLoadDays == null) {
+      setExecutionFeedback({
+        kind: 'error',
+        message: 'Initial load days must be between 1 and 365.',
+      });
+      return;
+    }
+
+    setExecutionFeedback(null);
+    setIsExecuting(true);
+
+    try {
+      const result = await healthConnectScheduleExecutionService.executeManually(
+        type,
+        {
+          initialLoadDays: parsedInitialLoadDays,
+        },
+      );
+
+      await reloadSchedule();
+
+      if (!result.success) {
+        setExecutionFeedback({
+          kind: 'error',
+          message: result.message ?? 'Initial load failed.',
+        });
+        return;
+      }
+
+      setExecutionFeedback({
+        kind: 'success',
+        message:
+          result.pushedItems > 0
+            ? `Initial load completed and pushed ${result.pushedItems} item(s).`
+            : 'Initial load completed. No mapped data to push.',
+      });
+    } catch (executionError) {
+      console.error('Failed to execute initial load.', executionError);
+      setExecutionFeedback({
+        kind: 'error',
+        message: 'Initial load failed.',
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [isInitialLoadValid, parsedInitialLoadDays, reloadSchedule, type]);
+
+  React.useEffect(() => {
+    setExecutionFeedback(null);
+  }, [type]);
 
   return (
     <View style={globalStyles.container}>
@@ -155,12 +276,56 @@ const HealthConnectScheduleSettings: React.FC = () => {
           </View>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
+          {schedule.lastExecutedAt && (
+            <Text style={styles.infoText}>
+              Last execution: {new Date(schedule.lastExecutedAt).toLocaleString()}
+            </Text>
+          )}
+          <Text style={styles.infoText}>
+            Last status: {schedule.lastExecutionStatus}
+          </Text>
+          {schedule.lastExecutionError && (
+            <Text style={styles.errorText}>{schedule.lastExecutionError}</Text>
+          )}
           {isSaved && !isModified && (
             <Text style={styles.successText}>Schedule saved.</Text>
+          )}
+          {executionFeedback && (
+            <Text
+              style={
+                executionFeedback.kind === 'success'
+                  ? styles.successText
+                  : styles.errorText
+              }
+            >
+              {executionFeedback.message}
+            </Text>
           )}
 
           <View style={styles.buttons}>
             {isSaving && <ActivityIndicator color={colorMap.primary} />}
+            {isExecuting && <ActivityIndicator color={colorMap.primary} />}
+            <View style={styles.initialLoadContainer}>
+              <Text style={styles.initialLoadLabel}>Initial load days</Text>
+              <TextInput
+                style={styles.initialLoadInput}
+                value={initialLoadDays}
+                onChangeText={handleInitialLoadDaysChanged}
+                editable={!isBusy}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+              <ButtonComponent
+                title="Initial load"
+                disabled={isBusy || !isInitialLoadValid}
+                onPress={handleInitialLoad}
+              />
+            </View>
+            <ButtonComponent
+              title="Run now"
+              disabled={isBusy}
+              onPress={handleExecuteNow}
+            />
             <ButtonComponent
               title="Cancel"
               disabled={!isModified || isBusy}
@@ -185,7 +350,7 @@ const styles = StyleSheet.create({
   tabSelection: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '50%',
+    width: '100%',
     borderBottomWidth: 2,
     borderBottomColor: colorMap.transparent,
   },
@@ -242,13 +407,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginTop: 10,
   },
+  infoText: {
+    color: colorMap.info,
+    paddingHorizontal: 15,
+    marginTop: 10,
+  },
   buttons: {
+    alignItems: 'flex-end',
+    gap: 10,
+    paddingHorizontal: 15,
+    marginTop: 25,
+  },
+  initialLoadContainer: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 10,
-    paddingHorizontal: 15,
-    marginTop: 25,
+  },
+  initialLoadLabel: {
+    color: colorMap.secondary,
+    fontSize: 13,
+  },
+  initialLoadInput: {
+    minWidth: 60,
+    borderWidth: 1,
+    borderColor: colorMap.disabled,
+    borderRadius: 4,
+    color: colorMap.secondary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    textAlign: 'center',
   },
 });
 export default HealthConnectScheduleSettings;

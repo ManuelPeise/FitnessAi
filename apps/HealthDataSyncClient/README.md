@@ -56,6 +56,8 @@ frequency are normalized on save (`hourly` resets day and hour, `daily` resets
 day), so a stored row never hides stale values behind a disabled input. Two
 schedule types exist: `HealthConnectExerciseDataExport` and
 `HealthConnectHealthDataExport`.
+At the moment, only `HealthConnectExerciseDataExport` is wired to a backend
+endpoint for execution.
 
 ---
 
@@ -121,7 +123,7 @@ that render the shared `HealthConnectMapping` component with a different
 | `databaseTypes.ts`     | TS row models + `createDatabaseScript` (full DDL, indexes, `updated_at` triggers)                     |
 | `databaseMigration.ts` | `PRAGMA user_version` based migration runner                                                          |
 
-Database file: `healthdata.db`. Current `latestDatabaseVersion` = **3**.
+Database file: `healthdata.db`. Current `latestDatabaseVersion` = **4**.
 
 Tables: `mapping_entries`, `api_authentication`, `schedule_settings`.
 Row mapping is explicit — DB columns are `snake_case`, models are `camelCase`,
@@ -129,13 +131,14 @@ and booleans are stored as `0`/`1`.
 
 `schedule_settings` columns: `id`, `type`, `is_active`, `hour`, `minute`,
 `frequency`, `day_of_week`, `last_executed_at` (NULL until an export runs),
-`created_at`, `updated_at` (trigger-maintained), with `UNIQUE (type)` backing
-the `ON CONFLICT(type) DO UPDATE` upsert in `saveSchedule`.
+`last_execution_status`, `last_execution_error`, `created_at`, `updated_at`
+(trigger-maintained), with `UNIQUE (type)` backing the
+`ON CONFLICT(type) DO UPDATE` upsert in `saveSchedule`.
 
-Migration v3 rebuilds `schedule_settings` (rename → create → copy → drop). It
-inspects `PRAGMA table_info` first, so it tolerates the legacy `interval` and
-`day` columns, a missing `is_active`, and the `'Daily'` frequency value written
-by the older v1 → v2 branch.
+Migrations rebuild `schedule_settings` (rename → create → copy → drop). They
+inspect `PRAGMA table_info` first, so they tolerate the legacy `interval` and
+`day` columns, a missing `is_active`, and add
+`last_execution_status` / `last_execution_error` for execution tracking.
 
 ### `lib/services/healthConnect/`
 
@@ -167,6 +170,13 @@ one record type, e.g. `READ_STEPS` covers `Steps` and `StepsCadence`), the
 
 Keychain wrapper. Keys are the `SecureStorageKeys` enum (`ACCESS_TOKEN`,
 `REFRESH_TOKEN`) used as the keychain `service`. **Tokens live here only.**
+
+### `lib/services/scheduler/`
+
+| File                                      | Responsibility                                                                                                                |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `healthConnectScheduleExecutionService.ts` | Shared execution pipeline for manual + background runs: due-checking, mapped-data filtering, payload creation, API posting |
+| `backgroundTaskService.ts`                | `react-native-background-fetch` configuration + headless callback that executes due schedules                               |
 
 ### Hooks
 
@@ -213,6 +223,23 @@ compares the current draft field-by-field against the persisted row, and Save
 normalizes the draft before upserting through `ON CONFLICT(type) DO UPDATE`,
 then resyncs state from the row that was actually written.
 
+**Schedule execution** — both manual ("Run now" on the schedule tab) and
+background execution call the same scheduler service. It reads active origin +
+metric mappings, reads Health Connect records per active mapped metric, keeps
+only records whose `metadata.dataOrigin` is actively mapped, maps values via
+`healthConnectMetricMapper`, and posts only that filtered payload to the API.
+Regular runs (manual/background) now export from **last execution time → now**
+for daily/hourly/weekly schedules. If no previous execution exists, "Run now"
+fails fast and the UI guides users to perform an initial load.
+Initial load is triggered from the schedule screen with a day-range input
+(`1..365`, default `1`) and defines the first export window as
+`now - <days>` → `now`.
+Background scheduling is disabled in React Native development mode
+(`__DEV__ === true`) to prevent local-debug runs from triggering periodic
+background imports.
+Current endpoint target: `POST /api/HealthConnectImport/ImportTrainingData`
+(`HealthConnectExerciseDataExport` only).
+
 ---
 
 ## 6. Development
@@ -245,14 +272,16 @@ To inspect the local DB, pull `healthdata.db` from the app sandbox with
 
 Implemented: Health Connect init/permissions/reads, origin & metric mapping
 CRUD with local persistence and migrations, schedule configuration UI, secure
-token storage, axios client with refresh-and-retry, metric flattening mapper.
+token storage, axios client with refresh-and-retry, metric flattening mapper,
+manual schedule execution, and Android background schedule execution through
+`react-native-background-fetch` (including headless handling when app is
+closed).
 
 Not implemented yet:
 
 - Real login against `Core.Api` (`AuthenticationContentProvider` stores literal
   `'token'` / `'refreshToken'` and logs the request).
-- The actual **export/sync job** — nothing consumes `healthConnectMetricMapper`
-  or executes a schedule yet; `last_executed_at` is never updated.
+- `HealthConnectHealthDataExport` backend import route/model and client wiring.
 - `apiService` bypasses `apiClient`, so it sends no `Authorization` header and
   calls `new URL()` on a relative path.
 

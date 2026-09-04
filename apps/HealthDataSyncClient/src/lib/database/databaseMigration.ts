@@ -1,7 +1,7 @@
 import { database } from './database';
 import { createDatabaseScript } from './databaseTypes';
 
-const latestDatabaseVersion = 3;
+const latestDatabaseVersion = 4;
 
 const getTableColumns = async (tableName: string): Promise<string[]> => {
   const result = await database.execute(`PRAGMA table_info(${tableName})`);
@@ -31,6 +31,8 @@ const migrateScheduleSettings = async (): Promise<void> => {
   const minuteColumn = pickColumn(['minute'], '0');
   const frequencyColumn = pickColumn(['frequency', 'interval'], "'daily'");
   const lastExecutedColumn = pickColumn(['last_executed_at'], 'NULL');
+  const lastExecutionStatusColumn = pickColumn(['last_execution_status'], "'idle'");
+  const lastExecutionErrorColumn = pickColumn(['last_execution_error'], 'NULL');
 
   await database.execute(
     'ALTER TABLE schedule_settings RENAME TO schedule_settings_legacy',
@@ -40,7 +42,7 @@ const migrateScheduleSettings = async (): Promise<void> => {
 
   await database.execute(`
     INSERT INTO schedule_settings
-      (id, type, is_active, hour, minute, frequency, day_of_week, last_executed_at)
+      (id, type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
     SELECT
       id,
       type,
@@ -53,7 +55,15 @@ const migrateScheduleSettings = async (): Promise<void> => {
         ELSE 'daily'
       END,
       COALESCE(${dayColumn}, 0),
-      NULLIF(${lastExecutedColumn}, '')
+      NULLIF(${lastExecutedColumn}, ''),
+      CASE LOWER(COALESCE(${lastExecutionStatusColumn}, 'idle'))
+        WHEN 'running' THEN 'running'
+        WHEN 'success' THEN 'success'
+        WHEN 'failed' THEN 'failed'
+        WHEN 'skipped' THEN 'skipped'
+        ELSE 'idle'
+      END,
+      NULLIF(${lastExecutionErrorColumn}, '')
     FROM schedule_settings_legacy
     WHERE type IN ('HealthConnectExerciseDataExport', 'HealthConnectHealthDataExport')
   `);
@@ -95,7 +105,9 @@ export const migrateDatabase = async (): Promise<void> => {
     `);
   }
 
-  await migrateScheduleSettings();
+  if (currentVersion <= 3) {
+    await migrateScheduleSettings();
+  }
 
   await database.execute(createDatabaseScript);
   await database.execute(`PRAGMA user_version = ${latestDatabaseVersion}`);

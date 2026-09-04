@@ -6,7 +6,18 @@ export type ScheduleSettingsType =
   | 'HealthConnectExerciseDataExport'
   | 'HealthConnectHealthDataExport';
 
+export const scheduleSettingsTypes: ScheduleSettingsType[] = [
+  'HealthConnectExerciseDataExport',
+  'HealthConnectHealthDataExport',
+];
+
 export type ScheduleFrequency = 'daily' | 'hourly' | 'weekly';
+export type ScheduleExecutionStatus =
+  | 'idle'
+  | 'running'
+  | 'success'
+  | 'failed'
+  | 'skipped';
 
 export type ApiAuthenticationTableEntry = {
   id: number;
@@ -27,6 +38,8 @@ export type ScheduleSettingsTableEntry = {
   frequency: ScheduleFrequency;
   dayOfWeek: number;
   lastExecutedAt: string | null;
+  lastExecutionStatus: ScheduleExecutionStatus;
+  lastExecutionError: string | null;
 };
 
 export type MappingTableEntry = {
@@ -68,6 +81,8 @@ CREATE TABLE IF NOT EXISTS schedule_settings (
   frequency TEXT NOT NULL DEFAULT 'daily' CHECK (frequency IN ('daily', 'hourly', 'weekly')),
   day_of_week INTEGER NOT NULL DEFAULT 0,
   last_executed_at TEXT,
+  last_execution_status TEXT NOT NULL DEFAULT 'idle' CHECK (last_execution_status IN ('idle', 'running', 'success', 'failed', 'skipped')),
+  last_execution_error TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (type)
@@ -93,7 +108,7 @@ BEGIN
 END;
 
 CREATE TRIGGER IF NOT EXISTS schedule_settings_updated_at
-AFTER UPDATE OF type, is_active, hour, minute, frequency, day_of_week, last_executed_at ON schedule_settings
+AFTER UPDATE OF type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error ON schedule_settings
 BEGIN
   UPDATE schedule_settings
   SET updated_at = CURRENT_TIMESTAMP

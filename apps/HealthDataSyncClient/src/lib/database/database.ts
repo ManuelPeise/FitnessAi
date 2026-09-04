@@ -2,6 +2,8 @@ import { open } from '@op-engineering/op-sqlite';
 import {
   HealthConnectMappingType,
   MappingTableEntry,
+  ScheduleExecutionStatus,
+  scheduleSettingsTypes,
   ScheduleFrequency,
   ScheduleSettingsTableEntry,
   ScheduleSettingsType,
@@ -35,6 +37,11 @@ const mapScheduleRow = (
   frequency: row.frequency as ScheduleFrequency,
   dayOfWeek: Number(row.day_of_week),
   lastExecutedAt: row.last_executed_at ? String(row.last_executed_at) : null,
+  lastExecutionStatus: (row.last_execution_status ??
+    'idle') as ScheduleExecutionStatus,
+  lastExecutionError: row.last_execution_error
+    ? String(row.last_execution_error)
+    : null,
 });
 
 export const databaseAccessor = {
@@ -42,6 +49,11 @@ export const databaseAccessor = {
     await migrateDatabase();
   },
   schedule: {
+    getSchedules: async (): Promise<ScheduleSettingsTableEntry[]> => {
+      const result = await database.execute('SELECT * FROM schedule_settings');
+
+      return result.rows.map(mapScheduleRow);
+    },
     getSchedule: async (
       type: ScheduleSettingsType,
     ): Promise<ScheduleSettingsTableEntry | null> => {
@@ -60,15 +72,17 @@ export const databaseAccessor = {
       schedule: ScheduleSettingsTableEntry,
     ): Promise<ScheduleSettingsTableEntry> => {
       await database.execute(
-        `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(type) DO UPDATE SET
            is_active = excluded.is_active,
            hour = excluded.hour,
            minute = excluded.minute,
            frequency = excluded.frequency,
            day_of_week = excluded.day_of_week,
-           last_executed_at = excluded.last_executed_at`,
+           last_executed_at = excluded.last_executed_at,
+           last_execution_status = excluded.last_execution_status,
+           last_execution_error = excluded.last_execution_error`,
         [
           schedule.type,
           schedule.isActive ? 1 : 0,
@@ -77,6 +91,8 @@ export const databaseAccessor = {
           schedule.frequency,
           schedule.dayOfWeek,
           schedule.lastExecutedAt,
+          schedule.lastExecutionStatus,
+          schedule.lastExecutionError,
         ],
       );
 
@@ -89,6 +105,57 @@ export const databaseAccessor = {
       }
 
       return persistedSchedule;
+    },
+    ensureSchedules: async (): Promise<void> => {
+      const result = await databaseAccessor.schedule.getSchedules();
+      const existingTypes = new Set(result.map(schedule => schedule.type));
+
+      const missingTypes = scheduleSettingsTypes.filter(
+        type => !existingTypes.has(type),
+      );
+
+      if (missingTypes.length === 0) {
+        return;
+      }
+
+      await Promise.all(
+        missingTypes.map(type =>
+          database.execute(
+            `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
+             VALUES (?, 0, 0, 0, 'daily', 0, NULL, 'idle', NULL)`,
+            [type],
+          ),
+        ),
+      );
+    },
+    setExecutionState: async (
+      type: ScheduleSettingsType,
+      status: ScheduleExecutionStatus,
+      options?: {
+        lastExecutedAt?: string | null;
+        lastExecutionError?: string | null;
+      },
+    ): Promise<ScheduleSettingsTableEntry | null> => {
+      const schedule = await databaseAccessor.schedule.getSchedule(type);
+
+      if (schedule == null) {
+        return null;
+      }
+
+      const nextSchedule: ScheduleSettingsTableEntry = {
+        ...schedule,
+        lastExecutionStatus: status,
+        lastExecutedAt:
+          options && 'lastExecutedAt' in options
+            ? options.lastExecutedAt ?? null
+            : schedule.lastExecutedAt,
+        lastExecutionError:
+          options && 'lastExecutionError' in options
+            ? options.lastExecutionError ?? null
+            : schedule.lastExecutionError,
+      };
+
+      return databaseAccessor.schedule.saveSchedule(nextSchedule);
     },
   },
   mappingTable: {
