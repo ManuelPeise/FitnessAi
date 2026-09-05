@@ -1,9 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { databaseAccessor } from '../../database/database';
-import {
-  secureStorage,
-  SecureStorageKeys,
-} from '../storage/secureStorage';
+import { secureStorage, SecureStorageKeys } from '../storage/secureStorage';
 
 type RefreshTokenResponse = {
   accessToken: string;

@@ -7,10 +7,16 @@ import { apiClient } from '../../lib/services/api/axiosClient';
 import { databaseAccessor } from '../../lib/database/database';
 import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
 
+type TokenResponse = {
+  token: string;
+  refreshToken: string;
+  tokenExpiration: string;
+  appId: string;
+};
+
 type User = {
   id: number;
   email: string;
-  password: string;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -56,16 +62,24 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const handleLogin = async (request: LoginRequest) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post('/login', request);
+      const response = await apiClient.post(
+        'UserAuthentication/AuthenticateUserOnMobile',
+        request,
+      );
 
       if (response && response.status === 200 && response.data) {
-        const { token, refreshToken, tokenExpiration, appId } = response.data;
+        const tokenResponse: TokenResponse = response.data;
 
-        if (!token || !refreshToken || !tokenExpiration || !appId) {
+        if (
+          !tokenResponse.token ||
+          !tokenResponse.refreshToken ||
+          !tokenResponse.tokenExpiration ||
+          !tokenResponse.appId
+        ) {
           throw new Error('Missing authentication tokens or app ID');
         }
 
-        const userResponse = await apiClient.get('authentication/me');
+        const userResponse = await apiClient.get('CurrentUser/GetCurrentUser');
 
         if (
           !userResponse ||
@@ -85,10 +99,10 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           const authenticationEntry: ApiAuthenticationTableEntry = {
             id: -1,
             userId: user.id,
-            accessToken: token,
-            refreshToken: refreshToken,
-            tokenExpiration: tokenExpiration,
-            appKey: appId,
+            accessToken: tokenResponse.token,
+            refreshToken: tokenResponse.refreshToken,
+            tokenExpiration: tokenResponse.tokenExpiration,
+            appKey: tokenResponse.appId,
             created_at: null,
             updated_at: null,
           };
@@ -99,10 +113,10 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
         } else {
           const updatedAuthenticationEntry: ApiAuthenticationTableEntry = {
             ...authentication,
-            accessToken: token,
-            refreshToken: refreshToken,
-            tokenExpiration: tokenExpiration,
-            appKey: appId,
+            accessToken: tokenResponse.token,
+            refreshToken: tokenResponse.refreshToken,
+            tokenExpiration: tokenResponse.tokenExpiration,
+            appKey: tokenResponse.appId,
             updated_at: null,
           };
 
@@ -111,10 +125,13 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           );
         }
 
-        await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, token);
+        await secureStorage.setItem(
+          SecureStorageKeys.ACCESS_TOKEN,
+          tokenResponse.token,
+        );
         await secureStorage.setItem(
           SecureStorageKeys.REFRESH_TOKEN,
-          refreshToken,
+          tokenResponse.refreshToken,
         );
         await secureStorage.setItem(
           SecureStorageKeys.CURRENT_USER_ID,
@@ -181,6 +198,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     };
     checkToken();
   }, [getTokens, initializeUserData]);
+
   return (
     <AuthenticationContext.Provider
       value={{
