@@ -1,5 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { databaseAccessor } from '../../database/database';
+import {
+  secureStorage,
+  SecureStorageKeys,
+} from '../storage/secureStorage';
 
 type RefreshTokenResponse = {
   accessToken: string;
@@ -30,21 +34,39 @@ const refreshClient = axios.create({
 
 let refreshPromise: Promise<string | null> | null = null;
 
+const getCurrentUserId = async (): Promise<number | null> => {
+  const storedUserId = await secureStorage.getItem(
+    SecureStorageKeys.CURRENT_USER_ID,
+  );
+  const parsedUserId = Number(storedUserId);
+
+  if (!storedUserId || !Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    return null;
+  }
+
+  return parsedUserId;
+};
+
 const refreshAccessToken = async (): Promise<string | null> => {
   if (refreshPromise) {
     return refreshPromise;
   }
 
   refreshPromise = (async () => {
+    const userId = await getCurrentUserId();
+    if (userId == null) {
+      return null;
+    }
+
     const authentication =
-      await databaseAccessor.authentication.getAuthentication();
+      await databaseAccessor.authentication.getAuthentication(userId);
 
     if (!authentication) {
       return null;
     }
 
     try {
-      if (!authentication?.refreshToken) {
+      if (!authentication.refreshToken) {
         return null;
       }
 
@@ -60,6 +82,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
       if (!accessToken || !newRefreshToken) {
         return null;
       }
+
       const currentAuthentication = {
         ...authentication,
         accessToken,
@@ -68,6 +91,12 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
       await databaseAccessor.authentication.saveAuthentication(
         currentAuthentication,
+      );
+
+      await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, accessToken);
+      await secureStorage.setItem(
+        SecureStorageKeys.REFRESH_TOKEN,
+        newRefreshToken,
       );
 
       return accessToken;
@@ -83,6 +112,8 @@ const refreshAccessToken = async (): Promise<string | null> => {
         currentAuthenticationEntry,
       );
 
+      await secureStorage.removeItem(SecureStorageKeys.ACCESS_TOKEN);
+      await secureStorage.removeItem(SecureStorageKeys.REFRESH_TOKEN);
       return null;
     } finally {
       refreshPromise = null;
@@ -94,8 +125,13 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    const userId = await getCurrentUserId();
+    if (userId == null) {
+      return config;
+    }
+
     const authentication =
-      await databaseAccessor.authentication.getAuthentication();
+      await databaseAccessor.authentication.getAuthentication(userId);
 
     if (authentication?.accessToken) {
       config.headers.Authorization = `Bearer ${authentication.accessToken}`;
@@ -114,7 +150,6 @@ apiClient.interceptors.response.use(
 
     const token = await refreshAccessToken();
 
-    // Retry the original request with the new access token
     if (token && error.config && !error.config._retry) {
       error.config._retry = true;
       error.config.headers.Authorization = `Bearer ${token}`;

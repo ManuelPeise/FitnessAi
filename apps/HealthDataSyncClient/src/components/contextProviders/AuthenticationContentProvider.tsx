@@ -7,6 +7,14 @@ import { apiClient } from '../../lib/services/api/axiosClient';
 import { databaseAccessor } from '../../lib/database/database';
 import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
 
+type User = {
+  id: number;
+  email: string;
+  password: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 type LoginRequest = {
   email: string;
   password: string;
@@ -14,6 +22,7 @@ type LoginRequest = {
 
 type AuthenticationContextResult = {
   isAuthenticated: boolean;
+  currentUserId: number | null;
   isInitializing: boolean;
   isLoading: boolean;
   handleLogin: (request: LoginRequest) => Promise<void>;
@@ -27,6 +36,7 @@ const AuthenticationContext =
 
 const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
+  const [currentUserId, setCurrentUserId] = React.useState<number | null>(null);
   const [isInitializing, setIsInitializing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -38,20 +48,43 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     return !!token && !!refreshToken;
   }, []);
 
+  const initializeUserData = React.useCallback(async (userId: number) => {
+    await databaseAccessor.initializeDatabase();
+    await databaseAccessor.schedule.ensureSchedules(userId);
+  }, []);
+
   const handleLogin = async (request: LoginRequest) => {
     setIsLoading(true);
-    console.log('Login request:', request);
     try {
       const response = await apiClient.post('/login', request);
 
       if (response && response.status === 200 && response.data) {
         const { token, refreshToken, tokenExpiration, appId } = response.data;
+
+        if (!token || !refreshToken || !tokenExpiration || !appId) {
+          throw new Error('Missing authentication tokens or app ID');
+        }
+
+        const userResponse = await apiClient.get('authentication/me');
+
+        if (
+          !userResponse ||
+          userResponse.status !== 200 ||
+          !userResponse.data
+        ) {
+          throw new Error('Failed to fetch user information');
+        }
+
+        const user: User = userResponse.data;
+        await initializeUserData(user.id);
+
         const authentication =
-          await databaseAccessor.authentication.getAuthentication();
+          await databaseAccessor.authentication.getAuthentication(user.id);
 
         if (authentication == null) {
           const authenticationEntry: ApiAuthenticationTableEntry = {
             id: -1,
+            userId: user.id,
             accessToken: token,
             refreshToken: refreshToken,
             tokenExpiration: tokenExpiration,
@@ -60,7 +93,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             updated_at: null,
           };
 
-          databaseAccessor.authentication.saveAuthentication(
+          await databaseAccessor.authentication.saveAuthentication(
             authenticationEntry,
           );
         } else {
@@ -73,17 +106,22 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             updated_at: null,
           };
 
-          databaseAccessor.authentication.saveAuthentication(
+          await databaseAccessor.authentication.saveAuthentication(
             updatedAuthenticationEntry,
           );
         }
 
-        await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, 'token');
+        await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, token);
         await secureStorage.setItem(
           SecureStorageKeys.REFRESH_TOKEN,
-          'refreshToken',
+          refreshToken,
+        );
+        await secureStorage.setItem(
+          SecureStorageKeys.CURRENT_USER_ID,
+          user.id.toString(),
         );
 
+        setCurrentUserId(user.id);
         setIsAuthenticated(true);
       }
     } finally {
@@ -96,7 +134,9 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     try {
       await secureStorage.removeItem(SecureStorageKeys.ACCESS_TOKEN);
       await secureStorage.removeItem(SecureStorageKeys.REFRESH_TOKEN);
+      await secureStorage.removeItem(SecureStorageKeys.CURRENT_USER_ID);
       setIsAuthenticated(false);
+      setCurrentUserId(null);
     } finally {
       setIsLoading(false);
     }
@@ -105,19 +145,47 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   React.useEffect(() => {
     const checkToken = async () => {
       setIsInitializing(true);
+      try {
+        const tokenExists = await getTokens();
+        if (!tokenExists) {
+          setIsAuthenticated(false);
+          setCurrentUserId(null);
+          return;
+        }
 
-      const tokenExists = await getTokens();
-      setIsAuthenticated(tokenExists);
+        const userIdValue = await secureStorage.getItem(
+          SecureStorageKeys.CURRENT_USER_ID,
+        );
+        const parsedUserId = Number(userIdValue);
 
-      setIsInitializing(false);
+        if (
+          !userIdValue ||
+          !Number.isInteger(parsedUserId) ||
+          parsedUserId <= 0
+        ) {
+          setIsAuthenticated(false);
+          setCurrentUserId(null);
+          return;
+        }
+
+        await initializeUserData(parsedUserId);
+        setCurrentUserId(parsedUserId);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Failed to initialize authenticated user state.', error);
+        setIsAuthenticated(false);
+        setCurrentUserId(null);
+      } finally {
+        setIsInitializing(false);
+      }
     };
     checkToken();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [getTokens, initializeUserData]);
   return (
     <AuthenticationContext.Provider
       value={{
         isAuthenticated,
+        currentUserId,
         isInitializing,
         isLoading,
         handleLogin,

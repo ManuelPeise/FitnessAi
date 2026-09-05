@@ -1,13 +1,13 @@
 import { open } from '@op-engineering/op-sqlite';
 import {
+  ApiAuthenticationTableEntry,
   HealthConnectMappingType,
   MappingTableEntry,
   ScheduleExecutionStatus,
-  scheduleSettingsTypes,
   ScheduleFrequency,
   ScheduleSettingsTableEntry,
+  scheduleSettingsTypes,
   ScheduleSettingsType,
-  ApiAuthenticationTableEntry,
 } from './databaseTypes';
 import { migrateDatabase } from './databaseMigration';
 
@@ -21,6 +21,7 @@ const mapMappingEntryRow = (
   row: Record<string, unknown>,
 ): MappingTableEntry => ({
   id: Number(row.id),
+  userId: Number(row.user_id),
   type: row.type as HealthConnectMappingType,
   isActive: Boolean(row.is_active),
   source: String(row.source),
@@ -31,6 +32,7 @@ const mapScheduleRow = (
   row: Record<string, unknown>,
 ): ScheduleSettingsTableEntry => ({
   id: Number(row.id),
+  userId: Number(row.user_id),
   type: row.type as ScheduleSettingsType,
   isActive: Boolean(row.is_active),
   hour: Number(row.hour),
@@ -49,12 +51,30 @@ const mapAuthenticationRow = (
   row: Record<string, unknown>,
 ): ApiAuthenticationTableEntry => ({
   id: Number(row.id),
-  accessToken: String(row.access_token),
-  refreshToken: String(row.refresh_token),
-  tokenExpiration: String(row.token_expiration),
-  appKey: String(row.app_key),
-  created_at: String(row.created_at),
-  updated_at: String(row.updated_at),
+  userId: Number(row.user_id),
+  accessToken: row.access_token ? String(row.access_token) : null,
+  refreshToken: row.refresh_token ? String(row.refresh_token) : null,
+  tokenExpiration: row.token_expiration ? String(row.token_expiration) : null,
+  appKey: row.app_key ? String(row.app_key) : null,
+  created_at: row.created_at ? String(row.created_at) : null,
+  updated_at: row.updated_at ? String(row.updated_at) : null,
+});
+
+const createDefaultSchedule = (
+  userId: number,
+  type: ScheduleSettingsType,
+): ScheduleSettingsTableEntry => ({
+  id: 0,
+  userId,
+  type,
+  isActive: false,
+  hour: 0,
+  minute: 0,
+  frequency: 'daily',
+  dayOfWeek: 0,
+  lastExecutedAt: null,
+  lastExecutionStatus: 'idle',
+  lastExecutionError: null,
 });
 
 export const databaseAccessor = {
@@ -62,43 +82,31 @@ export const databaseAccessor = {
     await migrateDatabase();
   },
   authentication: {
-    ensureAuthentication: async (): Promise<void> => {
-      const authentication =
-        await databaseAccessor.authentication.getAuthentication();
-      if (!authentication) {
-        await databaseAccessor.authentication.saveAuthentication({
-          id: -1,
-          accessToken: '',
-          refreshToken: '',
-          tokenExpiration: '',
-          appKey: '',
-          created_at: null,
-          updated_at: null,
-        });
-      }
-    },
-    getAuthentication:
-      async (): Promise<ApiAuthenticationTableEntry | null> => {
-        const result = await database.execute(
-          'SELECT * FROM api_authentication',
-        );
+    getAuthentication: async (
+      userId: number,
+    ): Promise<ApiAuthenticationTableEntry | null> => {
+      const result = await database.execute(
+        'SELECT * FROM api_authentication WHERE user_id = ?',
+        [userId],
+      );
 
-        return result.rows.length > 0
-          ? mapAuthenticationRow(result.rows[0])
-          : null;
-      },
+      return result.rows.length > 0
+        ? mapAuthenticationRow(result.rows[0])
+        : null;
+    },
     saveAuthentication: async (
       authentication: ApiAuthenticationTableEntry,
     ): Promise<ApiAuthenticationTableEntry> => {
       await database.execute(
-        `INSERT INTO api_authentication (access_token, refresh_token, token_expiration, app_key)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
+        `INSERT INTO api_authentication (user_id, access_token, refresh_token, token_expiration, app_key)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET
            access_token = excluded.access_token,
            refresh_token = excluded.refresh_token,
            token_expiration = excluded.token_expiration,
            app_key = excluded.app_key`,
         [
+          authentication.userId,
           authentication.accessToken,
           authentication.refreshToken,
           authentication.tokenExpiration,
@@ -107,7 +115,9 @@ export const databaseAccessor = {
       );
 
       const persistedAuthentication =
-        await databaseAccessor.authentication.getAuthentication();
+        await databaseAccessor.authentication.getAuthentication(
+          authentication.userId,
+        );
 
       if (!persistedAuthentication) {
         throw new Error(`Failed to persist authentication.`);
@@ -117,17 +127,28 @@ export const databaseAccessor = {
     },
   },
   schedule: {
-    getSchedules: async (): Promise<ScheduleSettingsTableEntry[]> => {
-      const result = await database.execute('SELECT * FROM schedule_settings');
+    ensureSchedules: async (userId: number): Promise<void> => {
+      await Promise.all(
+        scheduleSettingsTypes.map(type =>
+          databaseAccessor.schedule.saveSchedule(createDefaultSchedule(userId, type)),
+        ),
+      );
+    },
+    getSchedules: async (userId: number): Promise<ScheduleSettingsTableEntry[]> => {
+      const result = await database.execute(
+        'SELECT * FROM schedule_settings WHERE user_id = ?',
+        [userId],
+      );
 
       return result.rows.map(mapScheduleRow);
     },
     getSchedule: async (
+      userId: number,
       type: ScheduleSettingsType,
     ): Promise<ScheduleSettingsTableEntry | null> => {
       const result = await database.execute(
-        'SELECT * FROM schedule_settings WHERE type = ?',
-        [type],
+        'SELECT * FROM schedule_settings WHERE user_id = ? AND type = ?',
+        [userId, type],
       );
 
       if (result.rows.length === 0) {
@@ -140,9 +161,9 @@ export const databaseAccessor = {
       schedule: ScheduleSettingsTableEntry,
     ): Promise<ScheduleSettingsTableEntry> => {
       await database.execute(
-        `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(type) DO UPDATE SET
+        `INSERT INTO schedule_settings (user_id, type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(user_id, type) DO UPDATE SET
            is_active = excluded.is_active,
            hour = excluded.hour,
            minute = excluded.minute,
@@ -152,6 +173,7 @@ export const databaseAccessor = {
            last_execution_status = excluded.last_execution_status,
            last_execution_error = excluded.last_execution_error`,
         [
+          schedule.userId,
           schedule.type,
           schedule.isActive ? 1 : 0,
           schedule.hour,
@@ -165,6 +187,7 @@ export const databaseAccessor = {
       );
 
       const persistedSchedule = await databaseAccessor.schedule.getSchedule(
+        schedule.userId,
         schedule.type,
       );
 
@@ -174,29 +197,8 @@ export const databaseAccessor = {
 
       return persistedSchedule;
     },
-    ensureSchedules: async (): Promise<void> => {
-      const result = await databaseAccessor.schedule.getSchedules();
-      const existingTypes = new Set(result.map(schedule => schedule.type));
-
-      const missingTypes = scheduleSettingsTypes.filter(
-        type => !existingTypes.has(type),
-      );
-
-      if (missingTypes.length === 0) {
-        return;
-      }
-
-      await Promise.all(
-        missingTypes.map(type =>
-          database.execute(
-            `INSERT INTO schedule_settings (type, is_active, hour, minute, frequency, day_of_week, last_executed_at, last_execution_status, last_execution_error)
-             VALUES (?, 0, 0, 0, 'daily', 0, NULL, 'idle', NULL)`,
-            [type],
-          ),
-        ),
-      );
-    },
     setExecutionState: async (
+      userId: number,
       type: ScheduleSettingsType,
       status: ScheduleExecutionStatus,
       options?: {
@@ -204,7 +206,7 @@ export const databaseAccessor = {
         lastExecutionError?: string | null;
       },
     ): Promise<ScheduleSettingsTableEntry | null> => {
-      const schedule = await databaseAccessor.schedule.getSchedule(type);
+      const schedule = await databaseAccessor.schedule.getSchedule(userId, type);
 
       if (schedule == null) {
         return null;
@@ -228,74 +230,102 @@ export const databaseAccessor = {
   },
   mappingTable: {
     getMappingEntries: async (
+      userId: number,
       type: HealthConnectMappingType,
     ): Promise<MappingTableEntry[]> => {
       const result = await database.execute(
-        'SELECT id, type, is_active, source, target FROM mapping_entries WHERE type = ?',
-        [type],
+        'SELECT id, user_id, type, is_active, source, target FROM mapping_entries WHERE user_id = ? AND type = ?',
+        [userId, type],
       );
 
       return result.rows.map(mapMappingEntryRow);
     },
     addMappingEntries: async (
+      userId: number,
       entries: MappingTableEntry[],
     ): Promise<MappingTableEntry[]> => {
+      if (entries.length === 0) {
+        return [];
+      }
+
       const insertPromises = entries.map(entry =>
         database.execute(
-          'INSERT INTO mapping_entries (type, is_active, source, target) VALUES (?, ?, ?, ?)',
-          [entry.type, entry.isActive ? 1 : 0, entry.source, entry.target],
+          `INSERT INTO mapping_entries (user_id, type, is_active, source, target)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(user_id, type, source) DO UPDATE SET
+             is_active = excluded.is_active,
+             target = excluded.target`,
+          [
+            userId,
+            entry.type,
+            entry.isActive ? 1 : 0,
+            entry.source,
+            entry.target,
+          ],
         ),
       );
       await Promise.all(insertPromises);
-      return databaseAccessor.mappingTable.getMappingEntries(entries[0].type);
+      return databaseAccessor.mappingTable.getMappingEntries(
+        userId,
+        entries[0].type,
+      );
     },
     updateMappingEntry: async (
+      userId: number,
       id: number,
       mappingUpdate: MappingTableEntry,
     ): Promise<MappingTableEntry[]> => {
       const updatedPromise = await database.execute(
-        'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ?',
+        'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ? AND user_id = ?',
         [
           mappingUpdate.type,
           mappingUpdate.isActive ? 1 : 0,
           mappingUpdate.source,
           mappingUpdate.target,
           id,
+          userId,
         ],
       );
 
       await Promise.all([updatedPromise]);
 
       return databaseAccessor.mappingTable.getMappingEntries(
+        userId,
         mappingUpdate.type,
       );
     },
     updateMappingEntries: async (
+      userId: number,
       entries: MappingTableEntry[],
       type: HealthConnectMappingType,
     ): Promise<MappingTableEntry[]> => {
       const updatePromises = entries.map(entry =>
         database.execute(
-          'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ?',
+          'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ? AND user_id = ?',
           [
             entry.type,
             entry.isActive ? 1 : 0,
             entry.source,
             entry.target,
             entry.id,
+            userId,
           ],
         ),
       );
       await Promise.all(updatePromises);
 
-      return databaseAccessor.mappingTable.getMappingEntries(type);
+      return databaseAccessor.mappingTable.getMappingEntries(userId, type);
     },
     deleteMappingEntry: async (
+      userId: number,
       id: number,
       type: HealthConnectMappingType,
     ): Promise<MappingTableEntry[]> => {
-      await database.execute('DELETE FROM mapping_entries WHERE id = ?', [id]);
-      return databaseAccessor.mappingTable.getMappingEntries(type);
+      await database.execute('DELETE FROM mapping_entries WHERE id = ? AND user_id = ?', [
+        id,
+        userId,
+      ]);
+      return databaseAccessor.mappingTable.getMappingEntries(userId, type);
     },
   },
 };

@@ -6,6 +6,7 @@ import {
 } from '../lib/database/databaseTypes';
 import { databaseAccessor } from '../lib/database/database';
 import { DropdownItem } from '../components/inputComponents/Dropdown';
+import { useAuthenticationContext } from './useAuthenticationContext';
 
 type ScheduleSettingsState = {
   originalSchedule: ScheduleSettingsTableEntry | null;
@@ -43,9 +44,11 @@ const weekDays = [
 ];
 
 const createDefaultSchedule = (
+  userId: number,
   type: ScheduleSettingsType,
 ): ScheduleSettingsTableEntry => ({
   id: 0,
+  userId,
   type,
   isActive: false,
   hour: 0,
@@ -87,6 +90,7 @@ const areSchedulesEqual = (
 export const useScheduleSettings = (
   type: ScheduleSettingsType,
 ): UseScheduleSettingsReturnType => {
+  const { currentUserId } = useAuthenticationContext();
   const databaseAccessorRef = React.useRef(databaseAccessor);
 
   const [state, setState] = React.useState<ScheduleSettingsState>({
@@ -104,9 +108,17 @@ export const useScheduleSettings = (
     setIsSaved(false);
 
     try {
+      if (currentUserId == null) {
+        throw new Error('Authenticated user context is missing.');
+      }
+
       const storedSchedule =
-        await databaseAccessorRef.current.schedule.getSchedule(type);
-      const loadedSchedule = storedSchedule ?? createDefaultSchedule(type);
+        await databaseAccessorRef.current.schedule.getSchedule(
+          currentUserId,
+          type,
+        );
+      const loadedSchedule =
+        storedSchedule ?? createDefaultSchedule(currentUserId, type);
 
       setState({
         originalSchedule: loadedSchedule,
@@ -119,7 +131,7 @@ export const useScheduleSettings = (
     } finally {
       setIsLoading(false);
     }
-  }, [type]);
+  }, [currentUserId, type]);
 
   const handleScheduleChange = React.useCallback(
     (partialSchedule: Partial<ScheduleSettingsTableEntry>) => {

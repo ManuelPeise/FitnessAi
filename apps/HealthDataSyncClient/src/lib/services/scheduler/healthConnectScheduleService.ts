@@ -6,15 +6,45 @@ import { databaseAccessor } from '../../database/database';
 import { apiClient } from '../api/axiosClient';
 import { utils } from '../../utils';
 import { healthConnectSchedulePayloadFactory } from './healthConnectSchedulePayloadFactory';
+import {
+  secureStorage,
+  SecureStorageKeys,
+} from '../storage/secureStorage';
 
 const scheduleSyncServiceUrl = 'HealthConnectImport/ImportTrainingData';
+
+type ExecuteManuallyOptions = {
+  initialLoadDays?: number;
+};
+
+type ScheduleExecutionResult = {
+  success: boolean;
+  pushedItems: number;
+  message?: string;
+};
 
 class HealthConnectScheduleService {
   async executeDueSchedules() {
     await this.execute('HealthConnectExerciseDataExport');
     await this.execute('HealthConnectHealthDataExport');
   }
+
   async execute(type: ScheduleSettingsType, initialLoadDays?: number) {
+    await this.executeInternal(type, initialLoadDays);
+  }
+
+  async executeManually(
+    type: ScheduleSettingsType,
+    options?: ExecuteManuallyOptions,
+  ): Promise<ScheduleExecutionResult> {
+    return await this.executeInternal(type, options?.initialLoadDays);
+  }
+
+  private async executeInternal(
+    type: ScheduleSettingsType,
+    initialLoadDays?: number,
+  ): Promise<ScheduleExecutionResult> {
+    const userId = await this.getCurrentUserId();
     const currentTimeStamp = new Date();
     const startTimeStamp =
       initialLoadDays != null
@@ -25,31 +55,48 @@ class HealthConnectScheduleService {
 
     switch (type) {
       case 'HealthConnectExerciseDataExport':
-        await this.processHealthConnectHealthDataExport(
+        return await this.processHealthConnectHealthDataExport(
+          userId,
           type,
           startTimeStamp,
           currentTimeStamp,
         );
-        break;
       case 'HealthConnectHealthDataExport':
-        await this.processHealthConnectHealthDataExport(
+        return await this.processHealthConnectHealthDataExport(
+          userId,
           type,
           startTimeStamp,
           currentTimeStamp,
         );
-        break;
       default:
-        console.warn(`Unhandled schedule type: ${type}`);
-        break;
+        return {
+          success: false,
+          pushedItems: 0,
+          message: `Unhandled schedule type: ${type}`,
+        };
     }
   }
 
+  private async getCurrentUserId(): Promise<number> {
+    const storedUserId = await secureStorage.getItem(
+      SecureStorageKeys.CURRENT_USER_ID,
+    );
+    const parsedUserId = Number(storedUserId);
+
+    if (!storedUserId || !Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      throw new Error('Cannot execute schedule without authenticated user.');
+    }
+
+    return parsedUserId;
+  }
+
   private async processHealthConnectHealthDataExport(
+    userId: number,
     type: ScheduleSettingsType,
     from: Date,
     to: Date,
-  ) {
-    const exportModel = await healthConnectSchedulePayloadFactory.create({
+  ): Promise<ScheduleExecutionResult> {
+    const exportModel = await healthConnectSchedulePayloadFactory.create(userId, {
       from: from,
       to: to,
       type: type,
@@ -57,15 +104,19 @@ class HealthConnectScheduleService {
 
     try {
       if (exportModel.schedule == null) {
-        throw new Error('Schedule could not be created or is null');
+        throw new Error('No schedule was found for the current user.');
       }
 
       if (!exportModel.schedule?.isActive) {
-        return;
+        return { success: true, pushedItems: 0 };
       }
 
       if (exportModel.payload?.length === 0) {
-        throw new Error('Could not create payload or payload is empty');
+        return {
+          success: true,
+          pushedItems: 0,
+          message: 'No mapped data available for export.',
+        };
       }
 
       const response = await apiClient.post(
@@ -76,8 +127,13 @@ class HealthConnectScheduleService {
       if (response.status === 200) {
         await this.updateSchedule(exportModel.schedule, to, true);
 
-        return;
+        return {
+          success: true,
+          pushedItems: exportModel.payload.length,
+        };
       }
+
+      throw new Error(`Schedule sync failed with status ${response.status}.`);
     } catch (error) {
       if (exportModel.schedule) {
         await this.updateSchedule(
@@ -87,6 +143,12 @@ class HealthConnectScheduleService {
           String(error),
         );
       }
+
+      return {
+        success: false,
+        pushedItems: 0,
+        message: String(error),
+      };
     }
   }
 
@@ -108,5 +170,8 @@ class HealthConnectScheduleService {
     await databaseAccessor.schedule.saveSchedule(updatedSchedule);
   }
 }
+
+export const healthConnectScheduleExecutionService =
+  new HealthConnectScheduleService();
 
 export default HealthConnectScheduleService;

@@ -5,6 +5,7 @@ import {
 } from '../lib/database/databaseTypes';
 import { databaseAccessor } from '../lib/database/database';
 import { healthConnectService } from '../lib/services/healthConnect/healthConnectService';
+import { useAuthenticationContext } from './useAuthenticationContext';
 
 type HealthConnectModalProps = {
   isVisible: boolean;
@@ -30,6 +31,7 @@ type UseHealthConnectMappingsReturnType = {
 export const useHealthConnectMappings = (
   type: HealthConnectMappingType,
 ): UseHealthConnectMappingsReturnType => {
+  const { currentUserId } = useAuthenticationContext();
   const mappingDatabaseRef = React.useRef(databaseAccessor.mappingTable);
   const healthConnectServiceRef = React.useRef(healthConnectService);
 
@@ -52,14 +54,24 @@ export const useHealthConnectMappings = (
   );
 
   const loadMappings = React.useCallback(async () => {
+    if (currentUserId == null) {
+      setMappings([]);
+      return;
+    }
+
     const mappingsFromDb =
-      await databaseAccessor.mappingTable.getMappingEntries(type);
+      await databaseAccessor.mappingTable.getMappingEntries(currentUserId, type);
 
     setMappings(mappingsFromDb);
-  }, [type]);
+  }, [currentUserId, type]);
 
   const updateMapping = React.useCallback(
     async (id: number, mappingUpdate: Partial<MappingTableEntry>) => {
+      if (currentUserId == null) {
+        console.error('Cannot update mapping without authenticated user.');
+        return;
+      }
+
       const mappingEntry = mappings.find(mapping => mapping.id === id);
 
       if (!mappingEntry) {
@@ -72,21 +84,28 @@ export const useHealthConnectMappings = (
       };
       const mappingsFromDb =
         await mappingDatabaseRef.current.updateMappingEntry(
+          currentUserId,
           id,
           updatedMappingEntry,
         );
 
       setMappings(mappingsFromDb);
     },
-    [mappings],
+    [currentUserId, mappings],
   );
 
   const initializeOriginMappings = React.useCallback(async () => {
     try {
       setIsLoading(true);
+      if (currentUserId == null) {
+        throw new Error('Authenticated user context is missing.');
+      }
 
       const existingMappings =
-        await databaseAccessor.mappingTable.getMappingEntries(type);
+        await databaseAccessor.mappingTable.getMappingEntries(
+          currentUserId,
+          type,
+        );
       const availableOrigins =
         await healthConnectServiceRef.current.getAvailableOrigins();
 
@@ -99,6 +118,7 @@ export const useHealthConnectMappings = (
           origin => {
             return {
               id: -1,
+              userId: currentUserId,
               type: type,
               isActive: false,
               source: origin,
@@ -108,7 +128,10 @@ export const useHealthConnectMappings = (
         );
 
         const mappingsFromDb =
-          await mappingDatabaseRef.current.addMappingEntries(newMappings);
+          await mappingDatabaseRef.current.addMappingEntries(
+            currentUserId,
+            newMappings,
+          );
 
         setMappings(mappingsFromDb);
       }
@@ -117,14 +140,20 @@ export const useHealthConnectMappings = (
     } finally {
       setIsLoading(false);
     }
-  }, [type]);
+  }, [currentUserId, type]);
 
   const initializeMetricMappings = React.useCallback(async () => {
     try {
       setIsLoading(true);
+      if (currentUserId == null) {
+        throw new Error('Authenticated user context is missing.');
+      }
 
       const existingMappings =
-        await databaseAccessor.mappingTable.getMappingEntries(type);
+        await databaseAccessor.mappingTable.getMappingEntries(
+          currentUserId,
+          type,
+        );
 
       const grantedPermissions =
         await healthConnectServiceRef.current.getGrantedPermissions();
@@ -143,6 +172,7 @@ export const useHealthConnectMappings = (
           metricType => {
             return {
               id: -1,
+              userId: currentUserId,
               type: type,
               isActive: false,
               source: metricType,
@@ -152,7 +182,10 @@ export const useHealthConnectMappings = (
         );
 
         const mappingsFromDb =
-          await mappingDatabaseRef.current.addMappingEntries(newMappings);
+          await mappingDatabaseRef.current.addMappingEntries(
+            currentUserId,
+            newMappings,
+          );
         setMappings(mappingsFromDb);
       }
     } catch (err) {
@@ -160,7 +193,7 @@ export const useHealthConnectMappings = (
     } finally {
       setIsLoading(false);
     }
-  }, [type]);
+  }, [currentUserId, type]);
 
   React.useEffect(() => {
     const onLoad = async () => {
@@ -169,9 +202,7 @@ export const useHealthConnectMappings = (
       setIsLoading(false);
     };
     onLoad();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadMappings]);
 
   return {
     isLoading,

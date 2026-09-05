@@ -20,8 +20,8 @@ let isConfigured = false;
 
 const executeFetchTask = async (taskId: string): Promise<void> => {
   try {
-    // await healthConnectScheduleService.executeDueSchedules();
-    console.log('Executing background fetch task');
+    await healthConnectScheduleService.executeDueSchedules();
+    console.log('Executed background fetch task.');
   } catch (error) {
     console.error('Background task execution failed.', error);
   } finally {

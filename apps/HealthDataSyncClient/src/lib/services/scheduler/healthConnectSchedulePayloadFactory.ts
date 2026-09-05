@@ -22,22 +22,27 @@ class HealthConnectSchedulePayloadFactory {
   private readonly healthConnect = healthConnectService;
 
   create = async (
+    userId: number,
     request: HealthConnectExportRequest,
   ): Promise<HealthConnectDataExportModel> => {
     switch (request.type) {
       case 'HealthConnectExerciseDataExport':
-        return await this.getExerciseDataExportPayload(request);
+        return await this.getExerciseDataExportPayload(userId, request);
       case 'HealthConnectHealthDataExport':
-        return await this.getHealthMetricExportPayload(request);
+        return await this.getHealthMetricExportPayload(userId, request);
       default:
         throw new Error(`Unsupported export request type: ${request.type}`);
     }
   };
 
   private getHealthMetricExportPayload = async (
+    userId: number,
     request: HealthConnectExportRequest,
   ): Promise<HealthConnectDataExportModel> => {
-    const scheduleData = await this.getHealthConnectScheduleData(request.type);
+    const scheduleData = await this.getHealthConnectScheduleData(
+      userId,
+      request.type,
+    );
 
     if (!scheduleData) {
       return { payload: [], schedule: null };
@@ -60,9 +65,13 @@ class HealthConnectSchedulePayloadFactory {
   };
 
   private getExerciseDataExportPayload = async (
+    userId: number,
     request: HealthConnectExportRequest,
   ): Promise<HealthConnectDataExportModel> => {
-    const scheduleData = await this.getHealthConnectScheduleData(request.type);
+    const scheduleData = await this.getHealthConnectScheduleData(
+      userId,
+      request.type,
+    );
 
     if (!scheduleData) {
       return { payload: [], schedule: null };
@@ -93,17 +102,20 @@ class HealthConnectSchedulePayloadFactory {
   };
 
   private getHealthConnectSchedule = async (
+    userId: number,
     type: ScheduleSettingsType,
   ): Promise<ScheduleSettingsTableEntry | null> => {
-    const schedule = await this.databaseService.schedule.getSchedule(type);
+    const schedule = await this.databaseService.schedule.getSchedule(userId, type);
 
     return schedule;
   };
 
   private getActiveMappings = async (
+    userId: number,
     type: HealthConnectMappingType,
   ): Promise<HealthConnectMappingMap> => {
     const mappings = await this.databaseService.mappingTable.getMappingEntries(
+      userId,
       type,
     );
 
@@ -119,12 +131,19 @@ class HealthConnectSchedulePayloadFactory {
   };
 
   private getHealthConnectScheduleData = async (
+    userId: number,
     scheduleType: ScheduleSettingsType,
   ): Promise<HealthConnectScheduleData | null> => {
     const scheduleData: HealthConnectScheduleData = {
-      originMappings: await this.getActiveMappings('HealthConnectOrigin'),
-      metricMappings: await this.getActiveMappings('HealthConnectMetric'),
-      schedule: await this.getHealthConnectSchedule(scheduleType),
+      originMappings: await this.getActiveMappings(
+        userId,
+        'HealthConnectOrigin',
+      ),
+      metricMappings: await this.getActiveMappings(
+        userId,
+        'HealthConnectMetric',
+      ),
+      schedule: await this.getHealthConnectSchedule(userId, scheduleType),
     };
 
     if (
