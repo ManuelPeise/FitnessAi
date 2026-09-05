@@ -26,6 +26,7 @@ export type ApiAuthenticationTableEntry = {
   refreshToken: string | null;
   tokenExpiration: string | null;
   appKey: string | null;
+  selectedLanguage: 'en' | 'de' | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -81,6 +82,7 @@ CREATE TABLE IF NOT EXISTS api_authentication (
   refresh_token TEXT,
   token_expiration TEXT,
   app_key TEXT,
+  selected_language TEXT CHECK (selected_language IN ('en', 'de')),
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id)
@@ -123,7 +125,7 @@ BEGIN
 END;
 
 CREATE TRIGGER IF NOT EXISTS api_authentication_updated_at
-AFTER UPDATE OF access_token, refresh_token, token_expiration, app_key ON api_authentication
+AFTER UPDATE OF access_token, refresh_token, token_expiration, app_key, selected_language ON api_authentication
 BEGIN
   UPDATE api_authentication
   SET updated_at = CURRENT_TIMESTAMP

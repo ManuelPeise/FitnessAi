@@ -3,10 +3,17 @@ import axios, { AxiosRequestConfig } from 'axios';
 import {
   secureStorage,
   SecureStorageKeys,
+  UserInfo,
 } from '../../lib/services/storage/secureStorage';
 import { apiClient } from '../../lib/services/api/axiosClient';
 import { databaseAccessor } from '../../lib/database/database';
 import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
+import {
+  getCurrentLanguage,
+  getResource,
+  onLanguageChanged,
+  subscribeLanguageChanged,
+} from '../../lib/localization';
 
 type TokenResponse = {
   token: string;
@@ -47,24 +54,37 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const [isInitializing, setIsInitializing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const getTokens = React.useCallback(async () => {
-    const token = await secureStorage.getItem(SecureStorageKeys.ACCESS_TOKEN);
-    const refreshToken = await secureStorage.getItem(
-      SecureStorageKeys.REFRESH_TOKEN,
-    );
-    return !!token && !!refreshToken;
-  }, []);
+  const getUserInfo = React.useCallback(async (): Promise<UserInfo | null> => {
+    const serialized = await secureStorage.getItem(SecureStorageKeys.USER_INFO);
 
-  const getCurrentUserId = React.useCallback(async () => {
-    const currentUserIdValue = await secureStorage.getItem(
-      SecureStorageKeys.CURRENT_USER_ID,
-    );
-
-    if (currentUserIdValue) {
-      return parseInt(currentUserIdValue, 10);
+    if (!serialized) {
+      return null;
     }
 
-    return null;
+    try {
+      const parsed = JSON.parse(serialized) as UserInfo;
+
+      if (
+        typeof parsed !== 'object' ||
+        parsed == null ||
+        typeof parsed.isAuthenticated !== 'boolean' ||
+        (parsed.userId != null && !Number.isInteger(parsed.userId)) ||
+        (parsed.selectedLanguage !== 'en' && parsed.selectedLanguage !== 'de')
+      ) {
+        return null;
+      }
+
+      return parsed;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const setUserInfo = React.useCallback(async (userInfo: UserInfo) => {
+    await secureStorage.setItem(
+      SecureStorageKeys.USER_INFO,
+      JSON.stringify(userInfo),
+    );
   }, []);
 
   const handleLogin = async (request: LoginRequest) => {
@@ -84,7 +104,9 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           !tokenResponse.tokenExpiresAt ||
           !tokenResponse.appId
         ) {
-          throw new Error('Missing authentication tokens or app ID');
+          throw new Error(
+            getResource('common.descriptionMissingAuthTokensOrAppId'),
+          );
         }
 
         const config: AxiosRequestConfig = {
@@ -102,7 +124,9 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           userResponse.status !== 200 ||
           !userResponse.data
         ) {
-          throw new Error('Failed to fetch user information');
+          throw new Error(
+            getResource('common.descriptionFailedToFetchUserInfo'),
+          );
         }
 
         const user: User = userResponse.data;
@@ -118,6 +142,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             refreshToken: tokenResponse.refreshToken,
             tokenExpiration: tokenResponse.tokenExpiresAt,
             appKey: tokenResponse.appId,
+            selectedLanguage: getCurrentLanguage(),
             created_at: null,
             updated_at: null,
           };
@@ -132,6 +157,8 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             refreshToken: tokenResponse.refreshToken,
             tokenExpiration: tokenResponse.tokenExpiresAt,
             appKey: tokenResponse.appId,
+            selectedLanguage:
+              authentication.selectedLanguage ?? getCurrentLanguage(),
             updated_at: null,
           };
 
@@ -140,45 +167,34 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           );
         }
 
-        await secureStorage.setItem(
-          SecureStorageKeys.ACCESS_TOKEN,
-          tokenResponse.token,
-        );
-        await secureStorage.setItem(
-          SecureStorageKeys.REFRESH_TOKEN,
-          tokenResponse.refreshToken,
-        );
-        await secureStorage.setItem(
-          SecureStorageKeys.CURRENT_USER_ID,
-          user.id.toString(),
-        );
+        const selectedLanguage =
+          authentication?.selectedLanguage ?? getCurrentLanguage();
+
+        onLanguageChanged(selectedLanguage);
+
+        await setUserInfo({
+          userId: user.id,
+          isAuthenticated: true,
+          selectedLanguage,
+        });
 
         setCurrentUserId(user.id);
         setIsAuthenticated(true);
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        const requestUrl = err.config?.url ?? 'unknown-url';
-        const requestMethod = err.config?.method ?? 'unknown-method';
-        console.error('Login process failed with Axios error.', {
-          message: err.message,
-          code: err.code,
-          status: err.response?.status,
-          requestUrl,
-          requestMethod,
-        });
-
         if (err.response?.status === 401) {
-          throw new Error('Invalid email or password.');
+          throw new Error(
+            getResource('common.descriptionInvalidEmailOrPassword'),
+          );
         }
 
-        throw new Error(
-          'Unable to reach the server. Verify backend connectivity and try again.',
-        );
+        throw new Error(getResource('common.descriptionUnableToReachServer'));
       }
 
-      console.error('Login process failed:', err);
-      throw err instanceof Error ? err : new Error('Login failed.');
+      throw err instanceof Error
+        ? err
+        : new Error(getResource('common.descriptionLoginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -187,9 +203,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      await secureStorage.removeItem(SecureStorageKeys.ACCESS_TOKEN);
-      await secureStorage.removeItem(SecureStorageKeys.REFRESH_TOKEN);
-      await secureStorage.removeItem(SecureStorageKeys.CURRENT_USER_ID);
+      await secureStorage.removeItem(SecureStorageKeys.USER_INFO);
       setIsAuthenticated(false);
       setCurrentUserId(null);
     } finally {
@@ -201,25 +215,46 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     const checkToken = async () => {
       setIsInitializing(true);
       try {
-        const tokenExists = await getTokens();
-        if (!tokenExists) {
+        const userInfo = await getUserInfo();
+
+        if (
+          userInfo == null ||
+          !userInfo.isAuthenticated ||
+          userInfo.userId == null
+        ) {
           setIsAuthenticated(false);
           setCurrentUserId(null);
           return;
         }
 
-        const parsedUserId = await getCurrentUserId();
+        const authentication =
+          await databaseAccessor.authentication.getAuthentication(
+            userInfo.userId,
+          );
 
-        if (!parsedUserId) {
+        if (
+          authentication == null ||
+          !authentication.accessToken ||
+          !authentication.refreshToken
+        ) {
           setIsAuthenticated(false);
           setCurrentUserId(null);
           return;
         }
 
-        setCurrentUserId(parsedUserId);
+        if (authentication?.selectedLanguage) {
+          onLanguageChanged(authentication.selectedLanguage);
+        } else {
+          onLanguageChanged(userInfo.selectedLanguage);
+        }
+
+        setCurrentUserId(userInfo.userId);
         setIsAuthenticated(true);
       } catch (error) {
-        console.error('Failed to initialize authenticated user state.', error);
+        console.error(
+          getResource('common.descriptionInitializeAuthStateFailed'),
+          error,
+        );
         setIsAuthenticated(false);
         setCurrentUserId(null);
       } finally {
@@ -227,7 +262,46 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
       }
     };
     checkToken();
-  }, [getTokens]);
+  }, [getUserInfo]);
+
+  React.useEffect(() => {
+    return subscribeLanguageChanged(() => {
+      const persistLanguageAsync = async () => {
+        if (currentUserId == null) {
+          return;
+        }
+
+        const authentication =
+          await databaseAccessor.authentication.getAuthentication(
+            currentUserId,
+          );
+
+        if (authentication == null) {
+          return;
+        }
+
+        const selectedLanguage = getCurrentLanguage();
+
+        await databaseAccessor.authentication.saveAuthentication({
+          ...authentication,
+          selectedLanguage,
+        });
+
+        await setUserInfo({
+          userId: currentUserId,
+          isAuthenticated: true,
+          selectedLanguage,
+        });
+      };
+
+      persistLanguageAsync().catch(error => {
+        console.error(
+          getResource('common.descriptionPersistAuthenticationFailed'),
+          error,
+        );
+      });
+    });
+  }, [currentUserId, setUserInfo]);
 
   return (
     <AuthenticationContext.Provider

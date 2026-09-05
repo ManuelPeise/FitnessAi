@@ -1,12 +1,21 @@
 export const colorMap = {
-  primary: '#2563EB', // Blue 600
-  secondary: '#6B7280', // Gray 500
-  highlight: '#FACC15', // Yellow 400
-  success: '#16A34A', // Green 600
-  error: '#DC2626', // Red 600
-  warning: '#EA580C', // Orange 600
-  info: '#0284C7', // Sky 600
-  disabled: '#9CA3AF',
+  primary: '#3B82F6',
+  secondary: '#9CA3AF',
+  highlight: '#FACC15',
+  success: '#22C55E',
+  error: '#F87171',
+  warning: '#FB923C',
+  info: '#38BDF8',
+  disabled: '#4B5563',
+  background: '#0B1220',
+  backgroundAlt: '#111827',
+  surface: '#1F2937',
+  border: '#374151',
+  textPrimary: '#F9FAFB',
+  textSecondary: '#D1D5DB',
+  textMuted: '#9CA3AF',
+  overlay: 'rgba(2, 6, 23, 0.72)',
+  shadow: '#000000',
   transparent: 'transparent',
   white: '#FFFFFF',
 };

@@ -16,7 +16,7 @@ const ButtonComponent: React.FC<IProps> = props => {
       onPress={onPress}
       style={[
         styles.button,
-        { backgroundColor: disabled ? colorMap.disabled : colorMap.primary },
+        disabled ? styles.disabledButton : styles.enabledButton,
       ]}
       disabled={disabled}
     >
@@ -27,12 +27,27 @@ const ButtonComponent: React.FC<IProps> = props => {
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 25,
+    minHeight: 42,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 5,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  enabledButton: {
+    backgroundColor: colorMap.primary,
+    shadowColor: colorMap.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  disabledButton: {
+    backgroundColor: colorMap.disabled,
   },
   buttonText: {
-    color: colorMap.white,
+    color: colorMap.textPrimary,
+    fontWeight: '600',
   },
 });
 export default ButtonComponent;

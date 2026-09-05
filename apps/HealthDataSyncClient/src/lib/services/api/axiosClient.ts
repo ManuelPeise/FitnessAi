@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { databaseAccessor } from '../../database/database';
-import { secureStorage, SecureStorageKeys } from '../storage/secureStorage';
+import {
+  secureStorage,
+  SecureStorageKeys,
+  UserInfo,
+} from '../storage/secureStorage';
 
 type RefreshTokenResponse = {
   accessToken: string;
@@ -51,16 +55,33 @@ const refreshClient = axios.create({
 let refreshPromise: Promise<string | null> | null = null;
 
 const getCurrentUserId = async (): Promise<number | null> => {
-  const storedUserId = await secureStorage.getItem(
-    SecureStorageKeys.CURRENT_USER_ID,
+  const serializedUserInfo = await secureStorage.getItem(
+    SecureStorageKeys.USER_INFO,
   );
-  const parsedUserId = Number(storedUserId);
 
-  if (!storedUserId || !Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+  if (!serializedUserInfo) {
     return null;
   }
 
-  return parsedUserId;
+  let userInfo: UserInfo;
+
+  try {
+    userInfo = JSON.parse(serializedUserInfo) as UserInfo;
+  } catch {
+    return null;
+  }
+
+  if (
+    userInfo == null ||
+    !userInfo.isAuthenticated ||
+    userInfo.userId == null ||
+    !Number.isInteger(userInfo.userId) ||
+    userInfo.userId <= 0
+  ) {
+    return null;
+  }
+
+  return userInfo.userId;
 };
 
 const refreshAccessToken = async (): Promise<string | null> => {
@@ -109,12 +130,6 @@ const refreshAccessToken = async (): Promise<string | null> => {
         currentAuthentication,
       );
 
-      await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, accessToken);
-      await secureStorage.setItem(
-        SecureStorageKeys.REFRESH_TOKEN,
-        newRefreshToken,
-      );
-
       return accessToken;
     } catch {
       const currentAuthenticationEntry = {
@@ -127,9 +142,6 @@ const refreshAccessToken = async (): Promise<string | null> => {
       await databaseAccessor.authentication.saveAuthentication(
         currentAuthenticationEntry,
       );
-
-      await secureStorage.removeItem(SecureStorageKeys.ACCESS_TOKEN);
-      await secureStorage.removeItem(SecureStorageKeys.REFRESH_TOKEN);
       return null;
     } finally {
       refreshPromise = null;

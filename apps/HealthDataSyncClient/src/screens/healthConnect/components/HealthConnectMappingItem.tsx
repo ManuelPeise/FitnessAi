@@ -36,20 +36,23 @@ const HealthConnectMappingItem: React.FC<IProps> = props => {
 
 const styles = StyleSheet.create({
   button: {
-    padding: 5,
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: colorMap.backgroundAlt,
+    borderWidth: 1,
+    borderColor: colorMap.border,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    padding: 4,
   },
   status: {
     marginRight: 10,
   },
   source: {
     flex: 1,
+    color: colorMap.textPrimary,
   },
   arrow: {
     marginHorizontal: 10,

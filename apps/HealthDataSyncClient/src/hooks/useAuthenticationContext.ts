@@ -1,12 +1,13 @@
 import { useContext } from 'react';
 import { AuthenticationContext } from '../components/contextProviders/AuthenticationContentProvider';
+import { getResource } from '../lib/localization';
 
 export const useAuthenticationContext = () => {
   const ctx = useContext(AuthenticationContext);
 
   if (!ctx) {
     throw new Error(
-      'useAuthenticationContext must be used within an AuthenticationProvider',
+      getResource('common.descriptionMissingAuthenticationContext'),
     );
   }
 

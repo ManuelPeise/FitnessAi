@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
 import { colorMap } from '../../lib/styles/colorMap';
+import TextField from '../../components/inputComponents/TextField';
+import ButtonComponent from '../../components/inputComponents/ButtonComponent';
+import { ILocaleProps } from '../../lib/localization';
+import { withLocalNameSpaces } from '../../lib/localization/withLocalNameSpaces';
 
-const LoginScreen: React.FC = () => {
+const LoginScreen: React.FC<ILocaleProps> = props => {
+  const { getResource } = props;
   const { handleLogin } = useAuthenticationContext();
 
   const [email, setEmail] = useState<string>('');
@@ -28,7 +26,7 @@ const LoginScreen: React.FC = () => {
       if (loginError instanceof Error && loginError.message.trim().length > 0) {
         setError(loginError.message);
       } else {
-        setError('Login failed. Please check your credentials.');
+        setError(getResource('common.descriptionLoginFailedFallback'));
       }
     } finally {
       setIsLoading(false);
@@ -37,37 +35,37 @@ const LoginScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign in</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={email}
-        keyboardType="email-address"
-        onChangeText={setEmail}
-        editable={!isLoading}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        editable={!isLoading}
-      />
-      {error && <Text style={styles.error}>{error}</Text>}
-      {isLoading ? (
-        <ActivityIndicator />
-      ) : (
-        <TouchableOpacity
-          onPress={onLogin}
-          style={[styles.button, isLoginDisabled && styles.buttonDisabled]}
-          disabled={isLoginDisabled}
-        >
-          <Text style={styles.buttonText}>Sign in</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.card}>
+        <Text style={styles.title}>{getResource('common.captionLogin')}</Text>
+        <TextField
+          label={getResource('common.labelEmail')}
+          value={email}
+          placeholder={getResource('common.labelEmail')}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          onChange={setEmail}
+          disabled={isLoading}
+        />
+        <TextField
+          label={getResource('common.labelPassword')}
+          value={password}
+          placeholder={getResource('common.labelPassword')}
+          secureTextEntry
+          onChange={setPassword}
+          disabled={isLoading}
+        />
+        {error && <Text style={styles.error}>{error}</Text>}
+        {isLoading ? (
+          <ActivityIndicator color={colorMap.primary} />
+        ) : (
+          <ButtonComponent
+            title={getResource('common.labelSignIn')}
+            onPress={onLogin}
+            disabled={isLoginDisabled}
+          />
+        )}
+      </View>
     </View>
   );
 };
@@ -76,36 +74,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: colorMap.background,
     padding: 24,
+  },
+  card: {
+    backgroundColor: colorMap.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colorMap.border,
+    padding: 18,
+    gap: 6,
+    shadowColor: colorMap.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 6,
+    elevation: 3,
   },
   title: {
     fontSize: 28,
     fontWeight: '600',
     marginBottom: 24,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
+    color: colorMap.textPrimary,
   },
   error: {
     marginBottom: 12,
     color: colorMap.error,
   },
-  button: {
-    backgroundColor: colorMap.primary,
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: colorMap.disabled,
-  },
-  buttonText: {
-    color: colorMap.white,
-    fontWeight: '600',
-  },
 });
 
-export default LoginScreen;
+export default withLocalNameSpaces('LoginScreen', ['common'])(LoginScreen);

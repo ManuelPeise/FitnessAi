@@ -6,6 +6,7 @@ import {
 import { databaseAccessor } from '../lib/database/database';
 import { healthConnectService } from '../lib/services/healthConnect/healthConnectService';
 import { useAuthenticationContext } from './useAuthenticationContext';
+import { getResource } from '../lib/localization';
 
 type HealthConnectModalProps = {
   isVisible: boolean;
@@ -71,7 +72,11 @@ export const useHealthConnectMappings = (
   const updateMapping = React.useCallback(
     async (id: number, mappingUpdate: Partial<MappingTableEntry>) => {
       if (currentUserId == null) {
-        console.error('Cannot update mapping without authenticated user.');
+        console.error(
+          getResource(
+            'healthConnect.descriptionCannotUpdateMappingWithoutUser',
+          ),
+        );
         return;
       }
 
@@ -101,14 +106,18 @@ export const useHealthConnectMappings = (
     try {
       setIsLoading(true);
       if (currentUserId == null) {
-        throw new Error('Authenticated user context is missing.');
+        throw new Error(
+          getResource('healthConnect.descriptionMissingUserContext'),
+        );
       }
 
       const permissionsEnsured =
         await healthConnectServiceRef.current.ensurePermissions();
 
       if (!permissionsEnsured) {
-        throw new Error('Failed to ensure necessary permissions.');
+        throw new Error(
+          getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        );
       }
 
       const existingMappings =
@@ -147,7 +156,10 @@ export const useHealthConnectMappings = (
         setMappings(mappingsFromDb);
       }
     } catch (err) {
-      console.error(err);
+      console.error(
+        getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        err,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -157,14 +169,18 @@ export const useHealthConnectMappings = (
     try {
       setIsLoading(true);
       if (currentUserId == null) {
-        throw new Error('Authenticated user context is missing.');
+        throw new Error(
+          getResource('healthConnect.descriptionMissingUserContext'),
+        );
       }
 
       const permissionsEnsured =
         await healthConnectServiceRef.current.ensurePermissions();
 
       if (!permissionsEnsured) {
-        throw new Error('Failed to ensure necessary permissions.');
+        throw new Error(
+          getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        );
       }
       const existingMappings =
         await databaseAccessor.mappingTable.getMappingEntries(
@@ -206,7 +222,10 @@ export const useHealthConnectMappings = (
         setMappings(mappingsFromDb);
       }
     } catch (err) {
-      console.error(err);
+      console.error(
+        getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        err,
+      );
     } finally {
       setIsLoading(false);
     }

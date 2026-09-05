@@ -16,6 +16,7 @@ import {
   HealthConnectPermission,
   HealthConnectReadRange,
 } from './healthConnectTypes';
+import { getResource } from '../../localization';
 
 export type HealthConnectTrainingAggregateRecordType =
   | 'ActiveCaloriesBurned'
@@ -350,7 +351,9 @@ class HealthConnectService {
     const initialized = await this.initialize();
 
     if (!initialized) {
-      throw new Error('Health Connect failed to initialize.');
+      throw new Error(
+        getResource('common.descriptionHealthConnectInitializeFailed'),
+      );
     }
   }
 

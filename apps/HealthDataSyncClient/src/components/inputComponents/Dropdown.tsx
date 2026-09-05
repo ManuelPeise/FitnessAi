@@ -23,9 +23,11 @@ const Dropdown = <TValue extends DropdownValue>(props: IProps<TValue>) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={styles.pickerContainer}>
         <Picker
+          style={styles.picker}
+          dropdownIconColor={colorMap.textSecondary}
           selectedValue={value}
           enabled={!disabled}
           onValueChange={itemValue => onChange(itemValue as TValue)}
@@ -49,15 +51,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: colorMap.secondary,
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+    color: colorMap.textSecondary,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: colorMap.disabled,
-    borderRadius: 4,
+    borderColor: colorMap.border,
+    borderRadius: 10,
+    backgroundColor: colorMap.backgroundAlt,
+  },
+  picker: {
+    color: colorMap.textPrimary,
   },
 });
 export default Dropdown;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Switch, View, StyleSheet } from 'react-native';
+import { colorMap } from '../../lib/styles/colorMap';
 
 interface IProps {
   checked: boolean;
@@ -14,7 +15,11 @@ const SwitchComponent: React.FC<IProps> = props => {
     <View style={styles.container}>
       <Switch
         style={styles.switch}
-        thumbColor={checked ? '#2196F3' : '#f4f3f4'}
+        trackColor={{
+          true: colorMap.primary,
+          false: colorMap.disabled,
+        }}
+        thumbColor={checked ? colorMap.textPrimary : colorMap.textSecondary}
         value={checked}
         onValueChange={onValueChange}
         disabled={disabled}
@@ -28,7 +33,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginVertical: 10,
+    marginVertical: 4,
   },
   switch: {
     marginRight: 10,

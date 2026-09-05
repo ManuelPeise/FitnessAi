@@ -1,11 +1,12 @@
 import { useContext } from 'react';
 import { HealthConnectContext } from '../components/contextProviders/HealthConnectContextProvider';
+import { getResource } from '../lib/localization';
 
 const useHealthConnectContext = () => {
   const context = useContext(HealthConnectContext);
   if (!context) {
     throw new Error(
-      'useHealthConnectContext must be used within a HealthConnectProvider',
+      getResource('common.descriptionMissingHealthConnectContext'),
     );
   }
   return context;

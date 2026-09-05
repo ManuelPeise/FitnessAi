@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/auth/LoginScreen';
+import { getResource } from '../lib/localization';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -16,7 +17,7 @@ const AuthNavigator: React.FC = () => {
         name="Login"
         component={LoginScreen}
         options={{
-          title: 'Login',
+          title: getResource('common.captionLogin'),
           headerShown: false,
         }}
       />

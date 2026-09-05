@@ -6,14 +6,16 @@ import { globalStyles } from '../../../lib/styles/globalStyles';
 import HealthConnectMappingItem from './HealthConnectMappingItem';
 import HealthConnectMappingModal from './HealthConnectMappingModal';
 import ButtonComponent from '../../../components/inputComponents/ButtonComponent';
+import { colorMap } from '../../../lib/styles/colorMap';
+import { ILocaleProps, withLocalNameSpaces } from '../../../lib/localization';
 
-interface IProps {
+interface IProps extends ILocaleProps {
   type: HealthConnectMappingType;
-  title: string;
+  titleResource: string;
 }
 
 const HealthConnectMapping: React.FC<IProps> = props => {
-  const { type, title } = props;
+  const { type, titleResource, getResource } = props;
 
   const {
     isLoading,
@@ -35,23 +37,31 @@ const HealthConnectMapping: React.FC<IProps> = props => {
     <View style={globalStyles.container}>
       <View style={styles.root}>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>{title}</Text>
+          <Text style={styles.titleText}>{getResource(titleResource)}</Text>
         </View>
         <ScrollView
           style={styles.mappingContainer}
           contentContainerStyle={styles.mappingContent}
         >
-          {mappings.map(entry => (
-            <HealthConnectMappingItem
-              key={entry.id}
-              mapping={entry}
-              onClick={() => handleModalStateChanged(true, entry)}
-            />
-          ))}
+          {mappings.length > 0 ? (
+            mappings.map(entry => (
+              <HealthConnectMappingItem
+                key={entry.id}
+                mapping={entry}
+                onClick={() => handleModalStateChanged(true, entry)}
+              />
+            ))
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <Text style={styles.placeholderText}>
+                {getResource('healthConnect.descriptionNoMappingItemsAvailable')}
+              </Text>
+            </View>
+          )}
         </ScrollView>
         <View style={styles.buttonContainer}>
           <ButtonComponent
-            title="Initialize Mapping"
+            title={getResource('common.labelInitialize')}
             disabled={isLoading}
             onPress={initializationCallback}
           />
@@ -61,6 +71,7 @@ const HealthConnectMapping: React.FC<IProps> = props => {
         <HealthConnectMappingModal
           visible={modalProps.isVisible}
           mapping={modalProps.mapping}
+          getResource={getResource}
           onMappingChanged={entry => {
             updateMapping(entry.id, entry);
           }}
@@ -74,22 +85,39 @@ const HealthConnectMapping: React.FC<IProps> = props => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    padding: 10,
+    padding: 12,
   },
   titleContainer: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   titleText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    color: colorMap.textPrimary,
   },
   mappingContainer: {
     flex: 1,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   mappingContent: {
-    padding: 10,
-    gap: 5,
+    flexGrow: 1,
+    padding: 8,
+    gap: 8,
+    backgroundColor: colorMap.surface,
+    borderRadius: 12,
+    borderColor: colorMap.border,
+    borderWidth: 1,
+  },
+  placeholderContainer: {
+    flex: 1,
+    minHeight: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  placeholderText: {
+    color: colorMap.textMuted,
+    textAlign: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -99,4 +127,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HealthConnectMapping;
+export default withLocalNameSpaces('HealthConnectMapping', [
+  'common',
+  'healthConnect',
+])(HealthConnectMapping);

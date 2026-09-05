@@ -1,3 +1,5 @@
+import { getResource } from '../../localization';
+
 export type ApiResult<TResponse> = {
   data: TResponse;
   error?: string;
@@ -37,14 +39,20 @@ const apiService = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(
+          `${getResource('common.descriptionHttpErrorPrefix')} ${
+            response.status
+          }.`,
+        );
       }
 
       const data = (await response.json()) as TResponse;
       result.data = data;
     } catch (error) {
       result.error =
-        error instanceof Error ? error.message : 'Unknown request error.';
+        error instanceof Error
+          ? error.message
+          : getResource('common.descriptionUnknownRequestError');
     }
     return result;
   },

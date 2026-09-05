@@ -5,6 +5,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { StatusBar } from 'react-native';
 import { backgroundTaskService } from './src/lib/services/scheduler/backgroundTaskService';
 import { databaseAccessor } from './src/lib/database/database';
+import { getResource } from './src/lib/localization';
 
 const App: React.FC = () => {
   React.useEffect(() => {
@@ -13,7 +14,10 @@ const App: React.FC = () => {
         await databaseAccessor.initializeDatabase();
         await backgroundTaskService.initialize();
       } catch (error) {
-        console.error('Failed to initialize background task service.', error);
+        console.error(
+          getResource('common.descriptionBackgroundTaskServiceInitFailed'),
+          error,
+        );
       }
     };
 

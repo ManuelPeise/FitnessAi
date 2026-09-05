@@ -4,8 +4,10 @@ import SwitchComponent from '../../../components/inputComponents/SwitchComponent
 import TextField from '../../../components/inputComponents/TextField';
 import { MappingTableEntry } from '../../../lib/database/databaseTypes';
 import ButtonComponent from '../../../components/inputComponents/ButtonComponent';
+import { colorMap } from '../../../lib/styles/colorMap';
+import { ILocaleProps } from '../../../lib/localization';
 
-interface IProps {
+interface IProps extends Pick<ILocaleProps, 'getResource'> {
   visible: boolean;
   mapping: MappingTableEntry;
   onClose: () => void;
@@ -13,10 +15,14 @@ interface IProps {
 }
 
 const HealthConnectMappingModal: React.FC<IProps> = props => {
-  const { visible, mapping, onClose, onMappingChanged } = props;
+  const { visible, mapping, onClose, onMappingChanged, getResource } = props;
 
   const [selectedMapping, setSelectedMapping] =
     React.useState<MappingTableEntry>(mapping);
+
+  React.useEffect(() => {
+    setSelectedMapping(mapping);
+  }, [mapping]);
 
   const handleMappingChanged = React.useCallback(
     (update: Partial<MappingTableEntry>) => {
@@ -46,12 +52,16 @@ const HealthConnectMappingModal: React.FC<IProps> = props => {
     >
       <View style={styles.overlay}>
         <View style={styles.dialog}>
-          <Text style={styles.title}>Edit Mapping</Text>
+          <Text style={styles.title}>
+            {getResource('healthConnect.captionEditMapping')}
+          </Text>
 
           {mapping && (
             <View>
               <View style={styles.row}>
-                <Text>Active</Text>
+                <Text style={styles.labelText}>
+                  {getResource('common.labelActive')}
+                </Text>
                 <SwitchComponent
                   checked={selectedMapping.isActive}
                   onValueChange={checked =>
@@ -61,22 +71,27 @@ const HealthConnectMappingModal: React.FC<IProps> = props => {
               </View>
 
               <TextField
+                label={getResource('healthConnect.labelSource')}
                 value={selectedMapping.source}
                 onChange={source => handleMappingChanged({ source })}
-                placeholder="Source"
+                placeholder={getResource('healthConnect.labelSource')}
               />
 
               <TextField
+                label={getResource('healthConnect.labelTarget')}
                 value={selectedMapping.target}
                 onChange={target => handleMappingChanged({ target })}
-                placeholder="Target"
+                placeholder={getResource('healthConnect.labelTarget')}
               />
             </View>
           )}
           <View style={styles.buttons}>
-            <ButtonComponent title="Cancel" onPress={onClose} />
             <ButtonComponent
-              title="Save"
+              title={getResource('common.labelCancel')}
+              onPress={onClose}
+            />
+            <ButtonComponent
+              title={getResource('common.labelSave')}
               disabled={!canSave}
               onPress={() => {
                 onMappingChanged(selectedMapping);
@@ -95,24 +110,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colorMap.overlay,
   },
   dialog: {
     width: '95%',
     padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
+    backgroundColor: colorMap.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colorMap.border,
+    shadowColor: colorMap.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 20,
+    color: colorMap.textPrimary,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  labelText: {
+    color: colorMap.textSecondary,
+    fontWeight: '600',
   },
   buttons: {
     flexDirection: 'row',

@@ -4,6 +4,7 @@ import type {
   HeadlessEvent,
 } from 'react-native-background-fetch';
 import HealthConnectScheduleService from './healthConnectScheduleService';
+import { getResource } from '../../localization';
 
 const minimumFetchMinutes = 1;
 const healthConnectScheduleService = new HealthConnectScheduleService();
@@ -28,7 +29,9 @@ const executeFetchTask = async (
     await healthConnectScheduleService.executeDueSchedules();
   } catch (error) {
     console.error(
-      `[background-fetch:${source}] Task execution failed for id "${taskId}".`,
+      `${getResource(
+        'healthConnect.descriptionBackgroundTaskExecutionFailedPrefix',
+      )} "${taskId}" (${source}).`,
       error,
     );
   } finally {

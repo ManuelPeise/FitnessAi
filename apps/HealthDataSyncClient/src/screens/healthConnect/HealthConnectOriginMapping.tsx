@@ -3,7 +3,10 @@ import HealthConnectMapping from './components/HealthConnectMapping';
 
 const HealthConnectOriginMapping: React.FC = () => {
   return (
-    <HealthConnectMapping type="HealthConnectOrigin" title="Origin Mappings" />
+    <HealthConnectMapping
+      type="HealthConnectOrigin"
+      titleResource="healthConnect.captionOriginMappings"
+    />
   );
 };
 

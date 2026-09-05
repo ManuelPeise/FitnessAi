@@ -5,6 +5,7 @@ import HealthConnectMetricMapping from '../screens/healthConnect/HealthConnectMe
 import HealthConnectScheduleSettings from '../screens/healthConnect/HealthConnectScheduleSettings';
 import IconComponent from '../components/IconComponent';
 import { colorMap } from '../lib/styles/colorMap';
+import { getResource } from '../lib/localization';
 
 export type MainTabParamList = {
   Origins: undefined;
@@ -21,18 +22,23 @@ const HealthConnectTabNavigator: React.FC = () => {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          backgroundColor: colorMap.white,
+          backgroundColor: colorMap.surface,
           margin: 0,
           paddingVertical: 10,
+          borderTopColor: colorMap.border,
         },
         tabBarActiveTintColor: colorMap.primary,
-        tabBarInactiveTintColor: colorMap.disabled,
+        tabBarInactiveTintColor: colorMap.textMuted,
+        tabBarLabelStyle: {
+          fontWeight: '600',
+        },
       }}
     >
       <Tab.Screen
         name="Origins"
         component={HealthConnectOriginMapping}
         options={{
+          tabBarLabel: getResource('common.labelOrigins'),
           tabBarIcon: ({ color, size }) => (
             <IconComponent
               color={color}
@@ -48,6 +54,7 @@ const HealthConnectTabNavigator: React.FC = () => {
         name="Metrics"
         component={HealthConnectMetricMapping}
         options={{
+          tabBarLabel: getResource('common.labelMetrics'),
           tabBarIcon: ({ color, size }) => (
             <IconComponent
               color={color}
@@ -62,7 +69,7 @@ const HealthConnectTabNavigator: React.FC = () => {
         name="ScheduleSettings"
         component={HealthConnectScheduleSettings}
         options={{
-          tabBarLabel: 'Schedule',
+          tabBarLabel: getResource('common.labelSchedule'),
 
           tabBarIcon: ({ color, size }) => (
             <IconComponent

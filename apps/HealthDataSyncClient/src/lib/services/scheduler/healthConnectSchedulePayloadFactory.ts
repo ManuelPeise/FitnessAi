@@ -16,6 +16,7 @@ import {
   HealthConnectScheduleData,
 } from './scheduleTypes';
 import { mapMetric } from './metricMapper';
+import { getResource } from '../../localization';
 
 class HealthConnectSchedulePayloadFactory {
   private readonly databaseService = databaseAccessor;
@@ -32,11 +33,17 @@ class HealthConnectSchedulePayloadFactory {
         case 'HealthConnectHealthDataExport':
           return await this.getHealthMetricExportPayload(userId, request);
         default:
-          throw new Error(`Unsupported export request type: ${request.type}`);
+          throw new Error(
+            `${getResource(
+              'healthConnect.descriptionUnsupportedExportRequestTypePrefix',
+            )}: ${request.type}`,
+          );
       }
     } catch (error) {
       console.error(
-        `[HealthConnectSchedulePayloadFactory] Failed to create export payload for userId "${userId}" and type "${request.type}".`,
+        `${getResource(
+          'healthConnect.descriptionPayloadFactoryFailedPrefix',
+        )} "${userId}" and type "${request.type}".`,
         error,
       );
       return { payload: [], schedule: null };

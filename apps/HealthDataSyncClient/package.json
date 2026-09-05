@@ -8,6 +8,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:quiet": "eslint . --quiet",
+    "prettify": "prettier --write .",
     "start": "react-native start",
     "test": "jest"
   },

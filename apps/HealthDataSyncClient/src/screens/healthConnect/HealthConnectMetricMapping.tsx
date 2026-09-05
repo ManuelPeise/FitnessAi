@@ -3,7 +3,10 @@ import HealthConnectMapping from './components/HealthConnectMapping';
 
 const HealthConnectMetricMapping: React.FC = () => {
   return (
-    <HealthConnectMapping type="HealthConnectMetric" title="Metric Mappings" />
+    <HealthConnectMapping
+      type="HealthConnectMetric"
+      titleResource="healthConnect.captionMetricMappings"
+    />
   );
 };
 

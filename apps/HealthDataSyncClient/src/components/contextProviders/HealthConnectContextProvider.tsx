@@ -3,6 +3,7 @@ import { healthConnectService } from '../../lib/services/healthConnect/healthCon
 import { RecordType, ReadRecordsResult } from 'react-native-health-connect';
 import { HealthConnectReadRange } from '../../lib/services/healthConnect/healthConnectTypes';
 import { utils } from '../../lib/utils';
+import { getResource } from '../../lib/localization';
 
 type HealthConnectContextType = {
   isInitialized: boolean;
@@ -71,7 +72,11 @@ const HealthConnectProvider = ({ children }: HealthConnectProviderProps) => {
   React.useEffect(() => {
     const initialize = async () => {
       if (healthConnectServiceRef.current == null) {
-        throw new Error('HealthConnect service is not available.');
+        throw new Error(
+          getResource(
+            'healthConnect.descriptionHealthConnectServiceUnavailable',
+          ),
+        );
       }
 
       const result = await healthConnectServiceRef.current.initialize();

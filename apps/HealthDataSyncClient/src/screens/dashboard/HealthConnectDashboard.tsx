@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { globalStyles } from '../../lib/styles/globalStyles';
 import { colorMap } from '../../lib/styles/colorMap';
 import {
@@ -7,8 +7,13 @@ import {
   AppStackRoutes,
 } from '../../navigation/navigationTypes';
 import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
+import ButtonComponent from '../../components/inputComponents/ButtonComponent';
+import { ILocaleProps, withLocalNameSpaces } from '../../lib/localization';
 
-const HealthConnectDashboard: React.FC<DashboardProps> = props => {
+type Props = DashboardProps & ILocaleProps;
+
+const HealthConnectDashboard: React.FC<Props> = props => {
+  const { getResource } = props;
   const { navigation } = props;
   const { currentUserId } = useAuthenticationContext();
   const goToSettings = React.useCallback(() => {
@@ -17,12 +22,19 @@ const HealthConnectDashboard: React.FC<DashboardProps> = props => {
 
   return (
     <View style={globalStyles.container}>
-      <Text style={styles.title}>Health Connect Dashboard</Text>
-      <TouchableOpacity onPress={goToSettings} style={styles.button}>
-        <Text style={styles.buttonText}>Go to Settings</Text>
-      </TouchableOpacity>
-      <View>
-        <Text style={styles.userIdText}>Current User ID: {currentUserId}</Text>
+      <Text style={styles.title}>
+        {getResource('common.captionHealthConnectDashboard')}
+      </Text>
+      <View style={styles.buttonContainer}>
+        <ButtonComponent
+          title={getResource('common.labelGoToSettings')}
+          onPress={goToSettings}
+        />
+      </View>
+      <View style={styles.userContainer}>
+        <Text style={styles.userIdText}>
+          {getResource('common.labelCurrentUserId')}: {currentUserId}
+        </Text>
       </View>
     </View>
   );
@@ -30,21 +42,28 @@ const HealthConnectDashboard: React.FC<DashboardProps> = props => {
 
 const styles = StyleSheet.create({
   title: {
-    color: colorMap.white,
-    margin: 30,
+    color: colorMap.textPrimary,
+    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: '700',
   },
-  button: {
-    backgroundColor: colorMap.primary,
-    padding: 10,
-    borderRadius: 5,
+  buttonContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
-  buttonText: {
-    color: colorMap.white,
+  userContainer: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: colorMap.surface,
+    borderWidth: 1,
+    borderColor: colorMap.border,
   },
   userIdText: {
-    color: colorMap.error,
-    margin: 10,
+    color: colorMap.textSecondary,
   },
 });
 
-export default HealthConnectDashboard;
+export default withLocalNameSpaces('HealthConnectDashboard', ['common'])(
+  HealthConnectDashboard,
+);

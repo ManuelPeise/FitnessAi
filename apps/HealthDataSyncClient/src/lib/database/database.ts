@@ -6,10 +6,10 @@ import {
   ScheduleExecutionStatus,
   ScheduleFrequency,
   ScheduleSettingsTableEntry,
-  scheduleSettingsTypes,
   ScheduleSettingsType,
 } from './databaseTypes';
 import { migrateDatabase } from './databaseMigration';
+import { getResource } from '../localization';
 
 const databaseName = 'healthdata.db';
 
@@ -56,25 +56,11 @@ const mapAuthenticationRow = (
   refreshToken: row.refresh_token ? String(row.refresh_token) : null,
   tokenExpiration: row.token_expiration ? String(row.token_expiration) : null,
   appKey: row.app_key ? String(row.app_key) : null,
+  selectedLanguage: row.selected_language
+    ? (String(row.selected_language) as 'en' | 'de')
+    : null,
   created_at: row.created_at ? String(row.created_at) : null,
   updated_at: row.updated_at ? String(row.updated_at) : null,
-});
-
-const createDefaultSchedule = (
-  userId: number,
-  type: ScheduleSettingsType,
-): ScheduleSettingsTableEntry => ({
-  id: 0,
-  userId,
-  type,
-  isActive: false,
-  hour: 0,
-  minute: 0,
-  frequency: 'daily',
-  dayOfWeek: 0,
-  lastExecutedAt: null,
-  lastExecutionStatus: 'idle',
-  lastExecutionError: null,
 });
 
 export const databaseAccessor = {
@@ -98,19 +84,21 @@ export const databaseAccessor = {
       authentication: ApiAuthenticationTableEntry,
     ): Promise<ApiAuthenticationTableEntry> => {
       await database.execute(
-        `INSERT INTO api_authentication (user_id, access_token, refresh_token, token_expiration, app_key)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO api_authentication (user_id, access_token, refresh_token, token_expiration, app_key, selected_language)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(user_id) DO UPDATE SET
            access_token = excluded.access_token,
            refresh_token = excluded.refresh_token,
            token_expiration = excluded.token_expiration,
-           app_key = excluded.app_key`,
+           app_key = excluded.app_key,
+           selected_language = excluded.selected_language`,
         [
           authentication.userId,
           authentication.accessToken,
           authentication.refreshToken,
           authentication.tokenExpiration,
           authentication.appKey,
+          authentication.selectedLanguage,
         ],
       );
 
@@ -120,7 +108,9 @@ export const databaseAccessor = {
         );
 
       if (!persistedAuthentication) {
-        throw new Error(`Failed to persist authentication.`);
+        throw new Error(
+          getResource('common.descriptionPersistAuthenticationFailed'),
+        );
       }
 
       return persistedAuthentication;
@@ -187,7 +177,11 @@ export const databaseAccessor = {
       );
 
       if (!persistedSchedule) {
-        throw new Error(`Failed to persist schedule '${schedule.type}'.`);
+        throw new Error(
+          `${getResource('common.descriptionPersistScheduleFailedPrefix')} '${
+            schedule.type
+          }'.`,
+        );
       }
 
       return persistedSchedule;

@@ -173,10 +173,10 @@ Keychain wrapper. Keys are the `SecureStorageKeys` enum (`ACCESS_TOKEN`,
 
 ### `lib/services/scheduler/`
 
-| File                                      | Responsibility                                                                                                                |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| File                                       | Responsibility                                                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 | `healthConnectScheduleExecutionService.ts` | Shared execution pipeline for manual + background runs: due-checking, mapped-data filtering, payload creation, API posting |
-| `backgroundTaskService.ts`                | `react-native-background-fetch` configuration + headless callback that executes due schedules                               |
+| `backgroundTaskService.ts`                 | `react-native-background-fetch` configuration + headless callback that executes due schedules                              |
 
 ### Hooks
 

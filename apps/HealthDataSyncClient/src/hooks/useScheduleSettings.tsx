@@ -7,6 +7,7 @@ import {
 import { databaseAccessor } from '../lib/database/database';
 import { DropdownItem } from '../components/inputComponents/Dropdown';
 import { useAuthenticationContext } from './useAuthenticationContext';
+import { getResource } from '../lib/localization';
 
 type ScheduleSettingsState = {
   originalSchedule: ScheduleSettingsTableEntry | null;
@@ -32,16 +33,6 @@ type UseScheduleSettingsReturnType = {
     partialSchedule: Partial<ScheduleSettingsTableEntry>,
   ) => void;
 };
-
-const weekDays = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
 
 const createDefaultSchedule = (
   userId: number,
@@ -110,7 +101,9 @@ export const useScheduleSettings = (
 
     try {
       if (currentUserId == null) {
-        throw new Error('Authenticated user context is missing.');
+        throw new Error(
+          getResource('healthConnect.descriptionMissingUserContext'),
+        );
       }
 
       const storedSchedule =
@@ -127,8 +120,11 @@ export const useScheduleSettings = (
         currentSchedule: loadedSchedule,
       });
     } catch (loadError) {
-      console.error('Failed to load the schedule.', loadError);
-      setError('The schedule could not be loaded.');
+      console.error(
+        getResource('healthConnect.descriptionScheduleLoadFailed'),
+        loadError,
+      );
+      setError(getResource('healthConnect.descriptionScheduleLoadFailed'));
       setState({ originalSchedule: null, currentSchedule: null });
     } finally {
       setIsLoading(false);
@@ -201,8 +197,11 @@ export const useScheduleSettings = (
       });
       setIsSaved(true);
     } catch (saveError) {
-      console.error('Failed to save the schedule.', saveError);
-      setError('The schedule could not be saved. Please try again.');
+      console.error(
+        getResource('healthConnect.descriptionScheduleSaveFailed'),
+        saveError,
+      );
+      setError(getResource('healthConnect.descriptionScheduleSaveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -218,20 +217,21 @@ export const useScheduleSettings = (
     return !areSchedulesEqual(originalSchedule, currentSchedule);
   }, [state]);
 
-  const dayOptions = React.useMemo(
-    (): DropdownItem<number>[] =>
-      weekDays.map((label, index) => ({ label, value: index })),
-    [],
-  );
+  const dayOptions: DropdownItem<number>[] = [
+    getResource('healthConnect.labelSunday'),
+    getResource('healthConnect.labelMonday'),
+    getResource('healthConnect.labelTuesday'),
+    getResource('healthConnect.labelWednesday'),
+    getResource('healthConnect.labelThursday'),
+    getResource('healthConnect.labelFriday'),
+    getResource('healthConnect.labelSaturday'),
+  ].map((label, index) => ({ label, value: index }));
 
-  const frequencyOptions = React.useMemo(
-    (): DropdownItem<ScheduleFrequency>[] => [
-      { label: 'Daily', value: 'daily' },
-      { label: 'Hourly', value: 'hourly' },
-      { label: 'Weekly', value: 'weekly' },
-    ],
-    [],
-  );
+  const frequencyOptions: DropdownItem<ScheduleFrequency>[] = [
+    { label: getResource('healthConnect.labelDaily'), value: 'daily' },
+    { label: getResource('healthConnect.labelHourly'), value: 'hourly' },
+    { label: getResource('healthConnect.labelWeekly'), value: 'weekly' },
+  ];
 
   const hourOptions = React.useMemo(
     (): DropdownItem<number>[] =>

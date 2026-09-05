@@ -1,121 +1,44 @@
 import React from 'react';
-import { useScheduleSettings } from '../../hooks/useScheduleSettings';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-  ScrollView,
-} from 'react-native';
-import { globalStyles } from '../../lib/styles/globalStyles';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type {
-  ScheduleFrequency,
   ScheduleSettingsType,
+  ScheduleFrequency,
 } from '../../lib/database/databaseTypes';
-import IconComponent from '../../components/IconComponent';
+import { useScheduleSettings } from '../../hooks/useScheduleSettings';
+import { globalStyles } from '../../lib/styles/globalStyles';
 import { colorMap } from '../../lib/styles/colorMap';
 import Dropdown from '../../components/inputComponents/Dropdown';
 import ButtonComponent from '../../components/inputComponents/ButtonComponent';
 import SwitchComponent from '../../components/inputComponents/SwitchComponent';
 import { healthConnectScheduleExecutionService } from '../../lib/services/scheduler/healthConnectScheduleService';
+import { ILocaleProps, withLocalNameSpaces } from '../../lib/localization';
+import HealthConnectInitialLoadModal from './components/HealthConnectInitialLoadModal';
 
-type ScheduleTab = {
-  type: ScheduleSettingsType;
-  label: string;
+type ScheduleState = ReturnType<typeof useScheduleSettings>;
+
+const buildSuccessMessage = (resourcePrefix: string, pushedItems: number) => {
+  return `${resourcePrefix} ${pushedItems}.`;
 };
 
-const scheduleTabs: ScheduleTab[] = [
-  { type: 'HealthConnectExerciseDataExport', label: 'Exercise Data Export' },
-  { type: 'HealthConnectHealthDataExport', label: 'Health Data Export' },
-];
-
-const HealthConnectScheduleSettings: React.FC = () => {
-  const [type, setType] = React.useState<ScheduleSettingsType>(
+const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
+  const { getResource } = props;
+  const exerciseSchedule = useScheduleSettings(
     'HealthConnectExerciseDataExport',
+  );
+  const healthDataSchedule = useScheduleSettings(
+    'HealthConnectHealthDataExport',
   );
   const [isExecuting, setIsExecuting] = React.useState(false);
   const [executionFeedback, setExecutionFeedback] = React.useState<{
     message: string;
     kind: 'success' | 'error';
   } | null>(null);
+  const [isInitializeModalVisible, setIsInitializeModalVisible] =
+    React.useState(false);
   const [initialLoadDays, setInitialLoadDays] = React.useState('1');
-
-  const {
-    schedule,
-    isLoading,
-    isSaving,
-    isModified,
-    error,
-    isSaved,
-    frequencyOptions,
-    hourOptions,
-    minuteOptions,
-    dayOptions,
-    reloadSchedule,
-    handleResetSchedule,
-    handleSaveSchedule,
-    handleFrequencyChanged,
-    handleScheduleChange,
-  } = useScheduleSettings(type);
-
-  const isWeekly = schedule?.frequency === 'weekly';
-  const isHourly = schedule?.frequency === 'hourly';
-  const isBusy = isLoading || isSaving || isExecuting;
-  const isRunNowDisabled =
-    isBusy || schedule == null || !schedule.isActive || isModified;
-  const runDisabledHint = React.useMemo(() => {
-    if (isLoading || schedule == null || isExecuting) {
-      return null;
-    }
-
-    if (!schedule.isActive) {
-      return 'Activate and save the schedule to enable "Run now".';
-    }
-
-    if (isModified) {
-      return 'Save schedule changes before running now.';
-    }
-
-    return null;
-  }, [isExecuting, isLoading, isModified, schedule]);
-
-  const handleExecuteNow = React.useCallback(async () => {
-    setExecutionFeedback(null);
-    setIsExecuting(true);
-
-    try {
-      const result =
-        await healthConnectScheduleExecutionService.executeManually(type);
-
-      await reloadSchedule();
-
-      if (!result.success) {
-        setExecutionFeedback({
-          kind: 'error',
-          message: result.message ?? 'Schedule execution failed.',
-        });
-        return;
-      }
-
-      setExecutionFeedback({
-        kind: 'success',
-        message:
-          result.pushedItems > 0
-            ? `Execution completed and pushed ${result.pushedItems} item(s).`
-            : 'Execution completed. No mapped data to push.',
-      });
-    } catch (executionError) {
-      console.error('Failed to execute schedule manually.', executionError);
-      setExecutionFeedback({
-        kind: 'error',
-        message: 'Schedule execution failed.',
-      });
-    } finally {
-      setIsExecuting(false);
-    }
-  }, [reloadSchedule, type]);
+  const [loadExerciseSchedule, setLoadExerciseSchedule] = React.useState(false);
+  const [loadHealthDataSchedule, setLoadHealthDataSchedule] =
+    React.useState(false);
 
   const handleInitialLoadDaysChanged = React.useCallback((value: string) => {
     const normalized = value.replace(/[^0-9]/g, '');
@@ -140,331 +63,437 @@ const HealthConnectScheduleSettings: React.FC = () => {
     parsedInitialLoadDays != null &&
     parsedInitialLoadDays >= 1 &&
     parsedInitialLoadDays <= 365;
-  const isInitialLoadDisabled =
-    isBusy ||
-    !isInitialLoadValid ||
-    schedule == null ||
-    !schedule.isActive ||
-    isModified;
 
-  const handleInitialLoad = React.useCallback(async () => {
-    if (!isInitialLoadValid || parsedInitialLoadDays == null) {
-      setExecutionFeedback({
-        kind: 'error',
-        message: 'Initial load days must be between 1 and 365.',
-      });
-      return;
-    }
+  const canLoadInitialize =
+    isInitialLoadValid &&
+    (loadExerciseSchedule || loadHealthDataSchedule) &&
+    !isExecuting;
 
-    setExecutionFeedback(null);
-    setIsExecuting(true);
+  const getRunDisabledHint = React.useCallback(
+    (scheduleState: ScheduleState) => {
+      if (
+        scheduleState.isLoading ||
+        scheduleState.schedule == null ||
+        isExecuting
+      ) {
+        return null;
+      }
 
-    try {
-      const result =
-        await healthConnectScheduleExecutionService.executeManually(type, {
-          initialLoadDays: parsedInitialLoadDays,
-        });
+      if (!scheduleState.schedule.isActive) {
+        return getResource(
+          'healthConnect.descriptionRunNowNeedsActiveSchedule',
+        );
+      }
 
-      await reloadSchedule();
+      if (scheduleState.isModified) {
+        return getResource('healthConnect.descriptionRunNowNeedsSavedSchedule');
+      }
 
-      if (!result.success) {
-        setExecutionFeedback({
-          kind: 'error',
-          message: result.message ?? 'Initial load failed.',
-        });
+      return null;
+    },
+    [getResource, isExecuting],
+  );
+
+  const runSchedule = React.useCallback(
+    async (
+      type: ScheduleSettingsType,
+      scheduleState: ScheduleState,
+      options?: { initialLoadDays?: number },
+    ) => {
+      setExecutionFeedback(null);
+      setIsExecuting(true);
+
+      try {
+        const result =
+          await healthConnectScheduleExecutionService.executeManually(
+            type,
+            options,
+          );
+
+        await scheduleState.reloadSchedule();
+
+        if (!result.success) {
+          return {
+            success: false,
+            pushedItems: 0,
+            message:
+              result.message ??
+              getResource('healthConnect.descriptionScheduleExecutionFailed'),
+          };
+        }
+
+        const message =
+          options?.initialLoadDays != null
+            ? result.pushedItems > 0
+              ? buildSuccessMessage(
+                  getResource(
+                    'healthConnect.descriptionInitialLoadCompletedPrefix',
+                  ),
+                  result.pushedItems,
+                )
+              : getResource(
+                  'healthConnect.descriptionInitialLoadCompletedNoData',
+                )
+            : result.pushedItems > 0
+            ? buildSuccessMessage(
+                getResource(
+                  'healthConnect.descriptionExecutionCompletedPrefix',
+                ),
+                result.pushedItems,
+              )
+            : getResource('healthConnect.descriptionExecutionCompletedNoData');
+
+        return {
+          success: true,
+          pushedItems: result.pushedItems,
+          message,
+        };
+      } catch (executionError) {
+        console.error(
+          getResource('healthConnect.descriptionScheduleExecutionFailed'),
+          executionError,
+        );
+        return {
+          success: false,
+          pushedItems: 0,
+          message:
+            options?.initialLoadDays != null
+              ? getResource('healthConnect.descriptionInitialLoadFailed')
+              : getResource('healthConnect.descriptionScheduleExecutionFailed'),
+        };
+      } finally {
+        setIsExecuting(false);
+      }
+    },
+    [getResource],
+  );
+
+  const handleExecuteNow = React.useCallback(
+    async (type: ScheduleSettingsType, scheduleState: ScheduleState) => {
+      const result = await runSchedule(type, scheduleState);
+
+      if (!result) {
         return;
       }
 
       setExecutionFeedback({
-        kind: 'success',
-        message:
-          result.pushedItems > 0
-            ? `Initial load completed and pushed ${result.pushedItems} item(s).`
-            : 'Initial load completed. No mapped data to push.',
+        kind: result.success ? 'success' : 'error',
+        message: result.message,
       });
-    } catch (executionError) {
-      console.error('Failed to execute initial load.', executionError);
+    },
+    [runSchedule],
+  );
+
+  const handleInitialize = React.useCallback(async () => {
+    if (!isInitialLoadValid || parsedInitialLoadDays == null) {
       setExecutionFeedback({
         kind: 'error',
-        message: 'Initial load failed.',
+        message: getResource(
+          'healthConnect.descriptionInitialLoadRangeInvalid',
+        ),
       });
-    } finally {
-      setIsExecuting(false);
+      return;
     }
-  }, [isInitialLoadValid, parsedInitialLoadDays, reloadSchedule, type]);
 
-  React.useEffect(() => {
-    setExecutionFeedback(null);
-  }, [type]);
+    const selectedSchedules: Array<{
+      type: ScheduleSettingsType;
+      state: ScheduleState;
+    }> = [];
+
+    if (loadExerciseSchedule) {
+      selectedSchedules.push({
+        type: 'HealthConnectExerciseDataExport',
+        state: exerciseSchedule,
+      });
+    }
+
+    if (loadHealthDataSchedule) {
+      selectedSchedules.push({
+        type: 'HealthConnectHealthDataExport',
+        state: healthDataSchedule,
+      });
+    }
+
+    let pushedItems = 0;
+
+    for (let i = 0; i < selectedSchedules.length; i++) {
+      const selection = selectedSchedules[i];
+      const result = await runSchedule(selection.type, selection.state, {
+        initialLoadDays: parsedInitialLoadDays,
+      });
+
+      if (!result) {
+        continue;
+      }
+
+      if (!result.success) {
+        setExecutionFeedback({
+          kind: 'error',
+          message: result.message,
+        });
+        return;
+      }
+
+      pushedItems += result.pushedItems;
+    }
+
+    setExecutionFeedback({
+      kind: 'success',
+      message:
+        pushedItems > 0
+          ? buildSuccessMessage(
+              getResource(
+                'healthConnect.descriptionInitialLoadCompletedPrefix',
+              ),
+              pushedItems,
+            )
+          : getResource('healthConnect.descriptionInitialLoadCompletedNoData'),
+    });
+    setIsInitializeModalVisible(false);
+  }, [
+    exerciseSchedule,
+    getResource,
+    healthDataSchedule,
+    isInitialLoadValid,
+    loadExerciseSchedule,
+    loadHealthDataSchedule,
+    parsedInitialLoadDays,
+    runSchedule,
+  ]);
+
+  const renderScheduleCard = React.useCallback(
+    (
+      scheduleType: ScheduleSettingsType,
+      titleResource: string,
+      scheduleState: ScheduleState,
+    ) => {
+      if (scheduleState.isLoading || scheduleState.schedule == null) {
+        return (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>
+              {getResource(titleResource)}
+            </Text>
+            <ActivityIndicator color={colorMap.primary} />
+            {scheduleState.error ? (
+              <Text style={styles.errorText}>{scheduleState.error}</Text>
+            ) : null}
+          </View>
+        );
+      }
+
+      const { schedule } = scheduleState;
+      const isWeekly = schedule.frequency === 'weekly';
+      const isHourly = schedule.frequency === 'hourly';
+      const isBusy = scheduleState.isSaving || isExecuting;
+      const isRunNowDisabled =
+        isBusy ||
+        schedule == null ||
+        !schedule.isActive ||
+        scheduleState.isModified;
+
+      const runDisabledHint = getRunDisabledHint(scheduleState);
+
+      return (
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>{getResource(titleResource)}</Text>
+          <Text style={styles.cardCaption}>
+            {getResource('healthConnect.captionScheduleConfiguration')}
+          </Text>
+          <View style={styles.activeRow}>
+            <Text style={styles.activeLabel}>
+              {getResource('common.labelActive')}
+            </Text>
+            <SwitchComponent
+              checked={schedule.isActive}
+              disabled={scheduleState.isSaving || isExecuting}
+              onValueChange={isActive =>
+                scheduleState.handleScheduleChange({ isActive })
+              }
+            />
+          </View>
+
+          <Dropdown<ScheduleFrequency>
+            label={getResource('common.labelSelectFrequency')}
+            value={schedule.frequency}
+            items={scheduleState.frequencyOptions}
+            disabled={scheduleState.isSaving || isExecuting}
+            onChange={scheduleState.handleFrequencyChanged}
+          />
+
+          <Dropdown<number>
+            label={getResource('common.labelSelectDay')}
+            value={schedule.dayOfWeek}
+            items={scheduleState.dayOptions}
+            disabled={scheduleState.isSaving || isExecuting || !isWeekly}
+            onChange={dayOfWeek =>
+              scheduleState.handleScheduleChange({ dayOfWeek })
+            }
+          />
+
+          <View style={styles.timeRow}>
+            <View style={styles.column}>
+              <Dropdown<number>
+                label={getResource('common.labelSelectHour')}
+                value={schedule.hour}
+                items={scheduleState.hourOptions}
+                disabled={scheduleState.isSaving || isExecuting || isHourly}
+                onChange={hour => scheduleState.handleScheduleChange({ hour })}
+              />
+            </View>
+            <View style={styles.column}>
+              <Dropdown<number>
+                label={getResource('common.labelSelectMinute')}
+                value={schedule.minute}
+                items={scheduleState.minuteOptions}
+                disabled={scheduleState.isSaving || isExecuting}
+                onChange={minute =>
+                  scheduleState.handleScheduleChange({ minute })
+                }
+              />
+            </View>
+          </View>
+
+          <View style={styles.actionButtonsRow}>
+            <ButtonComponent
+              title={getResource('common.labelCancel')}
+              disabled={!scheduleState.isModified || isBusy}
+              onPress={scheduleState.handleResetSchedule}
+            />
+            <ButtonComponent
+              title={getResource('common.labelSave')}
+              disabled={!scheduleState.isModified || isBusy}
+              onPress={scheduleState.handleSaveSchedule}
+            />
+            <ButtonComponent
+              title={getResource('common.labelRunNow')}
+              disabled={isRunNowDisabled}
+              onPress={() => handleExecuteNow(scheduleType, scheduleState)}
+            />
+          </View>
+
+          {runDisabledHint ? (
+            <Text style={styles.infoText}>{runDisabledHint}</Text>
+          ) : null}
+          {scheduleState.error ? (
+            <Text style={styles.errorText}>{scheduleState.error}</Text>
+          ) : null}
+          {scheduleState.isSaved && !scheduleState.isModified ? (
+            <Text style={styles.successText}>
+              {getResource('healthConnect.descriptionScheduleSaved')}
+            </Text>
+          ) : null}
+        </View>
+      );
+    },
+    [getResource, getRunDisabledHint, handleExecuteNow, isExecuting],
+  );
 
   return (
     <View style={globalStyles.container}>
-      <View style={styles.tabSelectionContainer}>
-        {scheduleTabs.map(tab => {
-          const isSelected = type === tab.type;
+      <ScrollView
+        style={styles.contentScrollView}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        {renderScheduleCard(
+          'HealthConnectExerciseDataExport',
+          'healthConnect.captionScheduleExercise',
+          exerciseSchedule,
+        )}
 
-          return (
-            <TouchableOpacity
-              key={tab.type}
-              style={[
-                styles.tabSelection,
-                isSelected && styles.tabSelectionSelected,
-              ]}
-              onPress={() => setType(tab.type)}
-              disabled={isSaving}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isSelected }}
-            >
-              <IconComponent
-                name="schedule"
-                size={20}
-                color={isSelected ? colorMap.primary : colorMap.secondary}
-              />
-              <Text
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={[styles.tabLabel, isSelected && styles.tabLabelSelected]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {renderScheduleCard(
+          'HealthConnectHealthDataExport',
+          'healthConnect.captionScheduleHealthData',
+          healthDataSchedule,
+        )}
+
+        {executionFeedback ? (
+          <Text
+            style={
+              executionFeedback.kind === 'success'
+                ? styles.successText
+                : styles.errorText
+            }
+          >
+            {executionFeedback.message}
+          </Text>
+        ) : null}
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <ButtonComponent
+          title={getResource('common.labelInitialize')}
+          disabled={isExecuting}
+          onPress={() => setIsInitializeModalVisible(true)}
+        />
       </View>
 
-      {isLoading || schedule == null ? (
-        <View style={styles.stateContainer}>
-          {isLoading ? (
-            <ActivityIndicator color={colorMap.primary} />
-          ) : (
-            <Text style={styles.errorText}>
-              {error ?? 'No schedule available.'}
-            </Text>
-          )}
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.contentScrollView}
-          contentContainerStyle={styles.contentContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Status</Text>
-            {schedule.lastExecutedAt && (
-              <Text style={styles.infoText}>
-                Last execution:{' '}
-                {new Date(schedule.lastExecutedAt).toLocaleString()}
-              </Text>
-            )}
-            <Text style={styles.infoText}>
-              Last status: {schedule.lastExecutionStatus}
-            </Text>
-            {schedule.lastExecutionError && (
-              <Text style={styles.errorText}>
-                {schedule.lastExecutionError}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Schedule configuration</Text>
-            <View style={styles.activeRow}>
-              <Text style={styles.activeLabel}>Active</Text>
-              <SwitchComponent
-                checked={schedule.isActive}
-                disabled={isSaving}
-                onValueChange={isActive => handleScheduleChange({ isActive })}
-              />
-            </View>
-
-            <View style={styles.fullWidthColumn}>
-              <Dropdown<ScheduleFrequency>
-                label="Select frequency"
-                value={schedule.frequency}
-                items={frequencyOptions}
-                disabled={isSaving}
-                onChange={handleFrequencyChanged}
-              />
-            </View>
-
-            <View style={styles.fullWidthColumn}>
-              <Dropdown<number>
-                label="Select day"
-                value={schedule.dayOfWeek}
-                items={dayOptions}
-                disabled={isSaving || !isWeekly}
-                onChange={dayOfWeek => handleScheduleChange({ dayOfWeek })}
-              />
-            </View>
-
-            <View style={styles.timeRow}>
-              <View style={styles.column}>
-                <Dropdown<number>
-                  label="Select hour"
-                  value={schedule.hour}
-                  items={hourOptions}
-                  disabled={isSaving || isHourly}
-                  onChange={hour => handleScheduleChange({ hour })}
-                />
-              </View>
-
-              <View style={styles.column}>
-                <Dropdown<number>
-                  label="Select minute"
-                  value={schedule.minute}
-                  items={minuteOptions}
-                  disabled={isSaving}
-                  onChange={minute => handleScheduleChange({ minute })}
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Actions</Text>
-            {(isSaving || isExecuting) && (
-              <ActivityIndicator color={colorMap.primary} />
-            )}
-            <View style={styles.initialLoadContainer}>
-              <Text style={styles.initialLoadLabel}>Initial load days</Text>
-              <TextInput
-                style={styles.initialLoadInput}
-                value={initialLoadDays}
-                onChangeText={handleInitialLoadDaysChanged}
-                editable={!isBusy}
-                keyboardType="number-pad"
-                maxLength={3}
-              />
-              <ButtonComponent
-                title="Initial load"
-                disabled={isInitialLoadDisabled}
-                onPress={handleInitialLoad}
-              />
-              <ButtonComponent
-                title="Run now"
-                disabled={isRunNowDisabled}
-                onPress={handleExecuteNow}
-              />
-            </View>
-            <View style={styles.actionButtonsRow}>
-              <ButtonComponent
-                title="Cancel"
-                disabled={!isModified || isBusy}
-                onPress={handleResetSchedule}
-              />
-              <ButtonComponent
-                title="Save"
-                disabled={!isModified || isBusy}
-                onPress={handleSaveSchedule}
-              />
-            </View>
-            {runDisabledHint && (
-              <Text style={styles.infoText}>
-                {runDisabledHint}
-                {' Initial load uses the same execution requirements.'}
-              </Text>
-            )}
-            {error && <Text style={styles.errorText}>{error}</Text>}
-            {isSaved && !isModified && (
-              <Text style={styles.successText}>Schedule saved.</Text>
-            )}
-            {executionFeedback && (
-              <Text
-                style={
-                  executionFeedback.kind === 'success'
-                    ? styles.successText
-                    : styles.errorText
-                }
-              >
-                {executionFeedback.message}
-              </Text>
-            )}
-          </View>
-        </ScrollView>
-      )}
+      <HealthConnectInitialLoadModal
+        visible={isInitializeModalVisible}
+        isExecuting={isExecuting}
+        initialLoadDays={initialLoadDays}
+        loadExerciseSchedule={loadExerciseSchedule}
+        loadHealthDataSchedule={loadHealthDataSchedule}
+        canLoadInitialize={canLoadInitialize}
+        onClose={() => setIsInitializeModalVisible(false)}
+        onInitialLoadDaysChanged={handleInitialLoadDaysChanged}
+        onLoadExerciseScheduleChanged={setLoadExerciseSchedule}
+        onLoadHealthDataScheduleChanged={setLoadHealthDataSchedule}
+        onLoad={handleInitialize}
+        getResource={getResource}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  tabSelectionContainer: {
-    width: '100%',
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colorMap.disabled,
-  },
-  tabSelection: {
-    flex: 1,
-    minWidth: 0,
-    maxWidth: '50%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: colorMap.transparent,
-  },
-  tabSelectionSelected: {
-    borderBottomWidth: 2,
-    borderBottomColor: colorMap.primary,
-  },
-  tabLabel: {
-    flexShrink: 1,
-    color: colorMap.secondary,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  tabLabelSelected: {
-    color: colorMap.primary,
-    fontWeight: '600',
-  },
-  stateContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   contentScrollView: {
     flex: 1,
     width: '100%',
   },
   contentContainer: {
     width: '100%',
-    marginTop: 20,
-    gap: 12,
-    paddingBottom: 20,
+    gap: 14,
+    paddingBottom: 24,
   },
   sectionCard: {
     borderWidth: 1,
-    borderColor: colorMap.disabled,
-    borderRadius: 8,
-    padding: 12,
+    borderColor: colorMap.border,
+    borderRadius: 12,
+    padding: 14,
     gap: 10,
     width: '100%',
+    backgroundColor: colorMap.surface,
+    shadowColor: colorMap.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colorMap.secondary,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colorMap.textPrimary,
+  },
+  cardCaption: {
+    color: colorMap.textSecondary,
+    fontSize: 13,
   },
   activeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   activeLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colorMap.secondary,
+    color: colorMap.textSecondary,
+    flex: 1,
   },
   column: {
     flex: 1,
     minWidth: 0,
-  },
-  fullWidthColumn: {
-    flex: 1,
   },
   timeRow: {
     flexDirection: 'row',
@@ -472,40 +501,36 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colorMap.error,
+    textAlign: 'center',
+    paddingVertical: 10,
   },
   successText: {
     color: colorMap.success,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingVertical: 10,
   },
   infoText: {
     color: colorMap.info,
+    textAlign: 'center',
+    paddingVertical: 10,
   },
   actionButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
     gap: 10,
+    marginTop: 20,
+    marginBottom: 20,
   },
-  initialLoadContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  initialLoadLabel: {
-    color: colorMap.secondary,
-    fontSize: 13,
-  },
-  initialLoadInput: {
-    minWidth: 60,
-    borderWidth: 1,
-    borderColor: colorMap.disabled,
-    borderRadius: 4,
-    color: colorMap.secondary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  footer: {
+    paddingTop: 10,
+    alignItems: 'flex-end',
     textAlign: 'center',
   },
 });
-export default HealthConnectScheduleSettings;
+
+export default withLocalNameSpaces('HealthConnectScheduleSettings', [
+  'common',
+  'healthConnect',
+])(HealthConnectScheduleSettings);

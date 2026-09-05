@@ -6,7 +6,12 @@ import { databaseAccessor } from '../../database/database';
 import { apiClient } from '../api/axiosClient';
 import { utils } from '../../utils';
 import { healthConnectSchedulePayloadFactory } from './healthConnectSchedulePayloadFactory';
-import { secureStorage, SecureStorageKeys } from '../storage/secureStorage';
+import {
+  secureStorage,
+  SecureStorageKeys,
+  UserInfo,
+} from '../storage/secureStorage';
+import { getResource } from '../../localization';
 
 const scheduleSyncServiceUrl = 'HealthConnectImport/ImportTrainingData';
 
@@ -69,22 +74,48 @@ class HealthConnectScheduleService {
         return {
           success: false,
           pushedItems: 0,
-          message: `Unhandled schedule type: ${type}`,
+          message: `${getResource(
+            'healthConnect.descriptionUnhandledScheduleTypePrefix',
+          )}: ${type}`,
         };
     }
   }
 
   private async getCurrentUserId(): Promise<number> {
-    const storedUserId = await secureStorage.getItem(
-      SecureStorageKeys.CURRENT_USER_ID,
+    const serializedUserInfo = await secureStorage.getItem(
+      SecureStorageKeys.USER_INFO,
     );
-    const parsedUserId = Number(storedUserId);
+    let userInfo: UserInfo | null = null;
 
-    if (!storedUserId || !Number.isInteger(parsedUserId) || parsedUserId <= 0) {
-      throw new Error('Cannot execute schedule without authenticated user.');
+    if (!serializedUserInfo) {
+      throw new Error(
+        getResource(
+          'healthConnect.descriptionCannotExecuteScheduleWithoutUser',
+        ),
+      );
     }
 
-    return parsedUserId;
+    try {
+      userInfo = JSON.parse(serializedUserInfo) as UserInfo;
+    } catch {
+      userInfo = null;
+    }
+
+    if (
+      userInfo == null ||
+      !userInfo.isAuthenticated ||
+      userInfo.userId == null ||
+      !Number.isInteger(userInfo.userId) ||
+      userInfo.userId <= 0
+    ) {
+      throw new Error(
+        getResource(
+          'healthConnect.descriptionCannotExecuteScheduleWithoutUser',
+        ),
+      );
+    }
+
+    return userInfo.userId;
   }
 
   private async processHealthConnectHealthDataExport(
@@ -104,7 +135,9 @@ class HealthConnectScheduleService {
 
     try {
       if (exportModel.schedule == null) {
-        throw new Error('No schedule was found for the current user.');
+        throw new Error(
+          getResource('healthConnect.descriptionNoScheduleForCurrentUser'),
+        );
       }
 
       if (!exportModel.schedule?.isActive) {
@@ -115,7 +148,9 @@ class HealthConnectScheduleService {
         return {
           success: true,
           pushedItems: 0,
-          message: 'No mapped data available for export.',
+          message: getResource(
+            'healthConnect.descriptionNoMappedDataForExport',
+          ),
         };
       }
 
@@ -133,7 +168,11 @@ class HealthConnectScheduleService {
         };
       }
 
-      throw new Error(`Schedule sync failed with status ${response.status}.`);
+      throw new Error(
+        `${getResource('healthConnect.descriptionScheduleSyncFailedPrefix')} ${
+          response.status
+        }.`,
+      );
     } catch (error) {
       if (exportModel.schedule) {
         await this.updateSchedule(

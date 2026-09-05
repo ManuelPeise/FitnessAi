@@ -1,10 +1,15 @@
 import * as Keychain from 'react-native-keychain';
+import { SupportedLanguage } from '../../localization';
 
 export enum SecureStorageKeys {
-  ACCESS_TOKEN = 'ACCESS_TOKEN',
-  REFRESH_TOKEN = 'REFRESH_TOKEN',
-  CURRENT_USER_ID = 'CURRENT_USER_ID',
+  USER_INFO = 'USER_INFO',
 }
+
+export type UserInfo = {
+  userId: number | null;
+  isAuthenticated: boolean;
+  selectedLanguage: SupportedLanguage;
+};
 
 export const secureStorage = {
   async getItem(key: SecureStorageKeys): Promise<string | null> {
