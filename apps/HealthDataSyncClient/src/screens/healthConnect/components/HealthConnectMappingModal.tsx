@@ -78,7 +78,10 @@ const HealthConnectMappingModal: React.FC<IProps> = props => {
             <ButtonComponent
               title="Save"
               disabled={!canSave}
-              onPress={() => onMappingChanged(selectedMapping)}
+              onPress={() => {
+                onMappingChanged(selectedMapping);
+                onClose();
+              }}
             />
           </View>
         </View>

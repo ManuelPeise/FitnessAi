@@ -127,14 +127,9 @@ export const databaseAccessor = {
     },
   },
   schedule: {
-    ensureSchedules: async (userId: number): Promise<void> => {
-      await Promise.all(
-        scheduleSettingsTypes.map(type =>
-          databaseAccessor.schedule.saveSchedule(createDefaultSchedule(userId, type)),
-        ),
-      );
-    },
-    getSchedules: async (userId: number): Promise<ScheduleSettingsTableEntry[]> => {
+    getSchedules: async (
+      userId: number,
+    ): Promise<ScheduleSettingsTableEntry[]> => {
       const result = await database.execute(
         'SELECT * FROM schedule_settings WHERE user_id = ?',
         [userId],
@@ -206,7 +201,10 @@ export const databaseAccessor = {
         lastExecutionError?: string | null;
       },
     ): Promise<ScheduleSettingsTableEntry | null> => {
-      const schedule = await databaseAccessor.schedule.getSchedule(userId, type);
+      const schedule = await databaseAccessor.schedule.getSchedule(
+        userId,
+        type,
+      );
 
       if (schedule == null) {
         return null;
@@ -321,10 +319,10 @@ export const databaseAccessor = {
       id: number,
       type: HealthConnectMappingType,
     ): Promise<MappingTableEntry[]> => {
-      await database.execute('DELETE FROM mapping_entries WHERE id = ? AND user_id = ?', [
-        id,
-        userId,
-      ]);
+      await database.execute(
+        'DELETE FROM mapping_entries WHERE id = ? AND user_id = ?',
+        [id, userId],
+      );
       return databaseAccessor.mappingTable.getMappingEntries(userId, type);
     },
   },

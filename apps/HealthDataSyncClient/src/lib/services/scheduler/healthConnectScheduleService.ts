@@ -6,10 +6,7 @@ import { databaseAccessor } from '../../database/database';
 import { apiClient } from '../api/axiosClient';
 import { utils } from '../../utils';
 import { healthConnectSchedulePayloadFactory } from './healthConnectSchedulePayloadFactory';
-import {
-  secureStorage,
-  SecureStorageKeys,
-} from '../storage/secureStorage';
+import { secureStorage, SecureStorageKeys } from '../storage/secureStorage';
 
 const scheduleSyncServiceUrl = 'HealthConnectImport/ImportTrainingData';
 
@@ -96,11 +93,14 @@ class HealthConnectScheduleService {
     from: Date,
     to: Date,
   ): Promise<ScheduleExecutionResult> {
-    const exportModel = await healthConnectSchedulePayloadFactory.create(userId, {
-      from: from,
-      to: to,
-      type: type,
-    });
+    const exportModel = await healthConnectSchedulePayloadFactory.create(
+      userId,
+      {
+        from: from,
+        to: to,
+        type: type,
+      },
+    );
 
     try {
       if (exportModel.schedule == null) {

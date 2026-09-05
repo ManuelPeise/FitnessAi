@@ -1,5 +1,7 @@
-﻿using Logic.Services.Interfaces;
+﻿using Core.Api.AuthorizationAttributes;
+using Logic.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Enums.Authentication;
 using Shared.Models.Authentication;
 
 namespace Core.Api.ApiControllers.Authentication
@@ -13,6 +15,7 @@ namespace Core.Api.ApiControllers.Authentication
             _userService = userService;
         }
 
+        [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpGet(Name = "GetCurrentUser")]
         public async Task<UserExportModel?> GetCurrentUser()
         {

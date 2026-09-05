@@ -37,6 +37,7 @@ namespace Data.Database.Migrations
                     EffectAerob = table.Column<float>(type: "float", nullable: false),
                     EffectAnaerob = table.Column<float>(type: "float", nullable: false),
                     Vo2Max = table.Column<float>(type: "float", nullable: false),
+                    CaloriesBurned = table.Column<float>(type: "float", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -45,24 +46,6 @@ namespace Data.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RunningTrainingDataTable", x => x.Id);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "UserAiTable",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    RunningTrainingDataGuid = table.Column<Guid>(type: "char(36)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserAiTable", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -95,9 +78,9 @@ namespace Data.Database.Migrations
                     FirstName = table.Column<string>(type: "longtext", nullable: false),
                     LastName = table.Column<string>(type: "longtext", nullable: false),
                     Email = table.Column<string>(type: "longtext", nullable: false),
+                    AppId = table.Column<string>(type: "longtext", nullable: false),
                     UserRole = table.Column<int>(type: "int", nullable: false),
                     CredentialsId = table.Column<long>(type: "bigint", nullable: false),
-                    UserAiId = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -106,12 +89,6 @@ namespace Data.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserTable", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserTable_UserAiTable_UserAiId",
-                        column: x => x.UserAiId,
-                        principalTable: "UserAiTable",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserTable_UserCredentialsTable_CredentialsId",
                         column: x => x.CredentialsId,
@@ -126,12 +103,6 @@ namespace Data.Database.Migrations
                 table: "UserTable",
                 column: "CredentialsId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserTable_UserAiId",
-                table: "UserTable",
-                column: "UserAiId",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -142,9 +113,6 @@ namespace Data.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserTable");
-
-            migrationBuilder.DropTable(
-                name: "UserAiTable");
 
             migrationBuilder.DropTable(
                 name: "UserCredentialsTable");

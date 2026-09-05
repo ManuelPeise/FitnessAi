@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Core.Api.AuthorizationAttributes;
+using Microsoft.AspNetCore.Mvc;
+using Shared.Enums.Authentication;
 using Shared.Models.HealthConnect;
+using System.Text.Json;
 
 namespace Core.Api.ApiControllers.Import
 {
@@ -16,10 +19,12 @@ namespace Core.Api.ApiControllers.Import
 
         }
 
+        [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpPost(Name = "ImportTrainingData")]
         public async Task ImportTrainingData([FromBody] List<HealthConnectTrainingData> trainingData)
         {
-            var test = 100;
+            Console.WriteLine(JsonSerializer.Serialize(trainingData));
+
         }
     }
 }

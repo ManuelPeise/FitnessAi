@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "run-android:dev": "adb reverse tcp:8081 tcp:8081 && react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:quiet": "eslint . --quiet",

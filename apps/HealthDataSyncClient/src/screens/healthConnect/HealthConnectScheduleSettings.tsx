@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { globalStyles } from '../../lib/styles/globalStyles';
 import type {
@@ -27,6 +28,7 @@ type ScheduleTab = {
 
 const scheduleTabs: ScheduleTab[] = [
   { type: 'HealthConnectExerciseDataExport', label: 'Exercise Data Export' },
+  { type: 'HealthConnectHealthDataExport', label: 'Health Data Export' },
 ];
 
 const HealthConnectScheduleSettings: React.FC = () => {
@@ -61,6 +63,23 @@ const HealthConnectScheduleSettings: React.FC = () => {
   const isWeekly = schedule?.frequency === 'weekly';
   const isHourly = schedule?.frequency === 'hourly';
   const isBusy = isLoading || isSaving || isExecuting;
+  const isRunNowDisabled =
+    isBusy || schedule == null || !schedule.isActive || isModified;
+  const runDisabledHint = React.useMemo(() => {
+    if (isLoading || schedule == null || isExecuting) {
+      return null;
+    }
+
+    if (!schedule.isActive) {
+      return 'Activate and save the schedule to enable "Run now".';
+    }
+
+    if (isModified) {
+      return 'Save schedule changes before running now.';
+    }
+
+    return null;
+  }, [isExecuting, isLoading, isModified, schedule]);
 
   const handleExecuteNow = React.useCallback(async () => {
     setExecutionFeedback(null);
@@ -121,6 +140,12 @@ const HealthConnectScheduleSettings: React.FC = () => {
     parsedInitialLoadDays != null &&
     parsedInitialLoadDays >= 1 &&
     parsedInitialLoadDays <= 365;
+  const isInitialLoadDisabled =
+    isBusy ||
+    !isInitialLoadValid ||
+    schedule == null ||
+    !schedule.isActive ||
+    isModified;
 
   const handleInitialLoad = React.useCallback(async () => {
     if (!isInitialLoadValid || parsedInitialLoadDays == null) {
@@ -192,10 +217,14 @@ const HealthConnectScheduleSettings: React.FC = () => {
             >
               <IconComponent
                 name="schedule"
-                size={24}
+                size={20}
                 color={isSelected ? colorMap.primary : colorMap.secondary}
               />
-              <Text style={isSelected ? styles.tabLabelSelected : undefined}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[styles.tabLabel, isSelected && styles.tabLabelSelected]}
+              >
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -214,8 +243,31 @@ const HealthConnectScheduleSettings: React.FC = () => {
           )}
         </View>
       ) : (
-        <View style={styles.contentContainer}>
-          <View style={styles.row}>
+        <ScrollView
+          style={styles.contentScrollView}
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Status</Text>
+            {schedule.lastExecutedAt && (
+              <Text style={styles.infoText}>
+                Last execution:{' '}
+                {new Date(schedule.lastExecutedAt).toLocaleString()}
+              </Text>
+            )}
+            <Text style={styles.infoText}>
+              Last status: {schedule.lastExecutionStatus}
+            </Text>
+            {schedule.lastExecutionError && (
+              <Text style={styles.errorText}>
+                {schedule.lastExecutionError}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Schedule configuration</Text>
             <View style={styles.activeRow}>
               <Text style={styles.activeLabel}>Active</Text>
               <SwitchComponent
@@ -224,9 +276,7 @@ const HealthConnectScheduleSettings: React.FC = () => {
                 onValueChange={isActive => handleScheduleChange({ isActive })}
               />
             </View>
-          </View>
 
-          <View style={styles.row}>
             <View style={styles.fullWidthColumn}>
               <Dropdown<ScheduleFrequency>
                 label="Select frequency"
@@ -236,9 +286,7 @@ const HealthConnectScheduleSettings: React.FC = () => {
                 onChange={handleFrequencyChanged}
               />
             </View>
-          </View>
 
-          <View style={styles.row}>
             <View style={styles.fullWidthColumn}>
               <Dropdown<number>
                 label="Select day"
@@ -248,61 +296,35 @@ const HealthConnectScheduleSettings: React.FC = () => {
                 onChange={dayOfWeek => handleScheduleChange({ dayOfWeek })}
               />
             </View>
+
+            <View style={styles.timeRow}>
+              <View style={styles.column}>
+                <Dropdown<number>
+                  label="Select hour"
+                  value={schedule.hour}
+                  items={hourOptions}
+                  disabled={isSaving || isHourly}
+                  onChange={hour => handleScheduleChange({ hour })}
+                />
+              </View>
+
+              <View style={styles.column}>
+                <Dropdown<number>
+                  label="Select minute"
+                  value={schedule.minute}
+                  items={minuteOptions}
+                  disabled={isSaving}
+                  onChange={minute => handleScheduleChange({ minute })}
+                />
+              </View>
+            </View>
           </View>
 
-          <View style={styles.row}>
-            <View style={styles.column}>
-              <Dropdown<number>
-                label="Select hour"
-                value={schedule.hour}
-                items={hourOptions}
-                disabled={isSaving || isHourly}
-                onChange={hour => handleScheduleChange({ hour })}
-              />
-            </View>
-
-            <View style={styles.column}>
-              <Dropdown<number>
-                label="Select minute"
-                value={schedule.minute}
-                items={minuteOptions}
-                disabled={isSaving}
-                onChange={minute => handleScheduleChange({ minute })}
-              />
-            </View>
-          </View>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-          {schedule.lastExecutedAt && (
-            <Text style={styles.infoText}>
-              Last execution:{' '}
-              {new Date(schedule.lastExecutedAt).toLocaleString()}
-            </Text>
-          )}
-          <Text style={styles.infoText}>
-            Last status: {schedule.lastExecutionStatus}
-          </Text>
-          {schedule.lastExecutionError && (
-            <Text style={styles.errorText}>{schedule.lastExecutionError}</Text>
-          )}
-          {isSaved && !isModified && (
-            <Text style={styles.successText}>Schedule saved.</Text>
-          )}
-          {executionFeedback && (
-            <Text
-              style={
-                executionFeedback.kind === 'success'
-                  ? styles.successText
-                  : styles.errorText
-              }
-            >
-              {executionFeedback.message}
-            </Text>
-          )}
-
-          <View style={styles.buttons}>
-            {isSaving && <ActivityIndicator color={colorMap.primary} />}
-            {isExecuting && <ActivityIndicator color={colorMap.primary} />}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Actions</Text>
+            {(isSaving || isExecuting) && (
+              <ActivityIndicator color={colorMap.primary} />
+            )}
             <View style={styles.initialLoadContainer}>
               <Text style={styles.initialLoadLabel}>Initial load days</Text>
               <TextInput
@@ -315,27 +337,50 @@ const HealthConnectScheduleSettings: React.FC = () => {
               />
               <ButtonComponent
                 title="Initial load"
-                disabled={isBusy || !isInitialLoadValid}
+                disabled={isInitialLoadDisabled}
                 onPress={handleInitialLoad}
               />
+              <ButtonComponent
+                title="Run now"
+                disabled={isRunNowDisabled}
+                onPress={handleExecuteNow}
+              />
             </View>
-            <ButtonComponent
-              title="Run now"
-              disabled={isBusy}
-              onPress={handleExecuteNow}
-            />
-            <ButtonComponent
-              title="Cancel"
-              disabled={!isModified || isBusy}
-              onPress={handleResetSchedule}
-            />
-            <ButtonComponent
-              title="Save"
-              disabled={!isModified || isBusy}
-              onPress={handleSaveSchedule}
-            />
+            <View style={styles.actionButtonsRow}>
+              <ButtonComponent
+                title="Cancel"
+                disabled={!isModified || isBusy}
+                onPress={handleResetSchedule}
+              />
+              <ButtonComponent
+                title="Save"
+                disabled={!isModified || isBusy}
+                onPress={handleSaveSchedule}
+              />
+            </View>
+            {runDisabledHint && (
+              <Text style={styles.infoText}>
+                {runDisabledHint}
+                {' Initial load uses the same execution requirements.'}
+              </Text>
+            )}
+            {error && <Text style={styles.errorText}>{error}</Text>}
+            {isSaved && !isModified && (
+              <Text style={styles.successText}>Schedule saved.</Text>
+            )}
+            {executionFeedback && (
+              <Text
+                style={
+                  executionFeedback.kind === 'success'
+                    ? styles.successText
+                    : styles.errorText
+                }
+              >
+                {executionFeedback.message}
+              </Text>
+            )}
           </View>
-        </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -343,18 +388,34 @@ const HealthConnectScheduleSettings: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabSelectionContainer: {
+    width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: colorMap.disabled,
   },
   tabSelection: {
+    flex: 1,
+    minWidth: 0,
+    maxWidth: '50%',
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
     borderBottomWidth: 2,
     borderBottomColor: colorMap.transparent,
   },
   tabSelectionSelected: {
     borderBottomWidth: 2,
     borderBottomColor: colorMap.primary,
+  },
+  tabLabel: {
+    flexShrink: 1,
+    color: colorMap.secondary,
+    fontSize: 13,
+    textAlign: 'center',
   },
   tabLabelSelected: {
     color: colorMap.primary,
@@ -365,20 +426,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  contentContainer: {
+  contentScrollView: {
     flex: 1,
     width: '100%',
-    marginTop: 30,
   },
-  row: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    gap: 5,
-    padding: 5,
+  contentContainer: {
     width: '100%',
+    marginTop: 20,
+    gap: 12,
+    paddingBottom: 20,
+  },
+  sectionCard: {
+    borderWidth: 1,
+    borderColor: colorMap.disabled,
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
+    width: '100%',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colorMap.secondary,
   },
   activeRow: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -395,32 +466,31 @@ const styles = StyleSheet.create({
   fullWidthColumn: {
     flex: 1,
   },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   errorText: {
     color: colorMap.error,
-    paddingHorizontal: 15,
-    marginTop: 10,
   },
   successText: {
     color: colorMap.success,
-    paddingHorizontal: 15,
-    marginTop: 10,
   },
   infoText: {
     color: colorMap.info,
-    paddingHorizontal: 15,
-    marginTop: 10,
   },
-  buttons: {
-    alignItems: 'flex-end',
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: 10,
-    paddingHorizontal: 15,
-    marginTop: 25,
   },
   initialLoadContainer: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
   },
   initialLoadLabel: {

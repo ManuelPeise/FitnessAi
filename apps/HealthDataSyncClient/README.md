@@ -24,8 +24,8 @@ D:\dev\FitnessAi
    └─ Shared.Models\ Shared.Enums\ Shared.Interfaces\
 ```
 
-The client talks to `Core.Api`. During development the base URL is
-`http://localhost:5016/api/` (`src/lib/services/api/axiosClient.ts`).
+The client talks to `Core.Api`. During development the default base URL is
+`http://localhost:8080/api/` (`src/lib/services/api/axiosClient.ts`).
 
 Android package / applicationId: `com.healthdatasyncclient`.
 
@@ -259,9 +259,9 @@ npm test             # Jest
 Health Connect is Android-only. The iOS project builds, but every Health
 Connect feature is unavailable there.
 
-Because `ApiBaseUrl` is `http://localhost:5016`, a physical device needs
-`adb reverse tcp:5016 tcp:5016` (or a LAN URL). `usesCleartextTraffic` is
-enabled for debug builds.
+Because the default `ApiBaseUrl` is `http://localhost:8080`, a physical device
+needs `adb reverse tcp:8080 tcp:8080` (or a LAN URL).
+`usesCleartextTraffic` is enabled for debug builds.
 
 To inspect the local DB, pull `healthdata.db` from the app sandbox with
 `adb exec-out run-as com.healthdatasyncclient ...`.

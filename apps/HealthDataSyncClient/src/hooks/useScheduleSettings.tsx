@@ -97,6 +97,7 @@ export const useScheduleSettings = (
     originalSchedule: null,
     currentSchedule: null,
   });
+
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -117,6 +118,7 @@ export const useScheduleSettings = (
           currentUserId,
           type,
         );
+
       const loadedSchedule =
         storedSchedule ?? createDefaultSchedule(currentUserId, type);
 

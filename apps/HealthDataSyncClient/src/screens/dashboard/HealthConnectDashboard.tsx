@@ -6,10 +6,11 @@ import {
   DashboardProps,
   AppStackRoutes,
 } from '../../navigation/navigationTypes';
+import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
 
 const HealthConnectDashboard: React.FC<DashboardProps> = props => {
   const { navigation } = props;
-
+  const { currentUserId } = useAuthenticationContext();
   const goToSettings = React.useCallback(() => {
     navigation.navigate(AppStackRoutes.HealthConnect);
   }, [navigation]);
@@ -20,6 +21,9 @@ const HealthConnectDashboard: React.FC<DashboardProps> = props => {
       <TouchableOpacity onPress={goToSettings} style={styles.button}>
         <Text style={styles.buttonText}>Go to Settings</Text>
       </TouchableOpacity>
+      <View>
+        <Text style={styles.userIdText}>Current User ID: {currentUserId}</Text>
+      </View>
     </View>
   );
 };
@@ -36,6 +40,10 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: colorMap.white,
+  },
+  userIdText: {
+    color: colorMap.error,
+    margin: 10,
   },
 });
 

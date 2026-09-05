@@ -25,13 +25,21 @@ class HealthConnectSchedulePayloadFactory {
     userId: number,
     request: HealthConnectExportRequest,
   ): Promise<HealthConnectDataExportModel> => {
-    switch (request.type) {
-      case 'HealthConnectExerciseDataExport':
-        return await this.getExerciseDataExportPayload(userId, request);
-      case 'HealthConnectHealthDataExport':
-        return await this.getHealthMetricExportPayload(userId, request);
-      default:
-        throw new Error(`Unsupported export request type: ${request.type}`);
+    try {
+      switch (request.type) {
+        case 'HealthConnectExerciseDataExport':
+          return await this.getExerciseDataExportPayload(userId, request);
+        case 'HealthConnectHealthDataExport':
+          return await this.getHealthMetricExportPayload(userId, request);
+        default:
+          throw new Error(`Unsupported export request type: ${request.type}`);
+      }
+    } catch (error) {
+      console.error(
+        `[HealthConnectSchedulePayloadFactory] Failed to create export payload for userId "${userId}" and type "${request.type}".`,
+        error,
+      );
+      return { payload: [], schedule: null };
     }
   };
 
@@ -105,7 +113,10 @@ class HealthConnectSchedulePayloadFactory {
     userId: number,
     type: ScheduleSettingsType,
   ): Promise<ScheduleSettingsTableEntry | null> => {
-    const schedule = await this.databaseService.schedule.getSchedule(userId, type);
+    const schedule = await this.databaseService.schedule.getSchedule(
+      userId,
+      type,
+    );
 
     return schedule;
   };
@@ -134,6 +145,12 @@ class HealthConnectSchedulePayloadFactory {
     userId: number,
     scheduleType: ScheduleSettingsType,
   ): Promise<HealthConnectScheduleData | null> => {
+    const schedule = await this.getHealthConnectSchedule(userId, scheduleType);
+
+    if (!schedule) {
+      return null;
+    }
+
     const scheduleData: HealthConnectScheduleData = {
       originMappings: await this.getActiveMappings(
         userId,
@@ -143,17 +160,8 @@ class HealthConnectSchedulePayloadFactory {
         userId,
         'HealthConnectMetric',
       ),
-      schedule: await this.getHealthConnectSchedule(userId, scheduleType),
+      schedule,
     };
-
-    if (
-      Object.keys(scheduleData.originMappings).length === 0 ||
-      Object.keys(scheduleData.metricMappings).length === 0 ||
-      !scheduleData.schedule ||
-      !scheduleData.schedule.isActive
-    ) {
-      return null;
-    }
 
     return scheduleData;
   };

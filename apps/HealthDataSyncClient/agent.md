@@ -181,7 +181,7 @@ Consequences for new code:
   SQLite, AsyncStorage or component state.
 - `apiService.ts` is a lower-level `fetch` wrapper returning
   `ApiResult<TResponse>` (`{ data, error? }`) — it does not throw.
-- `ApiBaseUrl` is currently hardcoded to `http://localhost:5016/api/`; keep it
+- `ApiBaseUrl` defaults to `http://localhost:8080/api/`; keep it
   configurable-friendly and never commit real hosts or secrets.
 
 ### Logging / errors

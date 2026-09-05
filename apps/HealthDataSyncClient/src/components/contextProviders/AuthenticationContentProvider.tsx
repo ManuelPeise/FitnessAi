@@ -1,4 +1,5 @@
 import React from 'react';
+import axios, { AxiosRequestConfig } from 'axios';
 import {
   secureStorage,
   SecureStorageKeys,
@@ -10,7 +11,7 @@ import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
 type TokenResponse = {
   token: string;
   refreshToken: string;
-  tokenExpiration: string;
+  tokenExpiresAt: string;
   appId: string;
 };
 
@@ -54,9 +55,16 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     return !!token && !!refreshToken;
   }, []);
 
-  const initializeUserData = React.useCallback(async (userId: number) => {
-    await databaseAccessor.initializeDatabase();
-    await databaseAccessor.schedule.ensureSchedules(userId);
+  const getCurrentUserId = React.useCallback(async () => {
+    const currentUserIdValue = await secureStorage.getItem(
+      SecureStorageKeys.CURRENT_USER_ID,
+    );
+
+    if (currentUserIdValue) {
+      return parseInt(currentUserIdValue, 10);
+    }
+
+    return null;
   }, []);
 
   const handleLogin = async (request: LoginRequest) => {
@@ -68,18 +76,26 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
       );
 
       if (response && response.status === 200 && response.data) {
-        const tokenResponse: TokenResponse = response.data;
+        const tokenResponse: TokenResponse = await response.data;
 
         if (
           !tokenResponse.token ||
           !tokenResponse.refreshToken ||
-          !tokenResponse.tokenExpiration ||
+          !tokenResponse.tokenExpiresAt ||
           !tokenResponse.appId
         ) {
           throw new Error('Missing authentication tokens or app ID');
         }
 
-        const userResponse = await apiClient.get('CurrentUser/GetCurrentUser');
+        const config: AxiosRequestConfig = {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.token}`,
+          },
+        };
+        const userResponse = await apiClient.get(
+          'CurrentUser/GetCurrentUser',
+          config,
+        );
 
         if (
           !userResponse ||
@@ -90,7 +106,6 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
         }
 
         const user: User = userResponse.data;
-        await initializeUserData(user.id);
 
         const authentication =
           await databaseAccessor.authentication.getAuthentication(user.id);
@@ -101,7 +116,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             userId: user.id,
             accessToken: tokenResponse.token,
             refreshToken: tokenResponse.refreshToken,
-            tokenExpiration: tokenResponse.tokenExpiration,
+            tokenExpiration: tokenResponse.tokenExpiresAt,
             appKey: tokenResponse.appId,
             created_at: null,
             updated_at: null,
@@ -115,7 +130,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
             ...authentication,
             accessToken: tokenResponse.token,
             refreshToken: tokenResponse.refreshToken,
-            tokenExpiration: tokenResponse.tokenExpiration,
+            tokenExpiration: tokenResponse.tokenExpiresAt,
             appKey: tokenResponse.appId,
             updated_at: null,
           };
@@ -141,6 +156,29 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
         setCurrentUserId(user.id);
         setIsAuthenticated(true);
       }
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const requestUrl = err.config?.url ?? 'unknown-url';
+        const requestMethod = err.config?.method ?? 'unknown-method';
+        console.error('Login process failed with Axios error.', {
+          message: err.message,
+          code: err.code,
+          status: err.response?.status,
+          requestUrl,
+          requestMethod,
+        });
+
+        if (err.response?.status === 401) {
+          throw new Error('Invalid email or password.');
+        }
+
+        throw new Error(
+          'Unable to reach the server. Verify backend connectivity and try again.',
+        );
+      }
+
+      console.error('Login process failed:', err);
+      throw err instanceof Error ? err : new Error('Login failed.');
     } finally {
       setIsLoading(false);
     }
@@ -170,22 +208,14 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
           return;
         }
 
-        const userIdValue = await secureStorage.getItem(
-          SecureStorageKeys.CURRENT_USER_ID,
-        );
-        const parsedUserId = Number(userIdValue);
+        const parsedUserId = await getCurrentUserId();
 
-        if (
-          !userIdValue ||
-          !Number.isInteger(parsedUserId) ||
-          parsedUserId <= 0
-        ) {
+        if (!parsedUserId) {
           setIsAuthenticated(false);
           setCurrentUserId(null);
           return;
         }
 
-        await initializeUserData(parsedUserId);
         setCurrentUserId(parsedUserId);
         setIsAuthenticated(true);
       } catch (error) {
@@ -197,7 +227,7 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
       }
     };
     checkToken();
-  }, [getTokens, initializeUserData]);
+  }, [getTokens]);
 
   return (
     <AuthenticationContext.Provider

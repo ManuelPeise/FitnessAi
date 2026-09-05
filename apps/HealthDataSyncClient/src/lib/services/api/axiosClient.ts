@@ -7,7 +7,26 @@ type RefreshTokenResponse = {
   refreshToken?: string;
 };
 
-const ApiBaseUrl = 'https://localhost:7293/api/';
+const normalizeBaseUrl = (baseUrl: string): string =>
+  baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+
+const getApiBaseUrl = (): string => {
+  const runtimeApiConfig = globalThis as typeof globalThis & {
+    FITNESSAI_API_BASE_URL?: string;
+  };
+  const configuredApiBaseUrl = runtimeApiConfig.FITNESSAI_API_BASE_URL;
+
+  if (
+    typeof configuredApiBaseUrl === 'string' &&
+    configuredApiBaseUrl.trim().length > 0
+  ) {
+    return normalizeBaseUrl(configuredApiBaseUrl.trim());
+  }
+
+  return 'http://localhost:8080/api/';
+};
+
+const ApiBaseUrl = getApiBaseUrl();
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ApiBaseUrl,

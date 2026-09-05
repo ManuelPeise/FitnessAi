@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(AIDbContext))]
-    [Migration("20260830175946_Initialize-Database")]
+    [Migration("20260905114615_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -29,6 +29,9 @@ namespace Data.Database.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<float>("Age")
+                        .HasColumnType("float");
+
+                    b.Property<float>("CaloriesBurned")
                         .HasColumnType("float");
 
                     b.Property<DateTime>("CreatedAt")
@@ -95,33 +98,6 @@ namespace Data.Database.Migrations
                     b.ToTable("RunningTrainingDataTable");
                 });
 
-            modelBuilder.Entity("Data.Database.Entities.User.UserAiEntity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid>("RunningTrainingDataGuid")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserAiTable");
-                });
-
             modelBuilder.Entity("Data.Database.Entities.User.UserCredentialsEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -163,6 +139,10 @@ namespace Data.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<string>("AppId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -191,18 +171,12 @@ namespace Data.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<long>("UserAiId")
-                        .HasColumnType("bigint");
-
                     b.Property<int>("UserRole")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CredentialsId")
-                        .IsUnique();
-
-                    b.HasIndex("UserAiId")
                         .IsUnique();
 
                     b.ToTable("UserTable");
@@ -215,14 +189,6 @@ namespace Data.Database.Migrations
                         .HasForeignKey("Data.Database.Entities.User.UserEntity", "CredentialsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Data.Database.Entities.User.UserAiEntity", "UserAi")
-                        .WithOne()
-                        .HasForeignKey("Data.Database.Entities.User.UserEntity", "UserAiId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserAi");
 
                     b.Navigation("UserCredentials");
                 });

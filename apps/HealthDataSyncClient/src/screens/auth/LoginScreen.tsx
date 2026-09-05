@@ -22,11 +22,14 @@ const LoginScreen: React.FC = () => {
   const onLogin = async () => {
     setError(null);
     setIsLoading(true);
-
     try {
       await handleLogin({ email: email, password: password });
-    } catch {
-      setError('Login failed. Please check your credentials.');
+    } catch (loginError) {
+      if (loginError instanceof Error && loginError.message.trim().length > 0) {
+        setError(loginError.message);
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } finally {
       setIsLoading(false);
     }

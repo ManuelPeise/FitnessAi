@@ -5,7 +5,7 @@ import type {
 } from 'react-native-background-fetch';
 import HealthConnectScheduleService from './healthConnectScheduleService';
 
-const minimumFetchMinutes = 15;
+const minimumFetchMinutes = 1;
 const healthConnectScheduleService = new HealthConnectScheduleService();
 
 const fetchConfig: BackgroundFetchConfig = {
@@ -18,27 +18,34 @@ const fetchConfig: BackgroundFetchConfig = {
 
 let isConfigured = false;
 
-const executeFetchTask = async (taskId: string): Promise<void> => {
+type FetchExecutionSource = 'foreground' | 'headless';
+
+const executeFetchTask = async (
+  taskId: string,
+  source: FetchExecutionSource,
+): Promise<void> => {
   try {
     await healthConnectScheduleService.executeDueSchedules();
-    console.log('Executed background fetch task.');
   } catch (error) {
-    console.error('Background task execution failed.', error);
+    console.error(
+      `[background-fetch:${source}] Task execution failed for id "${taskId}".`,
+      error,
+    );
   } finally {
     BackgroundFetch.finish(taskId);
   }
 };
 
 export const backgroundTaskService = {
-  async initialize(): Promise<void> {
+  async initialize(): Promise<boolean> {
     if (isConfigured) {
-      return;
+      return true;
     }
 
     await BackgroundFetch.configure(
       fetchConfig,
       async taskId => {
-        await executeFetchTask(taskId);
+        await executeFetchTask(taskId, 'foreground');
       },
       async taskId => {
         BackgroundFetch.finish(taskId);
@@ -47,13 +54,15 @@ export const backgroundTaskService = {
 
     await BackgroundFetch.start();
     isConfigured = true;
+    return true;
   },
+
   async handleHeadlessTask(event: HeadlessEvent): Promise<void> {
     if (event.timeout) {
       BackgroundFetch.finish(event.taskId);
       return;
     }
 
-    await executeFetchTask(event.taskId);
+    await executeFetchTask(event.taskId, 'headless');
   },
 };

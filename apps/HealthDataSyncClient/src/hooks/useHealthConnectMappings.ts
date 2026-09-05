@@ -60,7 +60,10 @@ export const useHealthConnectMappings = (
     }
 
     const mappingsFromDb =
-      await databaseAccessor.mappingTable.getMappingEntries(currentUserId, type);
+      await databaseAccessor.mappingTable.getMappingEntries(
+        currentUserId,
+        type,
+      );
 
     setMappings(mappingsFromDb);
   }, [currentUserId, type]);
@@ -101,11 +104,19 @@ export const useHealthConnectMappings = (
         throw new Error('Authenticated user context is missing.');
       }
 
+      const permissionsEnsured =
+        await healthConnectServiceRef.current.ensurePermissions();
+
+      if (!permissionsEnsured) {
+        throw new Error('Failed to ensure necessary permissions.');
+      }
+
       const existingMappings =
         await databaseAccessor.mappingTable.getMappingEntries(
           currentUserId,
           type,
         );
+
       const availableOrigins =
         await healthConnectServiceRef.current.getAvailableOrigins();
 
@@ -149,6 +160,12 @@ export const useHealthConnectMappings = (
         throw new Error('Authenticated user context is missing.');
       }
 
+      const permissionsEnsured =
+        await healthConnectServiceRef.current.ensurePermissions();
+
+      if (!permissionsEnsured) {
+        throw new Error('Failed to ensure necessary permissions.');
+      }
       const existingMappings =
         await databaseAccessor.mappingTable.getMappingEntries(
           currentUserId,
