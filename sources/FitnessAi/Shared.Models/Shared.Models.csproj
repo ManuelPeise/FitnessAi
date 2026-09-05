@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared.Enums\Shared.Enums.csproj" />
     <ProjectReference Include="..\Shared.Interfaces\Shared.Interfaces.csproj" />
   </ItemGroup>
 

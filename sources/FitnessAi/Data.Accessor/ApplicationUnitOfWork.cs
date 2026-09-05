@@ -13,20 +13,17 @@ namespace Data.Accessor
         private readonly HttpContext _httpContext;
         private IRepositoryBase<UserEntity>? _userRepository;
         private IRepositoryBase<UserCredentialsEntity> _userCredentialsRepository;
-        private IRepositoryBase<UserAiEntity> _userAiRepository;
 
         public IRepositoryBase<UserEntity> UserRepository => _userRepository ?? new RepositoryBase<UserEntity>(_context);
         public IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository => _userCredentialsRepository ?? new RepositoryBase<UserCredentialsEntity>(_context);
-        public IRepositoryBase<UserAiEntity> UserAiRepository => _userAiRepository ?? new RepositoryBase<UserAiEntity>(_context);
+        
 
         public ApplicationUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
-
             _userRepository = new RepositoryBase<UserEntity>(_context);
             _userCredentialsRepository = new RepositoryBase<UserCredentialsEntity>(_context);
-            _userAiRepository = new RepositoryBase<UserAiEntity>(_context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

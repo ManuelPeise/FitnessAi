@@ -10,7 +10,6 @@ namespace Data.Database
 
         public DbSet<UserEntity> UserTable => Set<UserEntity>();
         public DbSet<UserCredentialsEntity> UserCredentialsTable => Set<UserCredentialsEntity>();
-        public DbSet<UserAiEntity> UserAiTable => Set<UserAiEntity>();
         public DbSet<RunningTrainingDataEntity> RunningTrainingDataTable => Set<RunningTrainingDataEntity>();
 
 
@@ -22,12 +21,6 @@ namespace Data.Database
                 .HasOne(u => u.UserCredentials)
                 .WithOne()
                 .HasForeignKey<UserEntity>(u => u.CredentialsId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UserEntity>()
-                .HasOne(u => u.UserAi)
-                .WithOne()
-                .HasForeignKey<UserEntity>(u => u.UserAiId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

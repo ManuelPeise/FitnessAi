@@ -25,16 +25,13 @@ namespace Logic.Services.Seed
                     FirstName = userSeedModel.FirstName,
                     LastName = userSeedModel.LastName,
                     Email = userSeedModel.Email,
+                    AppId = Guid.NewGuid().ToString(),
                     UserRole = UserRoleEnum.UserRole,
                     UserCredentials = new UserCredentialsEntity
                     {
                         Salt = "",
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
-                    UserAi = new UserAiEntity
-                    {
-                        RunningTrainingDataGuid = Guid.NewGuid()
-                    }
                 };
 
                 await _applicationUnitOfWork.UserRepository.AddAsync(userEntity);
@@ -59,15 +56,12 @@ namespace Logic.Services.Seed
                     LastName = userSeedModel.LastName,
                     Email = userSeedModel.Email,
                     UserRole = UserRoleEnum.AdminRole,
+                    AppId = Guid.NewGuid().ToString(),
                     UserCredentials = new UserCredentialsEntity
                     {
                         Salt = "",
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
-                    UserAi = new UserAiEntity
-                    {
-                        RunningTrainingDataGuid = Guid.NewGuid()
-                    }
                 };
 
                 await _applicationUnitOfWork.UserRepository.AddAsync(userEntity);

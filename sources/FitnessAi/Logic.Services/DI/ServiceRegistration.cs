@@ -13,6 +13,7 @@ namespace Logic.Services.DI
             services.AddScoped<IUserSeedService, UserSeedService>();
             services.AddScoped<IRunningDataImportService, RunningDataImportService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IUserService, UserService>();
         }
     }
 }

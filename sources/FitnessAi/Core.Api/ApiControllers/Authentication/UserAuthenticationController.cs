@@ -42,5 +42,11 @@ namespace Core.Api.ApiControllers.Authentication
                 Success = !string.IsNullOrEmpty(token) 
             });
         }
+
+        [HttpPost(Name = "AuthenticateUserOnMobile")]
+        public async Task<TokenResponse?> AuthenticateUserOnMobile([FromBody] UserAuthenticationModel model)
+        {
+            return await _authenticationService.AuthenticateUserOnMobile(model);
+        }
     }
 }

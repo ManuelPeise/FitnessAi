@@ -31,7 +31,7 @@ namespace Logic.Services.DataImport
             var userEntity = await _applicationUnitOfWork.UserRepository.GetByIdAsync(
                 userId,
                 true,
-                new List<Expression<Func<UserEntity, object>>> { x => x.UserAiId },
+                null,
                 cancellationToken);
 
             if (userEntity == null)
@@ -45,11 +45,11 @@ namespace Logic.Services.DataImport
 
             var models = parser.ParseCsv(csvContentRows, delimiter);
 
-            var entities = MapModelsToEntity(models, userEntity.UserAi.RunningTrainingDataGuid);
+            //var entities = MapModelsToEntity(models, userEntity.UserAi.RunningTrainingDataGuid);
 
-            await _aiUnitOfWork.RunningTrainingDataRepository.AddRangeAsync(entities, cancellationToken);
+            //await _aiUnitOfWork.RunningTrainingDataRepository.AddRangeAsync(entities, cancellationToken);
 
-            await _aiUnitOfWork.SaveChangesAsync(cancellationToken);
+            //await _aiUnitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         private List<RunningTrainingDataEntity> MapModelsToEntity(IReadOnlyList<RunningDataImportModel> models, Guid runningTrainingDataGuid)
