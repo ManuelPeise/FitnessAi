@@ -15,6 +15,7 @@ export type HealthConnectPermission =
 export type HealthConnectReadRange = {
   startTime: Date | string;
   endTime: Date | string;
+  dataOriginFilter?: string[];
   ascendingOrder?: boolean;
   pageSize?: number;
   pageToken?: string;
@@ -214,7 +215,7 @@ export type HealthConnectTrainingData = {
   exerciseType: HealthConnectExerciseType;
   origin: string;
   timeZoneInfo?: TimeZoneInfo;
-  trainingMetricData: HealthConnectTrainingMetricData[];
+  trainingMetricData: HealthConnectTrainingMetricData;
   trainingSegments?: TrainingSegments[];
   laps: TrainingLap[];
 };

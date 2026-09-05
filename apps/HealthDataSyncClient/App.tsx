@@ -11,6 +11,7 @@ const App: React.FC = () => {
     const initializeAsync = async () => {
       try {
         await databaseAccessor.initializeDatabase();
+        await databaseAccessor.authentication.ensureAuthentication();
         await databaseAccessor.schedule.ensureSchedules();
       } catch (error) {
         console.error('Failed to initialize local database.', error);

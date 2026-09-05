@@ -1,16 +1,20 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { secureStorage, SecureStorageKeys } from '../storage/secureStorage';
+import { databaseAccessor } from '../../database/database';
 
 type RefreshTokenResponse = {
   accessToken: string;
   refreshToken?: string;
 };
 
-const ApiBaseUrl = 'http://localhost:5016/api/';
+const ApiBaseUrl = 'https://localhost:7293/api/';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ApiBaseUrl,
   timeout: 30_000,
+  fetchOptions: {
+    mode: 'cors',
+    keepalive: true,
+  },
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,37 +36,52 @@ const refreshAccessToken = async (): Promise<string | null> => {
   }
 
   refreshPromise = (async () => {
-    try {
-      const refreshToken = await secureStorage.getItem(
-        SecureStorageKeys.REFRESH_TOKEN,
-      );
+    const authentication =
+      await databaseAccessor.authentication.getAuthentication();
 
-      if (!refreshToken) {
+    if (!authentication) {
+      return null;
+    }
+
+    try {
+      if (!authentication?.refreshToken) {
         return null;
       }
 
       const response = await refreshClient.post<RefreshTokenResponse>(
         '/auth/refresh',
         {
-          refreshToken,
+          refreshToken: authentication.refreshToken,
         },
       );
 
       const { accessToken, refreshToken: newRefreshToken } = response.data;
 
-      await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, accessToken);
-
-      if (newRefreshToken) {
-        await secureStorage.setItem(
-          SecureStorageKeys.REFRESH_TOKEN,
-          newRefreshToken,
-        );
+      if (!accessToken || !newRefreshToken) {
+        return null;
       }
+      const currentAuthentication = {
+        ...authentication,
+        accessToken,
+        refreshToken: newRefreshToken ?? null,
+      };
+
+      await databaseAccessor.authentication.saveAuthentication(
+        currentAuthentication,
+      );
 
       return accessToken;
     } catch {
-      await secureStorage.removeItem(SecureStorageKeys.ACCESS_TOKEN);
-      await secureStorage.removeItem(SecureStorageKeys.REFRESH_TOKEN);
+      const currentAuthenticationEntry = {
+        ...authentication,
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiration: null,
+      };
+
+      await databaseAccessor.authentication.saveAuthentication(
+        currentAuthenticationEntry,
+      );
 
       return null;
     } finally {
@@ -75,12 +94,11 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const accessToken = await secureStorage.getItem(
-      SecureStorageKeys.ACCESS_TOKEN,
-    );
+    const authentication =
+      await databaseAccessor.authentication.getAuthentication();
 
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    if (authentication?.accessToken) {
+      config.headers.Authorization = `Bearer ${authentication.accessToken}`;
     }
 
     return config;
@@ -94,12 +112,12 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const accessToken = await refreshAccessToken();
+    const token = await refreshAccessToken();
 
     // Retry the original request with the new access token
-    if (accessToken && error.config && !error.config._retry) {
+    if (token && error.config && !error.config._retry) {
       error.config._retry = true;
-      error.config.headers.Authorization = `Bearer ${accessToken}`;
+      error.config.headers.Authorization = `Bearer ${token}`;
       return apiClient(error.config);
     }
 

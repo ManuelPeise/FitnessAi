@@ -3,10 +3,13 @@ import type {
   BackgroundFetchConfig,
   HeadlessEvent,
 } from 'react-native-background-fetch';
-import { healthConnectScheduleExecutionService } from './healthConnectScheduleExecutionService';
+import HealthConnectScheduleService from './healthConnectScheduleService';
+
+const minimumFetchMinutes = 15;
+const healthConnectScheduleService = new HealthConnectScheduleService();
 
 const fetchConfig: BackgroundFetchConfig = {
-  minimumFetchInterval: 15,
+  minimumFetchInterval: minimumFetchMinutes,
   stopOnTerminate: false,
   startOnBoot: true,
   enableHeadless: true,
@@ -14,11 +17,11 @@ const fetchConfig: BackgroundFetchConfig = {
 };
 
 let isConfigured = false;
-const isDevelopmentMode = typeof __DEV__ !== 'undefined' && __DEV__;
 
 const executeFetchTask = async (taskId: string): Promise<void> => {
   try {
-    await healthConnectScheduleExecutionService.executeDueSchedules();
+    // await healthConnectScheduleService.executeDueSchedules();
+    console.log('Executing background fetch task');
   } catch (error) {
     console.error('Background task execution failed.', error);
   } finally {
@@ -28,18 +31,6 @@ const executeFetchTask = async (taskId: string): Promise<void> => {
 
 export const backgroundTaskService = {
   async initialize(): Promise<void> {
-    if (isDevelopmentMode) {
-      try {
-        await BackgroundFetch.stop();
-      } catch (stopError) {
-        console.error(
-          'Failed to stop background fetch while in development mode.',
-          stopError,
-        );
-      }
-      return;
-    }
-
     if (isConfigured) {
       return;
     }
@@ -58,11 +49,6 @@ export const backgroundTaskService = {
     isConfigured = true;
   },
   async handleHeadlessTask(event: HeadlessEvent): Promise<void> {
-    if (isDevelopmentMode) {
-      BackgroundFetch.finish(event.taskId);
-      return;
-    }
-
     if (event.timeout) {
       BackgroundFetch.finish(event.taskId);
       return;

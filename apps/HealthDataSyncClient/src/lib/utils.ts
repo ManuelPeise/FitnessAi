@@ -7,6 +7,11 @@ export const utils = {
     start.setHours(0, 0, 0, 0);
     return start;
   },
+  getPreviousDate: (date: Date, daysBefore: number) => {
+    const previousDate = new Date(date);
+    previousDate.setDate(previousDate.getDate() - daysBefore);
+    return previousDate;
+  },
   getSumOf: (numbers: number[]) => {
     return numbers.reduce((a, b) => a + b, 0);
   },

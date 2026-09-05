@@ -12,21 +12,16 @@ export const scheduleSettingsTypes: ScheduleSettingsType[] = [
 ];
 
 export type ScheduleFrequency = 'daily' | 'hourly' | 'weekly';
-export type ScheduleExecutionStatus =
-  | 'idle'
-  | 'running'
-  | 'success'
-  | 'failed'
-  | 'skipped';
+export type ScheduleExecutionStatus = 'success' | 'failed';
 
 export type ApiAuthenticationTableEntry = {
   id: number;
-  accessToken: string;
-  refreshToken: string;
-  tokenExpiration: string;
-  appKey: string;
-  created_at: string;
-  updated_at: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  tokenExpiration: string | null;
+  appKey: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
 export type ScheduleSettingsTableEntry = {

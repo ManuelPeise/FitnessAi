@@ -5,16 +5,31 @@ import {
   requestPermission as requestHealthConnectPermission,
   getGrantedPermissions as getHealthConnectGrantedPermissions,
   readRecords as readHealthConnectRecords,
+  aggregateRecord as aggregateHealthConnectRecord,
   type Permission,
   type RecordType,
   type ReadRecordsOptions,
   type ReadRecordsResult,
+  AggregateResult,
 } from 'react-native-health-connect';
 import {
   HealthConnectPermission,
   HealthConnectReadRange,
-  HealthConnectData,
 } from './healthConnectTypes';
+
+export type HealthConnectTrainingAggregateRecordType =
+  | 'ActiveCaloriesBurned'
+  | 'CyclingPedalingCadence'
+  | 'Distance'
+  | 'ElevationGained'
+  | 'ExerciseSession'
+  | 'FloorsClimbed'
+  | 'HeartRate'
+  | 'Power'
+  | 'Speed'
+  | 'Steps'
+  | 'StepsCadence'
+  | 'TotalCaloriesBurned';
 
 class HealthConnectService {
   private initialized = false;
@@ -223,14 +238,6 @@ class HealthConnectService {
     return this.areAllRequiredPermissionsGranted(grantedPermissions);
   }
 
-  async readSteps(
-    range: HealthConnectReadRange,
-  ): Promise<ReadRecordsResult<'Steps'>> {
-    await this.ensureInitialized();
-
-    return readHealthConnectRecords('Steps', this.createReadOptions(range));
-  }
-
   async ensurePermissions(): Promise<boolean> {
     await this.ensureInitialized();
 
@@ -281,13 +288,15 @@ class HealthConnectService {
     });
   }
 
-  async readData(range: HealthConnectReadRange): Promise<HealthConnectData> {
-    const [steps, exerciseSessions] = await Promise.all([
-      this.readSteps(range),
-      this.readExerciseSessions(range),
-    ]);
+  async readAggregatedMetric<
+    T extends HealthConnectTrainingAggregateRecordType,
+  >(metricType: T, range: HealthConnectReadRange): Promise<AggregateResult<T>> {
+    const result = await aggregateHealthConnectRecord({
+      recordType: metricType,
+      timeRangeFilter: this.createReadOptions(range).timeRangeFilter,
+    });
 
-    return { steps, exerciseSessions };
+    return result;
   }
 
   async getAvailableOrigins(range?: HealthConnectReadRange): Promise<string[]> {
@@ -352,6 +361,7 @@ class HealthConnectService {
         startTime: this.toIsoString(range.startTime),
         endTime: this.toIsoString(range.endTime),
       },
+      dataOriginFilter: range.dataOriginFilter,
       ascendingOrder: range.ascendingOrder,
       pageSize: range.pageSize,
       pageToken: range.pageToken,

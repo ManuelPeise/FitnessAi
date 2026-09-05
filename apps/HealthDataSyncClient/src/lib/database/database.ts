@@ -7,6 +7,7 @@ import {
   ScheduleFrequency,
   ScheduleSettingsTableEntry,
   ScheduleSettingsType,
+  ApiAuthenticationTableEntry,
 } from './databaseTypes';
 import { migrateDatabase } from './databaseMigration';
 
@@ -44,9 +45,76 @@ const mapScheduleRow = (
     : null,
 });
 
+const mapAuthenticationRow = (
+  row: Record<string, unknown>,
+): ApiAuthenticationTableEntry => ({
+  id: Number(row.id),
+  accessToken: String(row.access_token),
+  refreshToken: String(row.refresh_token),
+  tokenExpiration: String(row.token_expiration),
+  appKey: String(row.app_key),
+  created_at: String(row.created_at),
+  updated_at: String(row.updated_at),
+});
+
 export const databaseAccessor = {
   initializeDatabase: async (): Promise<void> => {
     await migrateDatabase();
+  },
+  authentication: {
+    ensureAuthentication: async (): Promise<void> => {
+      const authentication =
+        await databaseAccessor.authentication.getAuthentication();
+      if (!authentication) {
+        await databaseAccessor.authentication.saveAuthentication({
+          id: -1,
+          accessToken: '',
+          refreshToken: '',
+          tokenExpiration: '',
+          appKey: '',
+          created_at: null,
+          updated_at: null,
+        });
+      }
+    },
+    getAuthentication:
+      async (): Promise<ApiAuthenticationTableEntry | null> => {
+        const result = await database.execute(
+          'SELECT * FROM api_authentication',
+        );
+
+        return result.rows.length > 0
+          ? mapAuthenticationRow(result.rows[0])
+          : null;
+      },
+    saveAuthentication: async (
+      authentication: ApiAuthenticationTableEntry,
+    ): Promise<ApiAuthenticationTableEntry> => {
+      await database.execute(
+        `INSERT INTO api_authentication (access_token, refresh_token, token_expiration, app_key)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           access_token = excluded.access_token,
+           refresh_token = excluded.refresh_token,
+           token_expiration = excluded.token_expiration,
+           app_key = excluded.app_key`,
+        [
+          authentication.accessToken,
+          authentication.refreshToken,
+          authentication.tokenExpiration,
+          authentication.appKey,
+        ],
+      );
+
+      const persistedAuthentication =
+        await databaseAccessor.authentication.getAuthentication();
+
+      if (!persistedAuthentication) {
+        throw new Error(`Failed to persist authentication.`);
+      }
+
+      return persistedAuthentication;
+    },
   },
   schedule: {
     getSchedules: async (): Promise<ScheduleSettingsTableEntry[]> => {

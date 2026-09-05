@@ -18,7 +18,7 @@ import { colorMap } from '../../lib/styles/colorMap';
 import Dropdown from '../../components/inputComponents/Dropdown';
 import ButtonComponent from '../../components/inputComponents/ButtonComponent';
 import SwitchComponent from '../../components/inputComponents/SwitchComponent';
-import { healthConnectScheduleExecutionService } from '../../lib/services/scheduler/healthConnectScheduleExecutionService';
+import { healthConnectScheduleExecutionService } from '../../lib/services/scheduler/healthConnectScheduleService';
 
 type ScheduleTab = {
   type: ScheduleSettingsType;
@@ -67,9 +67,8 @@ const HealthConnectScheduleSettings: React.FC = () => {
     setIsExecuting(true);
 
     try {
-      const result = await healthConnectScheduleExecutionService.executeManually(
-        type,
-      );
+      const result =
+        await healthConnectScheduleExecutionService.executeManually(type);
 
       await reloadSchedule();
 
@@ -136,12 +135,10 @@ const HealthConnectScheduleSettings: React.FC = () => {
     setIsExecuting(true);
 
     try {
-      const result = await healthConnectScheduleExecutionService.executeManually(
-        type,
-        {
+      const result =
+        await healthConnectScheduleExecutionService.executeManually(type, {
           initialLoadDays: parsedInitialLoadDays,
-        },
-      );
+        });
 
       await reloadSchedule();
 
@@ -278,7 +275,8 @@ const HealthConnectScheduleSettings: React.FC = () => {
           {error && <Text style={styles.errorText}>{error}</Text>}
           {schedule.lastExecutedAt && (
             <Text style={styles.infoText}>
-              Last execution: {new Date(schedule.lastExecutedAt).toLocaleString()}
+              Last execution:{' '}
+              {new Date(schedule.lastExecutedAt).toLocaleString()}
             </Text>
           )}
           <Text style={styles.infoText}>

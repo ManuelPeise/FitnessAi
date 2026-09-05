@@ -3,16 +3,14 @@ import {
   secureStorage,
   SecureStorageKeys,
 } from '../../lib/services/storage/secureStorage';
+import { apiClient } from '../../lib/services/api/axiosClient';
+import { databaseAccessor } from '../../lib/database/database';
+import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
 
 type LoginRequest = {
   email: string;
   password: string;
 };
-
-// type TokenResponse = {
-//   token: string;
-//   refreshToken: string;
-// };
 
 type AuthenticationContextResult = {
   isAuthenticated: boolean;
@@ -44,24 +42,50 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
     setIsLoading(true);
     console.log('Login request:', request);
     try {
-      // const response = await apiClient.sendRequest<LoginRequest, TokenResponse>(
-      //   {
-      //     serviceUrl: '/login',
-      //     method: 'POST',
-      //     body: request,
-      //   },
-      // );
+      const response = await apiClient.post('/login', request);
 
-      // if (response.data) {
-      //   const { token, refreshToken } = response.data;
+      if (response && response.status === 200 && response.data) {
+        const { token, refreshToken, tokenExpiration, appId } = response.data;
+        const authentication =
+          await databaseAccessor.authentication.getAuthentication();
 
-      await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, 'token');
-      await secureStorage.setItem(
-        SecureStorageKeys.REFRESH_TOKEN,
-        'refreshToken',
-      );
+        if (authentication == null) {
+          const authenticationEntry: ApiAuthenticationTableEntry = {
+            id: -1,
+            accessToken: token,
+            refreshToken: refreshToken,
+            tokenExpiration: tokenExpiration,
+            appKey: appId,
+            created_at: null,
+            updated_at: null,
+          };
 
-      setIsAuthenticated(true);
+          databaseAccessor.authentication.saveAuthentication(
+            authenticationEntry,
+          );
+        } else {
+          const updatedAuthenticationEntry: ApiAuthenticationTableEntry = {
+            ...authentication,
+            accessToken: token,
+            refreshToken: refreshToken,
+            tokenExpiration: tokenExpiration,
+            appKey: appId,
+            updated_at: null,
+          };
+
+          databaseAccessor.authentication.saveAuthentication(
+            updatedAuthenticationEntry,
+          );
+        }
+
+        await secureStorage.setItem(SecureStorageKeys.ACCESS_TOKEN, 'token');
+        await secureStorage.setItem(
+          SecureStorageKeys.REFRESH_TOKEN,
+          'refreshToken',
+        );
+
+        setIsAuthenticated(true);
+      }
     } finally {
       setIsLoading(false);
     }
