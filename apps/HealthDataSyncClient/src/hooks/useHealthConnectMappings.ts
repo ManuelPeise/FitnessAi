@@ -13,9 +13,15 @@ type HealthConnectModalProps = {
   mapping: MappingTableEntry | null;
 };
 
+type MappingFeedback = {
+  kind: 'info' | 'warning' | 'error';
+  message: string;
+};
+
 type UseHealthConnectMappingsReturnType = {
   isLoading: boolean;
   mappings: MappingTableEntry[];
+  feedback: MappingFeedback | null;
   modalProps: HealthConnectModalProps | null;
   handleModalStateChanged: (
     isVisible: boolean,
@@ -38,6 +44,7 @@ export const useHealthConnectMappings = (
 
   const [mappings, setMappings] = React.useState<MappingTableEntry[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [feedback, setFeedback] = React.useState<MappingFeedback | null>(null);
   const [modalProps, setModalProps] = React.useState<HealthConnectModalProps>({
     isVisible: false,
     mapping: null,
@@ -55,28 +62,36 @@ export const useHealthConnectMappings = (
   );
 
   const loadMappings = React.useCallback(async () => {
-    if (currentUserId == null) {
-      setMappings([]);
-      return;
-    }
+    try {
+      if (currentUserId == null) {
+        setMappings([]);
+        return;
+      }
 
-    const mappingsFromDb =
-      await databaseAccessor.mappingTable.getMappingEntries(
-        currentUserId,
-        type,
+      const mappingsFromDb =
+        await databaseAccessor.mappingTable.getMappingEntries(
+          currentUserId,
+          type,
+        );
+
+      setMappings(mappingsFromDb);
+    } catch (error) {
+      setFeedback({
+        kind: 'error',
+        message: getResource(
+          'healthConnect.descriptionMappingInitializationFailed',
+        ),
+      });
+      console.error(
+        getResource('healthConnect.descriptionMappingInitializationFailed'),
+        error,
       );
-
-    setMappings(mappingsFromDb);
+    }
   }, [currentUserId, type]);
 
   const updateMapping = React.useCallback(
     async (id: number, mappingUpdate: Partial<MappingTableEntry>) => {
       if (currentUserId == null) {
-        console.error(
-          getResource(
-            'healthConnect.descriptionCannotUpdateMappingWithoutUser',
-          ),
-        );
         return;
       }
 
@@ -142,7 +157,7 @@ export const useHealthConnectMappings = (
               type: type,
               isActive: false,
               source: origin,
-              target: '',
+              target: origin,
             };
           },
         );
@@ -154,10 +169,27 @@ export const useHealthConnectMappings = (
           );
 
         setMappings(mappingsFromDb);
+        setFeedback({
+          kind: 'info',
+          message: `${getResource(
+            'healthConnect.descriptionMappingInitializationSucceededPrefix',
+          )} ${originsToProcess.length}.`,
+        });
+      } else {
+        setFeedback({
+          kind: 'warning',
+          message: getResource('healthConnect.descriptionNoNewMappingsFound'),
+        });
       }
     } catch (err) {
+      setFeedback({
+        kind: 'error',
+        message: getResource(
+          'healthConnect.descriptionMappingInitializationFailed',
+        ),
+      });
       console.error(
-        getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        getResource('healthConnect.descriptionMappingInitializationFailed'),
         err,
       );
     } finally {
@@ -209,7 +241,7 @@ export const useHealthConnectMappings = (
               type: type,
               isActive: false,
               source: metricType,
-              target: '',
+              target: metricType,
             };
           },
         );
@@ -220,10 +252,27 @@ export const useHealthConnectMappings = (
             newMappings,
           );
         setMappings(mappingsFromDb);
+        setFeedback({
+          kind: 'info',
+          message: `${getResource(
+            'healthConnect.descriptionMappingInitializationSucceededPrefix',
+          )} ${metricTypesToProcess.length}.`,
+        });
+      } else {
+        setFeedback({
+          kind: 'warning',
+          message: getResource('healthConnect.descriptionNoNewMappingsFound'),
+        });
       }
     } catch (err) {
+      setFeedback({
+        kind: 'error',
+        message: getResource(
+          'healthConnect.descriptionMappingInitializationFailed',
+        ),
+      });
       console.error(
-        getResource('healthConnect.descriptionEnsurePermissionsFailed'),
+        getResource('healthConnect.descriptionMappingInitializationFailed'),
         err,
       );
     } finally {
@@ -243,6 +292,7 @@ export const useHealthConnectMappings = (
   return {
     isLoading,
     mappings,
+    feedback,
     modalProps,
     handleModalStateChanged,
     updateMapping,

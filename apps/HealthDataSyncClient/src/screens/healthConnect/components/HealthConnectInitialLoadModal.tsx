@@ -1,7 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import ButtonComponent from '../../../components/inputComponents/ButtonComponent';
-import SwitchComponent from '../../../components/inputComponents/SwitchComponent';
 import TextField from '../../../components/inputComponents/TextField';
 import { ILocaleProps } from '../../../lib/localization';
 import { colorMap } from '../../../lib/styles/colorMap';
@@ -10,13 +9,9 @@ interface IProps extends Pick<ILocaleProps, 'getResource'> {
   visible: boolean;
   isExecuting: boolean;
   initialLoadDays: string;
-  loadExerciseSchedule: boolean;
-  loadHealthDataSchedule: boolean;
   canLoadInitialize: boolean;
   onClose: () => void;
   onInitialLoadDaysChanged: (value: string) => void;
-  onLoadExerciseScheduleChanged: (value: boolean) => void;
-  onLoadHealthDataScheduleChanged: (value: boolean) => void;
   onLoad: () => void;
 }
 
@@ -25,13 +20,9 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
     visible,
     isExecuting,
     initialLoadDays,
-    loadExerciseSchedule,
-    loadHealthDataSchedule,
     canLoadInitialize,
     onClose,
     onInitialLoadDaysChanged,
-    onLoadExerciseScheduleChanged,
-    onLoadHealthDataScheduleChanged,
     onLoad,
     getResource,
   } = props;
@@ -46,7 +37,7 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
           <Text style={styles.sectionTitle}>
-            {getResource('common.labelInitialize')}
+            {getResource('common.labelPushOnDemand')}
           </Text>
 
           <TextField
@@ -60,28 +51,6 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
             disabled={isExecuting}
           />
 
-          <View style={styles.activeRow}>
-            <Text style={styles.activeLabel}>
-              {getResource('healthConnect.labelExerciseDataExport')}
-            </Text>
-            <SwitchComponent
-              checked={loadExerciseSchedule}
-              onValueChange={onLoadExerciseScheduleChanged}
-              disabled={isExecuting}
-            />
-          </View>
-
-          <View style={styles.activeRow}>
-            <Text style={styles.activeLabel}>
-              {getResource('healthConnect.labelHealthDataExport')}
-            </Text>
-            <SwitchComponent
-              checked={loadHealthDataSchedule}
-              onValueChange={onLoadHealthDataScheduleChanged}
-              disabled={isExecuting}
-            />
-          </View>
-
           <View style={styles.actionButtonsRow}>
             <ButtonComponent
               title={getResource('common.labelCancel')}
@@ -89,9 +58,11 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
               disabled={isExecuting}
             />
             <ButtonComponent
-              title={getResource('common.labelLoad')}
+              title={getResource('common.labelPush')}
               onPress={onLoad}
+              isLoading={isExecuting}
               disabled={!canLoadInitialize}
+              minWidth={80}
             />
           </View>
         </View>

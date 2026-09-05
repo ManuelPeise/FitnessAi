@@ -1,4 +1,5 @@
-﻿using Data.Database.Entities.User;
+﻿using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.User;
 
 namespace Data.Accessor.Interfaces
 {
@@ -6,7 +7,7 @@ namespace Data.Accessor.Interfaces
     {
         IRepositoryBase<UserEntity> UserRepository { get; }
         IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository { get; }
-
+        IRepositoryBase<HealthConnectDataEntity> HealthConnectDataRepository { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

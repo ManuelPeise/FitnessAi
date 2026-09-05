@@ -1,30 +1,25 @@
 ﻿using Core.Api.AuthorizationAttributes;
+using Logic.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Enums.Authentication;
 using Shared.Models.HealthConnect;
-using System.Text.Json;
 
 namespace Core.Api.ApiControllers.Import
 {
     public class HealthConnectImportController: ApiControllerBase
     {
-        public HealthConnectImportController()
-        {
-            
-        }
+        private readonly IHealthDataImport _healthDataImport;
 
-        [HttpPost(Name = "ImportHealthData")]
-        public async Task ImportHealthData()
+        public HealthConnectImportController(IHealthDataImport healthDataImport)
         {
-
+            _healthDataImport = healthDataImport;
         }
 
         [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
-        [HttpPost(Name = "ImportTrainingData")]
-        public async Task ImportTrainingData([FromBody] List<HealthConnectTrainingData> trainingData)
+        [HttpPost(Name = "ImportHealthData")]
+        public async Task ImportHealthData([FromBody] List<HealthConnectDataExport> dataExportModels)
         {
-            Console.WriteLine(JsonSerializer.Serialize(trainingData));
-
+            await _healthDataImport.ImportHealthData(dataExportModels);
         }
     }
 }

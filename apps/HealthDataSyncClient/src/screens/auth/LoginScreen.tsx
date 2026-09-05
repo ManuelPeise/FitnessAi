@@ -56,15 +56,13 @@ const LoginScreen: React.FC<ILocaleProps> = props => {
           disabled={isLoading}
         />
         {error && <Text style={styles.error}>{error}</Text>}
-        {isLoading ? (
-          <ActivityIndicator color={colorMap.primary} />
-        ) : (
-          <ButtonComponent
-            title={getResource('common.labelSignIn')}
-            onPress={onLogin}
-            disabled={isLoginDisabled}
-          />
-        )}
+        <ButtonComponent
+          title={getResource('common.labelSignIn')}
+          onPress={onLogin}
+          isLoading={isLoading}
+          minWidth={80}
+          disabled={isLoginDisabled}
+        />
       </View>
     </View>
   );

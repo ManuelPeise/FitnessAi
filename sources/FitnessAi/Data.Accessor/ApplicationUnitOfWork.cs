@@ -1,6 +1,7 @@
 ﻿using Data.Accessor.Interfaces;
 using Data.Database;
 using Data.Database.Entities;
+using Data.Database.Entities.HealthConnect;
 using Data.Database.Entities.User;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,10 @@ namespace Data.Accessor
         private readonly HttpContext _httpContext;
         private IRepositoryBase<UserEntity>? _userRepository;
         private IRepositoryBase<UserCredentialsEntity> _userCredentialsRepository;
-
+        private IRepositoryBase<HealthConnectDataEntity> _healthConnectDataRepository;
         public IRepositoryBase<UserEntity> UserRepository => _userRepository ?? new RepositoryBase<UserEntity>(_context);
         public IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository => _userCredentialsRepository ?? new RepositoryBase<UserCredentialsEntity>(_context);
-        
+        public IRepositoryBase<HealthConnectDataEntity> HealthConnectDataRepository => _healthConnectDataRepository ?? new RepositoryBase<HealthConnectDataEntity>(_context);
 
         public ApplicationUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
@@ -24,6 +25,7 @@ namespace Data.Accessor
             _httpContext = httpContextAccessor.HttpContext;
             _userRepository = new RepositoryBase<UserEntity>(_context);
             _userCredentialsRepository = new RepositoryBase<UserCredentialsEntity>(_context);
+            _healthConnectDataRepository = new RepositoryBase<HealthConnectDataEntity>(_context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

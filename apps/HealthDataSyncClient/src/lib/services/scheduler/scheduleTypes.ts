@@ -1,4 +1,3 @@
-import { RecordType } from 'react-native-health-connect';
 import {
   MappingTableEntry,
   ScheduleSettingsTableEntry,
@@ -59,22 +58,6 @@ export enum HealthConnectDataUnitEnum {
   RATE = 7,
   KILOMETERS_PER_HOUR = 8,
 }
-export const excersiseRecordTypes: RecordType[] = [
-  'ActiveCaloriesBurned',
-  'CyclingPedalingCadence',
-  'Distance',
-  'ElevationGained',
-  'HeartRate',
-  'HeartRateVariabilityRmssd',
-  'OxygenSaturation',
-  'Power',
-  'RespiratoryRate',
-  'Speed',
-  'Steps',
-  'StepsCadence',
-  'TotalCaloriesBurned',
-  'Vo2Max',
-];
 export type HealthConnectMappingMap = { [key: string]: MappingTableEntry };
 
 export type HealthConnectScheduleData = {
@@ -100,6 +83,8 @@ export type HealthConnectDataEntry = {
   type: HealthConnectRecordTypeEnum;
   unit: HealthConnectDataUnitEnum;
   value: number;
+  startTimestamp: string;
+  endTimestamp: string;
 };
 
 export type HealthConnectDataExport = {

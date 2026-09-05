@@ -40,5 +40,7 @@
   "descriptionBackgroundTaskServiceInitFailed": "Failed to initialize background task service.",
   "descriptionPersistAuthenticationFailed": "Failed to persist authentication.",
   "descriptionPersistScheduleFailedPrefix": "Failed to persist schedule of type",
-  "descriptionHealthConnectInitializeFailed": "Health Connect failed to initialize."
+  "descriptionHealthConnectInitializeFailed": "Health Connect failed to initialize.",
+  "labelPushOnDemand": "Push on demand",
+  "labelPush": "Push"
 }

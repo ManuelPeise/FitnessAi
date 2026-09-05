@@ -1,26 +1,36 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
 import { colorMap } from '../../lib/styles/colorMap';
 
 interface IProps {
   title: string;
   disabled?: boolean;
+  isLoading?: boolean;
+  minWidth?: number;
+
   onPress: () => void | Promise<void>;
 }
 
 const ButtonComponent: React.FC<IProps> = props => {
-  const { title, onPress, disabled } = props;
+  const { title, onPress, disabled, isLoading, minWidth } = props;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       style={[
         styles.button,
+        { minWidth: minWidth ?? 0 },
         disabled ? styles.disabledButton : styles.enabledButton,
       ]}
       disabled={disabled}
     >
-      <Text style={styles.buttonText}>{title}</Text>
+      {!isLoading && <Text style={styles.buttonText}>{title}</Text>}
+      {isLoading && <ActivityIndicator color={colorMap.primary} />}
     </TouchableOpacity>
   );
 };

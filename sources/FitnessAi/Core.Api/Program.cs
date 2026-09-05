@@ -8,4 +8,6 @@ var app = builder.Build();
 
 AppConfiguration.ConfigureAppServices(app);
 
+await DbMigrator.Migrate(app.Services);
+
 app.Run();

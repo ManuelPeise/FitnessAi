@@ -13,7 +13,7 @@ import {
 } from '../storage/secureStorage';
 import { getResource } from '../../localization';
 
-const scheduleSyncServiceUrl = 'HealthConnectImport/ImportTrainingData';
+const scheduleSyncServiceUrl = 'HealthConnectImport/ImportHealthData';
 
 type ExecuteManuallyOptions = {
   initialLoadDays?: number;
@@ -27,7 +27,6 @@ type ScheduleExecutionResult = {
 
 class HealthConnectScheduleService {
   async executeDueSchedules() {
-    await this.execute('HealthConnectExerciseDataExport');
     await this.execute('HealthConnectHealthDataExport');
   }
 
@@ -55,30 +54,22 @@ class HealthConnectScheduleService {
           )
         : utils.getStartOfDay(currentTimeStamp);
 
-    switch (type) {
-      case 'HealthConnectExerciseDataExport':
-        return await this.processHealthConnectHealthDataExport(
-          userId,
-          type,
-          startTimeStamp,
-          currentTimeStamp,
-        );
-      case 'HealthConnectHealthDataExport':
-        return await this.processHealthConnectHealthDataExport(
-          userId,
-          type,
-          startTimeStamp,
-          currentTimeStamp,
-        );
-      default:
-        return {
-          success: false,
-          pushedItems: 0,
-          message: `${getResource(
-            'healthConnect.descriptionUnhandledScheduleTypePrefix',
-          )}: ${type}`,
-        };
+    if (type !== 'HealthConnectHealthDataExport') {
+      return {
+        success: false,
+        pushedItems: 0,
+        message: `${getResource(
+          'healthConnect.descriptionUnhandledScheduleTypePrefix',
+        )}: ${type}`,
+      };
     }
+
+    return await this.processHealthConnectHealthDataExport(
+      userId,
+      type,
+      startTimeStamp,
+      currentTimeStamp,
+    );
   }
 
   private async getCurrentUserId(): Promise<number> {

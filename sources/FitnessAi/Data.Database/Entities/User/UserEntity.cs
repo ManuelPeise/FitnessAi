@@ -1,4 +1,5 @@
-﻿using Shared.Enums.Authentication;
+﻿using Data.Database.Entities.HealthConnect;
+using Shared.Enums.Authentication;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Database.Entities.User
@@ -14,7 +15,7 @@ namespace Data.Database.Entities.User
         public long CredentialsId { get; set; }
         [ForeignKey(nameof(CredentialsId))]
         public UserCredentialsEntity UserCredentials { get; set; } = null!;
+        public HashSet<HealthConnectDataEntity> HealthData { get; set; } = [];
 
-        
     }
 }

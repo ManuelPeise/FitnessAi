@@ -3,11 +3,9 @@ export type HealthConnectMappingType =
   | 'HealthConnectMetric';
 
 export type ScheduleSettingsType =
-  | 'HealthConnectExerciseDataExport'
-  | 'HealthConnectHealthDataExport';
+  'HealthConnectHealthDataExport';
 
 export const scheduleSettingsTypes: ScheduleSettingsType[] = [
-  'HealthConnectExerciseDataExport',
   'HealthConnectHealthDataExport',
 ];
 
@@ -99,7 +97,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS schedule_settings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('HealthConnectExerciseDataExport', 'HealthConnectHealthDataExport')),
+  type TEXT NOT NULL CHECK (type IN ('HealthConnectHealthDataExport')),
   is_active INTEGER NOT NULL DEFAULT 0 CHECK (is_active IN (0, 1)),
   hour INTEGER NOT NULL DEFAULT 0,
   minute INTEGER NOT NULL DEFAULT 0,

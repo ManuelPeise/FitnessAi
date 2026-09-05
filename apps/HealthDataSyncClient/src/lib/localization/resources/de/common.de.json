@@ -40,5 +40,7 @@
   "descriptionBackgroundTaskServiceInitFailed": "Initialisierung des Hintergrundtask-Dienstes fehlgeschlagen.",
   "descriptionPersistAuthenticationFailed": "Authentifizierung konnte nicht gespeichert werden.",
   "descriptionPersistScheduleFailedPrefix": "Zeitplan konnte nicht gespeichert werden, Typ",
-  "descriptionHealthConnectInitializeFailed": "Health Connect konnte nicht initialisiert werden."
+  "descriptionHealthConnectInitializeFailed": "Health Connect konnte nicht initialisiert werden.",
+  "labelPushOnDemand": "Auf Abruf senden",
+  "labelPush": "Senden"
 }

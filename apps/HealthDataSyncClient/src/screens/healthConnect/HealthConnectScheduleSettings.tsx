@@ -1,5 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type {
   ScheduleSettingsType,
   ScheduleFrequency,
@@ -22,9 +28,6 @@ const buildSuccessMessage = (resourcePrefix: string, pushedItems: number) => {
 
 const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
   const { getResource } = props;
-  const exerciseSchedule = useScheduleSettings(
-    'HealthConnectExerciseDataExport',
-  );
   const healthDataSchedule = useScheduleSettings(
     'HealthConnectHealthDataExport',
   );
@@ -36,9 +39,6 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
   const [isInitializeModalVisible, setIsInitializeModalVisible] =
     React.useState(false);
   const [initialLoadDays, setInitialLoadDays] = React.useState('1');
-  const [loadExerciseSchedule, setLoadExerciseSchedule] = React.useState(false);
-  const [loadHealthDataSchedule, setLoadHealthDataSchedule] =
-    React.useState(false);
 
   const handleInitialLoadDaysChanged = React.useCallback((value: string) => {
     const normalized = value.replace(/[^0-9]/g, '');
@@ -64,10 +64,7 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
     parsedInitialLoadDays >= 1 &&
     parsedInitialLoadDays <= 365;
 
-  const canLoadInitialize =
-    isInitialLoadValid &&
-    (loadExerciseSchedule || loadHealthDataSchedule) &&
-    !isExecuting;
+  const canLoadInitialize = isInitialLoadValid && !isExecuting;
 
   const getRunDisabledHint = React.useCallback(
     (scheduleState: ScheduleState) => {
@@ -149,10 +146,6 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
           message,
         };
       } catch (executionError) {
-        console.error(
-          getResource('healthConnect.descriptionScheduleExecutionFailed'),
-          executionError,
-        );
         return {
           success: false,
           pushedItems: 0,
@@ -195,68 +188,43 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
       return;
     }
 
-    const selectedSchedules: Array<{
-      type: ScheduleSettingsType;
-      state: ScheduleState;
-    }> = [];
-
-    if (loadExerciseSchedule) {
-      selectedSchedules.push({
-        type: 'HealthConnectExerciseDataExport',
-        state: exerciseSchedule,
-      });
-    }
-
-    if (loadHealthDataSchedule) {
-      selectedSchedules.push({
-        type: 'HealthConnectHealthDataExport',
-        state: healthDataSchedule,
-      });
-    }
-
-    let pushedItems = 0;
-
-    for (let i = 0; i < selectedSchedules.length; i++) {
-      const selection = selectedSchedules[i];
-      const result = await runSchedule(selection.type, selection.state, {
+    const result = await runSchedule(
+      'HealthConnectHealthDataExport',
+      healthDataSchedule,
+      {
         initialLoadDays: parsedInitialLoadDays,
+      },
+    );
+
+    if (!result) {
+      return;
+    }
+
+    if (!result.success) {
+      setExecutionFeedback({
+        kind: 'error',
+        message: result.message,
       });
-
-      if (!result) {
-        continue;
-      }
-
-      if (!result.success) {
-        setExecutionFeedback({
-          kind: 'error',
-          message: result.message,
-        });
-        return;
-      }
-
-      pushedItems += result.pushedItems;
+      return;
     }
 
     setExecutionFeedback({
       kind: 'success',
       message:
-        pushedItems > 0
+        result.pushedItems > 0
           ? buildSuccessMessage(
               getResource(
                 'healthConnect.descriptionInitialLoadCompletedPrefix',
               ),
-              pushedItems,
+              result.pushedItems,
             )
           : getResource('healthConnect.descriptionInitialLoadCompletedNoData'),
     });
     setIsInitializeModalVisible(false);
   }, [
-    exerciseSchedule,
     getResource,
     healthDataSchedule,
     isInitialLoadValid,
-    loadExerciseSchedule,
-    loadHealthDataSchedule,
     parsedInitialLoadDays,
     runSchedule,
   ]);
@@ -382,10 +350,36 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
               {getResource('healthConnect.descriptionScheduleSaved')}
             </Text>
           ) : null}
+
+          {executionFeedback ? (
+            <Text
+              style={
+                executionFeedback.kind === 'success'
+                  ? styles.successText
+                  : styles.errorText
+              }
+            >
+              {executionFeedback.message}
+            </Text>
+          ) : null}
+
+          <View style={styles.cardFooter}>
+            <ButtonComponent
+              title={getResource('common.labelInitialize')}
+              disabled={isExecuting}
+              onPress={() => setIsInitializeModalVisible(true)}
+            />
+          </View>
         </View>
       );
     },
-    [getResource, getRunDisabledHint, handleExecuteNow, isExecuting],
+    [
+      executionFeedback,
+      getResource,
+      getRunDisabledHint,
+      handleExecuteNow,
+      isExecuting,
+    ],
   );
 
   return (
@@ -396,49 +390,19 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
         keyboardShouldPersistTaps="handled"
       >
         {renderScheduleCard(
-          'HealthConnectExerciseDataExport',
-          'healthConnect.captionScheduleExercise',
-          exerciseSchedule,
-        )}
-
-        {renderScheduleCard(
           'HealthConnectHealthDataExport',
           'healthConnect.captionScheduleHealthData',
           healthDataSchedule,
         )}
-
-        {executionFeedback ? (
-          <Text
-            style={
-              executionFeedback.kind === 'success'
-                ? styles.successText
-                : styles.errorText
-            }
-          >
-            {executionFeedback.message}
-          </Text>
-        ) : null}
       </ScrollView>
-
-      <View style={styles.footer}>
-        <ButtonComponent
-          title={getResource('common.labelInitialize')}
-          disabled={isExecuting}
-          onPress={() => setIsInitializeModalVisible(true)}
-        />
-      </View>
 
       <HealthConnectInitialLoadModal
         visible={isInitializeModalVisible}
         isExecuting={isExecuting}
         initialLoadDays={initialLoadDays}
-        loadExerciseSchedule={loadExerciseSchedule}
-        loadHealthDataSchedule={loadHealthDataSchedule}
         canLoadInitialize={canLoadInitialize}
         onClose={() => setIsInitializeModalVisible(false)}
         onInitialLoadDaysChanged={handleInitialLoadDaysChanged}
-        onLoadExerciseScheduleChanged={setLoadExerciseSchedule}
-        onLoadHealthDataScheduleChanged={setLoadHealthDataSchedule}
         onLoad={handleInitialize}
         getResource={getResource}
       />
@@ -452,9 +416,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   contentContainer: {
+    flexGrow: 1,
     width: '100%',
-    gap: 14,
-    paddingBottom: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 12,
   },
   sectionCard: {
     borderWidth: 1,
@@ -463,6 +429,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 10,
     width: '100%',
+    maxWidth: 860,
     backgroundColor: colorMap.surface,
     shadowColor: colorMap.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -523,10 +490,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-  footer: {
-    paddingTop: 10,
+  cardFooter: {
+    paddingTop: 8,
     alignItems: 'flex-end',
-    textAlign: 'center',
   },
 });
 
