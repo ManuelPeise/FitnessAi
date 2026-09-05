@@ -3,6 +3,7 @@ import * as Keychain from 'react-native-keychain';
 export enum SecureStorageKeys {
   ACCESS_TOKEN = 'ACCESS_TOKEN',
   REFRESH_TOKEN = 'REFRESH_TOKEN',
+  CURRENT_USER_ID = 'CURRENT_USER_ID',
 }
 
 export const secureStorage = {

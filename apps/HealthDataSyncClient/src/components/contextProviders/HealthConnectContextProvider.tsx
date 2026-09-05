@@ -79,7 +79,6 @@ const HealthConnectProvider = ({ children }: HealthConnectProviderProps) => {
       setIsInitialized(result);
     };
     initialize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

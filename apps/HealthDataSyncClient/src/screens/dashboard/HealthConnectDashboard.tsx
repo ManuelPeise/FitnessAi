@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { globalStyles } from '../../lib/styles/globalStyles';
+import { colorMap } from '../../lib/styles/colorMap';
 import {
   DashboardProps,
   AppStackRoutes,
@@ -15,17 +16,27 @@ const HealthConnectDashboard: React.FC<DashboardProps> = props => {
 
   return (
     <View style={globalStyles.container}>
-      <Text style={{ color: '#ffffff', margin: 30 }}>
-        Health Connect Dashboard
-      </Text>
-      <TouchableOpacity
-        onPress={goToSettings}
-        style={{ backgroundColor: '#007bff', padding: 10, borderRadius: 5 }}
-      >
-        <Text style={{ color: '#ffffff' }}>Go to Settings</Text>
+      <Text style={styles.title}>Health Connect Dashboard</Text>
+      <TouchableOpacity onPress={goToSettings} style={styles.button}>
+        <Text style={styles.buttonText}>Go to Settings</Text>
       </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  title: {
+    color: colorMap.white,
+    margin: 30,
+  },
+  button: {
+    backgroundColor: colorMap.primary,
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: colorMap.white,
+  },
+});
 
 export default HealthConnectDashboard;
