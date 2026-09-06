@@ -1,6 +1,7 @@
 ﻿using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Models.Scheduler;
 using Logic.Services.Interfaces;
 using Logic.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -10,17 +11,23 @@ namespace Logic.Services.DataImport
 {
     public class HealthDataImport : IHealthDataImport
     {
+        private const string HealthConnectTrainingJobName = "Ai Health Connect Training Data Job";
+        private const string HealthConnectTrainingJobDescription = "Train the Ai model with the imported health data.";
+        private const string HealthConnectTrainingJobUrl = "/api/ai/health-connect/train";
         private readonly ILogger<HealthDataImport> _logger;
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
+        private readonly IScheduledJobService _scheduledJobService;
         private readonly ICurrentUserService _currentUserService;
 
         public HealthDataImport(
             ILogger<HealthDataImport> logger,
             IApplicationUnitOfWork applicationUnitOfWork,
+            IScheduledJobService scheduledJobService,
             ICurrentUserService currentUserService)
         {
             _logger = logger;
             _applicationUnitOfWork = applicationUnitOfWork;
+            _scheduledJobService = scheduledJobService;
             _currentUserService = currentUserService;
         }
 
@@ -101,7 +108,18 @@ namespace Logic.Services.DataImport
                     .HealthConnectDataRepository
                     .AddRangeAsync(entitiesToPersist);
 
-                await _applicationUnitOfWork.SaveChangesAsync();
+                var addedRows = await _applicationUnitOfWork.SaveChangesAsync();
+
+                if(addedRows > 0)
+                {
+                    await _scheduledJobService.AddJobAsync(
+                        HealthConnectTrainingJobName,
+                        HealthConnectTrainingJobDescription,
+                        new WebServiceModel
+                        {
+                            Url = new Uri(HealthConnectTrainingJobUrl, UriKind.Relative),
+                        });
+                }
 
                 _logger.LogInformation(
                     "Health data import persisted {ImportedEntries} entries and skipped {SkippedEntries} duplicates for user {UserId}.",

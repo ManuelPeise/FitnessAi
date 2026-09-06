@@ -2,6 +2,7 @@
 using Data.Database;
 using Data.Database.Entities;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Scheduler;
 using Data.Database.Entities.Settings;
 using Data.Database.Entities.User;
 using Microsoft.AspNetCore.Http;
@@ -18,13 +19,14 @@ namespace Data.Accessor
         private IRepositoryBase<HealthConnectDataEntity> _healthConnectDataRepository;
         private IRepositoryBase<SettingsEntity> _settingsRepository;
         private IRepositoryBase<AISettingsEntity> _aiSettingsRepository;
+        private IRepositoryBase<ScheduledJobEntity> _scheduledJobsRepository;
 
         public IRepositoryBase<UserEntity> UserRepository => _userRepository ?? new RepositoryBase<UserEntity>(_context);
         public IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository => _userCredentialsRepository ?? new RepositoryBase<UserCredentialsEntity>(_context);
         public IRepositoryBase<HealthConnectDataEntity> HealthConnectDataRepository => _healthConnectDataRepository ?? new RepositoryBase<HealthConnectDataEntity>(_context);
         public IRepositoryBase<SettingsEntity> SettingsRepository => _settingsRepository ?? new RepositoryBase<SettingsEntity>(_context);
         public IRepositoryBase<AISettingsEntity> AISettingsRepository => _aiSettingsRepository ?? new RepositoryBase<AISettingsEntity>(_context);
-
+        public IRepositoryBase<ScheduledJobEntity> ScheduledJobsRepository => _scheduledJobsRepository ?? new RepositoryBase<ScheduledJobEntity>(_context);
         public ApplicationUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
@@ -34,6 +36,7 @@ namespace Data.Accessor
             _healthConnectDataRepository = new RepositoryBase<HealthConnectDataEntity>(_context);
             _settingsRepository = new RepositoryBase<SettingsEntity>(_context);
             _aiSettingsRepository = new RepositoryBase<AISettingsEntity>(_context);
+            _scheduledJobsRepository = new RepositoryBase<ScheduledJobEntity>(_context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

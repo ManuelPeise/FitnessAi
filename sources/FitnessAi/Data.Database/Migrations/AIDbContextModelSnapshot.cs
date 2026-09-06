@@ -19,17 +19,17 @@ namespace Data.Database.Migrations
                 .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("Data.Database.Entities.Ai.RunningTrainingDataEntity", b =>
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiHealthConnectExerciseTrainingDataEntity", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    b.Property<float>("Age")
-                        .HasColumnType("float");
+                    b.Property<decimal>("BodyFat")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("CaloriesBurned")
-                        .HasColumnType("float");
+                    b.Property<decimal>("CaloriesBurned")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -38,45 +38,57 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<decimal>("CyclingPedalingCadenceAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DistanceInMeters")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ElevationGain")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("EndTimeStamp")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<float>("Distance")
-                        .HasColumnType("float");
+                    b.Property<int>("ExerciseType")
+                        .HasColumnType("int");
 
-                    b.Property<float>("Duration")
-                        .HasColumnType("float");
+                    b.Property<decimal>("HeartRateAvg")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("EffectAerob")
-                        .HasColumnType("float");
-
-                    b.Property<float>("EffectAnaerob")
-                        .HasColumnType("float");
-
-                    b.Property<float>("ElevationGain")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Gender")
+                    b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<float>("HeartRate")
-                        .HasColumnType("float");
+                    b.Property<decimal>("LeanBodyMass")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("LossOfAltitude")
-                        .HasColumnType("float");
+                    b.Property<decimal>("MaxHeartRate")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("Pace")
-                        .HasColumnType("float");
+                    b.Property<decimal>("MinHeartRate")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("Performance")
-                        .HasColumnType("float");
+                    b.Property<decimal>("OxygenSaturationAvg")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("RunningTrainingDataGuid")
-                        .HasColumnType("char(36)");
+                    b.Property<decimal>("PowerAvg")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("StepFrequence")
-                        .HasColumnType("float");
+                    b.Property<decimal>("RespiratoryRatePerMinuteAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SpeedAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartTimeStamp")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("Steps")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("StepsCadenceAvg")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -84,11 +96,11 @@ namespace Data.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<float>("Vo2Max")
-                        .HasColumnType("float");
+                    b.Property<decimal>("Vo2Max")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<float>("Weight")
-                        .HasColumnType("float");
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -111,6 +123,9 @@ namespace Data.Database.Migrations
                     b.Property<string>("EndTimestamp")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("ExerciseType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Source")
                         .IsRequired()
@@ -143,6 +158,60 @@ namespace Data.Database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("HealthConnectDataTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Scheduler.ScheduledJobEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RequestModelJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScheduledJobsTable");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.Settings.AISettingsEntity", b =>

@@ -1,5 +1,6 @@
 ﻿using Data.Database.Entities.Ai;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Scheduler;
 using Data.Database.Entities.Settings;
 using Data.Database.Entities.User;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,8 @@ namespace Data.Database
         public DbSet<HealthConnectDataEntity> HealthConnectDataTable => Set<HealthConnectDataEntity>();
         public DbSet<SettingsEntity> SettingsTable => Set<SettingsEntity>();
         public DbSet<AISettingsEntity> AiSettingsTable => Set<AISettingsEntity>();
-        
+        public DbSet<ScheduledJobEntity> ScheduledJobsTable => Set<ScheduledJobEntity>();
+
         override protected void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

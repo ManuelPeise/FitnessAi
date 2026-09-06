@@ -5,8 +5,8 @@ namespace Core.Api.Bundels.Scheduler
 {
     public sealed class WebJob : IJob
     {
-        public Uri Url { get; set; } = default!;
-        public long FireTime { get; set; } = default!;
+        public string Url { get; set; } = default!;
+        public Dictionary<string, object> Parameters { get; set; } = new();
 
         private readonly ILogger<WebJob> _logger;
         private readonly IInternalHttpClient _httpClient;
@@ -27,7 +27,7 @@ namespace Core.Api.Bundels.Scheduler
                 "Executing WebJob at {Time}",
                 DateTimeOffset.UtcNow);
 
-                var response = await _httpClient.PostAsync(Url);
+                var response = await _httpClient.PostAsync(Url, Parameters, null, cancellationToken);
 
                 response.EnsureSuccessStatusCode();
 

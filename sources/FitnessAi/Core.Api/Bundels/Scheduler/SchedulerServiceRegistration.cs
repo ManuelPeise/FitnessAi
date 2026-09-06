@@ -6,12 +6,16 @@ namespace Core.Api.Bundels.Scheduler
     {
         public static void AddSchedulerServices(this IServiceCollection services)
         {
+            var utcNow = DateTime.Now;
+
             services.AddQuartz(q =>
             {
                 q.ConfigureWebJob(
-                    url: "loadData",
-                    triggerName: "WebJobTrigger",
-                    cronExpression: "0/60 * * * * ?");
+                    url: "ScheduledTask/ProcessScheduledTasks",
+                    triggerName: "ScheduledTaskTrigger",
+                    cronExpression: "0 0/5 * * * ?",  // "0 0/15 * * * ?"
+                    now: utcNow,
+                    minuteOffset: 2);
             });
 
             services.AddQuartzHostedService(options =>
@@ -24,13 +28,37 @@ namespace Core.Api.Bundels.Scheduler
             this IQuartzBuilder builder,
             string url,
             string triggerName,
-            string cronExpression)
+            string cronExpression,
+            DateTime now,
+            int minuteOffset = 0)
         {
+            var dateBuilder = DateBuilder.Create()
+                    .AtHourMinuteAndSecond(now.Hour, GetMinuteOffset(now.Minute, minuteOffset), 0)
+                    .Build();
+
             builder.ScheduleJob<WebJob>(trigger => trigger
                 .WithIdentity(triggerName)
                 .WithDescription($"Trigger for {triggerName}")
-                .UsingJobData(job => job.Url, new Uri(url, UriKind.Relative))
+                .UsingJobData(job => job.Url, url)
+                .UsingJobData(job => job.Parameters, new Dictionary<string, object>())
+#if DEBUG
+                .StartNow()
+#else
+                .StartAt(dateBuilder)
+#endif
                 .WithCronSchedule(cronExpression));
+        }
+
+        private static int GetMinuteOffset(int minute, int minuteOffset)
+        {
+            var calculatedMinute = minute + minuteOffset;
+            
+            if (calculatedMinute > 59)
+            {
+                calculatedMinute -= 60;
+            }
+
+            return calculatedMinute;
         }
     }
 }

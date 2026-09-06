@@ -41,23 +41,27 @@ namespace Data.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    RunningTrainingDataGuid = table.Column<Guid>(type: "char(36)", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Gender = table.Column<string>(type: "longtext", nullable: false),
-                    Weight = table.Column<float>(type: "float", nullable: false),
-                    Age = table.Column<float>(type: "float", nullable: false),
-                    Duration = table.Column<float>(type: "float", nullable: false),
-                    Distance = table.Column<float>(type: "float", nullable: false),
-                    Pace = table.Column<float>(type: "float", nullable: false),
-                    HeartRate = table.Column<float>(type: "float", nullable: false),
-                    StepFrequence = table.Column<float>(type: "float", nullable: false),
-                    Performance = table.Column<float>(type: "float", nullable: false),
-                    ElevationGain = table.Column<float>(type: "float", nullable: false),
-                    LossOfAltitude = table.Column<float>(type: "float", nullable: false),
-                    EffectAerob = table.Column<float>(type: "float", nullable: false),
-                    EffectAnaerob = table.Column<float>(type: "float", nullable: false),
-                    Vo2Max = table.Column<float>(type: "float", nullable: false),
-                    CaloriesBurned = table.Column<float>(type: "float", nullable: false),
+                    Key = table.Column<string>(type: "longtext", nullable: false),
+                    ExerciseType = table.Column<int>(type: "int", nullable: false),
+                    StartTimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndTimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DistanceInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Steps = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Vo2Max = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    LeanBodyMass = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MaxHeartRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MinHeartRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ElevationGain = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CaloriesBurned = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    BodyFat = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    OxygenSaturationAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RespiratoryRatePerMinuteAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    HeartRateAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StepsCadenceAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PowerAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SpeedAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CyclingPedalingCadenceAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -66,6 +70,32 @@ namespace Data.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RunningTrainingDataTable", x => x.Id);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ScheduledJobsTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false),
+                    Description = table.Column<string>(type: "longtext", nullable: false),
+                    RequestModelJson = table.Column<string>(type: "longtext", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    FailedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ErrorMessage = table.Column<string>(type: "longtext", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduledJobsTable", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -157,6 +187,7 @@ namespace Data.Database.Migrations
                     Source = table.Column<string>(type: "longtext", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Unit = table.Column<int>(type: "int", nullable: false),
+                    ExerciseType = table.Column<int>(type: "int", nullable: true),
                     Value = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     StartTimestamp = table.Column<string>(type: "longtext", nullable: false),
                     EndTimestamp = table.Column<string>(type: "longtext", nullable: false),
@@ -210,6 +241,9 @@ namespace Data.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "RunningTrainingDataTable");
+
+            migrationBuilder.DropTable(
+                name: "ScheduledJobsTable");
 
             migrationBuilder.DropTable(
                 name: "UserTable");

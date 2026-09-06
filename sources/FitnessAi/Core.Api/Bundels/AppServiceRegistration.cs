@@ -72,9 +72,18 @@ namespace Core.Api.Bundels
                         policy.AddRequirements(
                             new ApiAuthorizationRequirement(UserRoleEnum.UserRole));
                     });
+                options.AddPolicy(
+                    AuthorizationPolicies.MaintenanceUserAuthentication,
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser();
+                        policy.AddRequirements(
+                            new MaintenanceUserAuthorizationRequirement(UserRoleEnum.MaintenanceRole));
+                    });
             });
 
             services.AddScoped<IAuthorizationHandler, ApiAuthorizationHandler>();
+            services.AddScoped<IAuthorizationHandler, MaintenanceUserAuthorizationHandler>();
 
             services.AddControllers();
 

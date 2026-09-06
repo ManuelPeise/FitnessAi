@@ -8,7 +8,8 @@ namespace Core.Api.HttpClients
         public static void RegisterHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<MaintenanceAuthenticationHandler>();
-            services.AddHttpClient<IInternalHttpClient, SchedulerHttpClient>(client =>
+            
+            services.AddHttpClient<IInternalHttpClient, InternalHttpClient>(client =>
             {
                 client.BaseAddress = GetBaseUrl(configuration);
             }).AddHttpMessageHandler<MaintenanceAuthenticationHandler>();

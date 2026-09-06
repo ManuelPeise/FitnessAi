@@ -2,6 +2,10 @@
 {
     public interface IInternalHttpClient
     {
-        Task<HttpResponseMessage> PostAsync(Uri requestUri, HttpContent? content = null, CancellationToken cancellationToken = default);
+        Task<HttpResponseMessage> PostAsync(
+            string requestUri, 
+            Dictionary<string, object>? parameters = null, 
+            HttpContent? content = null, 
+            CancellationToken cancellationToken = default);
     }
 }
