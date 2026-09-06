@@ -1,6 +1,7 @@
 ﻿using Data.Database.Entities.User;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,9 +10,15 @@ using System.Text;
 
 namespace Logic.Services.Authentication
 {
-    public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions)
+    public class JwtTokenService: IJwtTokenService
     {
-        private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+        private readonly JwtOptions _jwtOptions;
+        
+        public JwtTokenService(IOptions<JwtOptions> jwtOptions)
+        {
+            _jwtOptions = jwtOptions.Value;
+        }
+        
 
         public string CreateAccessToken(UserEntity user, DateTime nowUtc)
         {
@@ -42,13 +49,6 @@ namespace Logic.Services.Authentication
         {
             var randomBytes = RandomNumberGenerator.GetBytes(64);
             return Base64UrlEncoder.Encode(randomBytes);
-        }
-
-        public string ComputeTokenHash(string token)
-        {
-            var tokenBytes = Encoding.UTF8.GetBytes(token);
-            var hashBytes = SHA256.HashData(tokenBytes);
-            return Convert.ToHexString(hashBytes);
         }
     }
 }

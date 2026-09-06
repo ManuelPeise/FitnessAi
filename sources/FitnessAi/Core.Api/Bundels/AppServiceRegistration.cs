@@ -1,6 +1,9 @@
 ﻿using Core.Api.AuthorizationAttributes;
+using Core.Api.Bundels.Scheduler;
+using Core.Api.HttpClients;
 using Data.Accessor.DI;
 using Data.Database;
+using Logic.Ai.DI;
 using Logic.Services.DI;
 using Logic.Shared.DI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -77,9 +80,12 @@ namespace Core.Api.Bundels
 
             services.AddOpenApi();
 
-            ServiceRegistration.AddLogicServices(services);
-            DataAccessorServiceRegistration.AddDataAccessorServices(services);
-            SharedServiceRegistration.AddSharedServices(services);
+            services.RegisterHttpClients(builder.Configuration);
+            services.AddSchedulerServices();
+            services.AddLogicServices();
+            services.AddDataAccessorServices();
+            services.AddSharedServices();
+            services.AddAiServices();
         }
     }
 }

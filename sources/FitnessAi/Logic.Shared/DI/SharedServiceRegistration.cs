@@ -3,9 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Logic.Shared.DI
 {
-    public class SharedServiceRegistration
+    public static class SharedServiceRegistration
     {
-        public static void AddSharedServices(IServiceCollection services)
+        public static void AddSharedServices(this IServiceCollection services)
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
         }

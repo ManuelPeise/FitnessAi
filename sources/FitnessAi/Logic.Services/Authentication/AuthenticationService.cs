@@ -3,21 +3,21 @@ using Data.Accessor.Models;
 using Data.Database.Entities.User;
 using Logic.Services.Interfaces;
 using Logic.Shared;
-using Microsoft.Extensions.Options;
+using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
 
 namespace Logic.Services.Authentication
 {
     public class AuthenticationService : IAuthenticationService
     {
-       
-        private readonly JwtTokenService _jwtTokenService;
+        private readonly IJwtTokenService _jwtTokenService;
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
+        
         public AuthenticationService(
-            IOptions<JwtOptions> jwtOptions, 
+            IJwtTokenService jwtTokenService,
             IApplicationUnitOfWork applicationUnitOfWork)
         {
-            _jwtTokenService = new JwtTokenService(jwtOptions);
+            _jwtTokenService = jwtTokenService;
             _applicationUnitOfWork = applicationUnitOfWork;
         }
 

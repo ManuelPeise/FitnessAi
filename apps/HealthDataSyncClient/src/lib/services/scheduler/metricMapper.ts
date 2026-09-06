@@ -1,5 +1,6 @@
 import { ReadRecordsResult, RecordType } from 'react-native-health-connect';
 import {
+  ExerciseTypeEnum,
   HealthConnectDataEntry,
   HealthConnectDataUnitEnum,
   HealthConnectRecordTypeEnum,
@@ -25,12 +26,14 @@ const entry = (
   value: number,
   startTimestamp: string,
   endTimestamp: string,
+  exerciseType?: ExerciseTypeEnum,
 ): HealthConnectDataEntry => ({
   type,
   unit,
   value,
   startTimestamp,
   endTimestamp,
+  exerciseType,
 });
 
 export const mapMetric = (
@@ -106,8 +109,16 @@ export const mapMetric = (
           return [];
         }
 
-        const systolic = unitValue(record.systolic, 'inMillimetersOfMercury', NaN);
-        const diastolic = unitValue(record.diastolic, 'inMillimetersOfMercury', NaN);
+        const systolic = unitValue(
+          record.systolic,
+          'inMillimetersOfMercury',
+          NaN,
+        );
+        const diastolic = unitValue(
+          record.diastolic,
+          'inMillimetersOfMercury',
+          NaN,
+        );
         const value = Number.isFinite(systolic)
           ? systolic
           : Number.isFinite(diastolic)
@@ -249,18 +260,22 @@ export const mapMetric = (
         if (!start || !end) {
           return [];
         }
+        const exerciseType: ExerciseTypeEnum =
+          record.exerciseType as unknown as ExerciseTypeEnum;
         const startMs = Date.parse(start);
         const endMs = Date.parse(end);
         const durationMinutes =
           Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
             ? (endMs - startMs) / 60000
             : 0;
+
         return entry(
           HealthConnectRecordTypeEnum.ExerciseSession,
           HealthConnectDataUnitEnum.RATE,
           durationMinutes,
           start,
           end,
+          exerciseType,
         );
       });
     case 'FloorsClimbed':
@@ -526,9 +541,7 @@ export const mapMetric = (
           Array.isArray(record.deltas) && record.deltas.length > 0
             ? (() => {
                 const delta = record.deltas.find(isRecord);
-                return delta
-                  ? unitValue(delta.delta, 'inCelsius', 0)
-                  : 0;
+                return delta ? unitValue(delta.delta, 'inCelsius', 0) : 0;
               })()
             : 0;
 

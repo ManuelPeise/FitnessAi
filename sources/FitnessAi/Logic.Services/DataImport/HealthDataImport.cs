@@ -80,6 +80,7 @@ namespace Logic.Services.DataImport
                             Source = key,
                             Type = entry.Type,
                             Unit = entry.Unit,
+                            ExerciseType = entry.ExerciseType,
                             Value = entry.Value,
                             StartTimestamp = entry.StartTimestamp,
                             EndTimestamp = entry.EndTimestamp

@@ -3,6 +3,7 @@ using Logic.Services.DataImport;
 using Logic.Services.Interfaces;
 using Logic.Services.Seed;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Interfaces.Authentication;
 
 namespace Logic.Services.DI
 {
@@ -15,6 +16,7 @@ namespace Logic.Services.DI
             services.AddScoped<IHealthDataImport, HealthDataImport>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IJwtTokenService, JwtTokenService>();
         }
     }
 }

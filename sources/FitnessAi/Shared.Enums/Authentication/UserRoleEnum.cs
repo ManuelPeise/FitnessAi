@@ -4,5 +4,6 @@
     {
         UserRole = 0,
         AdminRole = 1,
+        MaintenanceRole = 2
     }
 }

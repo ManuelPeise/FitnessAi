@@ -12,7 +12,7 @@ namespace Data.Database
 
         public DbSet<UserEntity> UserTable => Set<UserEntity>();
         public DbSet<UserCredentialsEntity> UserCredentialsTable => Set<UserCredentialsEntity>();
-        public DbSet<RunningTrainingDataEntity> RunningTrainingDataTable => Set<RunningTrainingDataEntity>();
+        public DbSet<AiHealthConnectExerciseTrainingDataEntity> RunningTrainingDataTable => Set<AiHealthConnectExerciseTrainingDataEntity>();
         public DbSet<HealthConnectDataEntity> HealthConnectDataTable => Set<HealthConnectDataEntity>();
         public DbSet<SettingsEntity> SettingsTable => Set<SettingsEntity>();
         public DbSet<AISettingsEntity> AiSettingsTable => Set<AISettingsEntity>();

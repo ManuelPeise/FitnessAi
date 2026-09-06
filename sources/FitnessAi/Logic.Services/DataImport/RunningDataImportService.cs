@@ -52,27 +52,11 @@ namespace Logic.Services.DataImport
             //await _aiUnitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        private List<RunningTrainingDataEntity> MapModelsToEntity(IReadOnlyList<RunningDataImportModel> models, Guid runningTrainingDataGuid)
+        private List<AiHealthConnectExerciseTrainingDataEntity> MapModelsToEntity(IReadOnlyList<RunningDataImportModel> models, Guid runningTrainingDataGuid)
         {
-            var entities = models.Select(model => new RunningTrainingDataEntity
+            var entities = models.Select(model => new AiHealthConnectExerciseTrainingDataEntity
             {
-                RunningTrainingDataGuid = runningTrainingDataGuid,
-                Date = model.Date,
-                Age = model.Age,
-                Distance = model.Distance,
-                Duration = model.Duration,
-                Gender = model.Gender,
-                HeartRate = model.HeartRate,
-                LossOfAltitude = model.LossOfAltitude,
-                Pace = model.Pace,
-                Performance = model.Performance,
-                StepFrequence = model.StepFrequence,
-                Weight = model.Weight,
-                Vo2Max = model.Vo2Max,
-                EffectAerob = model.EffectAerob,
-                EffectAnaerob = model.EffectAnaerob,
-                ElevationGain = model.ElevationGain,
-                CaloriesBurned = model.CaloriesBurned
+                
             }).ToList();
 
             return entities;

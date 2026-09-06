@@ -9,6 +9,10 @@ namespace Data.Database.Entities.HealthConnect
         public string Source { get; set; } = null!;
         public HealthConnectRecordTypeEnum Type { get; set; }
         public HealthConnectDataUnitEnum Unit { get; set; }
+        /// <summary>
+        /// Type of exercise associated with the exercise session
+        /// </summary>
+        public ExerciseTypeEnum? ExerciseType { get; set; }
         public decimal Value { get; set; }
         public string StartTimestamp { get; set; } = string.Empty;
         public string EndTimestamp { get; set; } = string.Empty;

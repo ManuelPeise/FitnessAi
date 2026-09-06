@@ -1,5 +1,6 @@
 ﻿using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
+using Data.Database.Entities.Settings;
 using Data.Database.Entities.User;
 using Logic.Services.Interfaces;
 using Logic.Shared;
@@ -40,6 +41,15 @@ namespace Logic.Services.Seed
                     {
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
+                    Settings = new SettingsEntity
+                    {
+                        AiSettings = new AISettingsEntity
+                        {
+                            CanUseHealthDataForAiTraining = false,
+                            CanUseHealthDataAcceptedAt = null,
+                            CanUseHealthDataRejectedAt = null,
+                        }
+                    }
                 };
 
                 await _applicationUnitOfWork.UserRepository.AddAsync(userEntity);
@@ -77,6 +87,15 @@ namespace Logic.Services.Seed
                     {
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
+                    Settings = new SettingsEntity
+                    {
+                        AiSettings = new AISettingsEntity
+                        {
+                            CanUseHealthDataForAiTraining = false,
+                            CanUseHealthDataAcceptedAt = null,
+                            CanUseHealthDataRejectedAt = null,
+                        }
+                    }
                 };
 
                 await _applicationUnitOfWork.UserRepository.AddAsync(userEntity);

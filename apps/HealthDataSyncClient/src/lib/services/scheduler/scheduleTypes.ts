@@ -58,6 +58,71 @@ export enum HealthConnectDataUnitEnum {
   RATE = 7,
   KILOMETERS_PER_HOUR = 8,
 }
+
+export enum ExerciseTypeEnum {
+  OtherWorkout = 0,
+  Badminton = 2,
+  Baseball = 4,
+  Basketball = 5,
+  Biking = 8,
+  BikingStationary = 9,
+  BootCamp = 10,
+  Boxing = 11,
+  Calisthenics = 13,
+  Cricket = 14,
+  Dancing = 16,
+  Elliptical = 25,
+  ExerciseClass = 26,
+  Fencing = 27,
+  FootballAmerican = 28,
+  FootballAustralian = 29,
+  FrisbeeDisc = 31,
+  Golf = 32,
+  GuidedBreathing = 33,
+  Gymnastics = 34,
+  Handball = 35,
+  HighIntensityIntervalTraining = 36,
+  Hiking = 37,
+  IceHockey = 38,
+  IceSkating = 39,
+  MartialArts = 44,
+  Paddling = 46,
+  Paragliding = 47,
+  Pilates = 48,
+  Racquetball = 50,
+  RockClimbing = 51,
+  RollerHockey = 52,
+  Rowing = 53,
+  RowingMachine = 54,
+  Rugby = 55,
+  Running = 56,
+  RunningTreadmill = 57,
+  Sailing = 58,
+  ScubaDiving = 59,
+  Skating = 60,
+  Skiing = 61,
+  Snowboarding = 62,
+  Snowshoeing = 63,
+  Soccer = 64,
+  Softball = 65,
+  Squash = 66,
+  StairClimbing = 68,
+  StairClimbingMachine = 69,
+  StrengthTraining = 70,
+  Stretching = 71,
+  Surfing = 72,
+  SwimmingOpenWater = 73,
+  SwimmingPool = 74,
+  TableTennis = 75,
+  Tennis = 76,
+  Volleyball = 78,
+  Walking = 79,
+  WaterPolo = 80,
+  Weightlifting = 81,
+  Wheelchair = 82,
+  Yoga = 83,
+}
+
 export type HealthConnectMappingMap = { [key: string]: MappingTableEntry };
 
 export type HealthConnectScheduleData = {
@@ -82,6 +147,7 @@ export type HealthConnectExportMetaData = {
 export type HealthConnectDataEntry = {
   type: HealthConnectRecordTypeEnum;
   unit: HealthConnectDataUnitEnum;
+  exerciseType?: ExerciseTypeEnum;
   value: number;
   startTimestamp: string;
   endTimestamp: string;
