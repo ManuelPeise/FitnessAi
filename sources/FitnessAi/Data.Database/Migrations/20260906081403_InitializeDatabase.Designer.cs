@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(AIDbContext))]
-    [Migration("20260905114615_InitializeDatabase")]
+    [Migration("20260906081403_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -98,6 +98,119 @@ namespace Data.Database.Migrations
                     b.ToTable("RunningTrainingDataTable");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectDataEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EndTimestamp")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StartTimestamp")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("HealthConnectDataTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Settings.AISettingsEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("CanUseHealthDataAcceptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("CanUseHealthDataForAiTraining")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("CanUseHealthDataRejectedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AiSettingsTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Settings.SettingsEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AiSettingsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiSettingsId")
+                        .IsUnique();
+
+                    b.ToTable("SettingsTable");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.User.UserCredentialsEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -116,10 +229,6 @@ namespace Data.Database.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("RefreshToken")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Salt")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -165,6 +274,9 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<long>("SettingsId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -179,7 +291,32 @@ namespace Data.Database.Migrations
                     b.HasIndex("CredentialsId")
                         .IsUnique();
 
+                    b.HasIndex("SettingsId")
+                        .IsUnique();
+
                     b.ToTable("UserTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectDataEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany("HealthData")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Settings.SettingsEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.Settings.AISettingsEntity", "AiSettings")
+                        .WithOne()
+                        .HasForeignKey("Data.Database.Entities.Settings.SettingsEntity", "AiSettingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AiSettings");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.User.UserEntity", b =>
@@ -190,7 +327,20 @@ namespace Data.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Data.Database.Entities.Settings.SettingsEntity", "Settings")
+                        .WithOne()
+                        .HasForeignKey("Data.Database.Entities.User.UserEntity", "SettingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Settings");
+
                     b.Navigation("UserCredentials");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.User.UserEntity", b =>
+                {
+                    b.Navigation("HealthData");
                 });
 #pragma warning restore 612, 618
         }

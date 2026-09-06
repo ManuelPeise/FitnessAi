@@ -1,4 +1,5 @@
 ﻿using Data.Accessor.Interfaces;
+using Data.Accessor.Models;
 using Data.Database.Entities.User;
 using Logic.Services.Interfaces;
 using Logic.Shared;
@@ -20,6 +21,14 @@ namespace Logic.Services.Seed
         {
             try
             {
+                var existingUser = await _applicationUnitOfWork.UserRepository.GetSingleAsync(
+                    new DbQueryOptions<UserEntity> { WhereExpression = u => u.Email == userSeedModel.Email });
+
+                if (existingUser != null)
+                {
+                    return false;
+                }
+
                 var userEntity = new UserEntity
                 {
                     FirstName = userSeedModel.FirstName,
@@ -29,7 +38,6 @@ namespace Logic.Services.Seed
                     UserRole = UserRoleEnum.UserRole,
                     UserCredentials = new UserCredentialsEntity
                     {
-                        Salt = "",
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
                 };
@@ -50,6 +58,14 @@ namespace Logic.Services.Seed
         {
             try
             {
+                var existingUser = await _applicationUnitOfWork.UserRepository.GetSingleAsync(
+                   new DbQueryOptions<UserEntity> { WhereExpression = u => u.Email == userSeedModel.Email });
+
+                if (existingUser != null)
+                {
+                    return false;
+                }
+
                 var userEntity = new UserEntity
                 {
                     FirstName = userSeedModel.FirstName,
@@ -59,7 +75,6 @@ namespace Logic.Services.Seed
                     AppId = Guid.NewGuid().ToString(),
                     UserCredentials = new UserCredentialsEntity
                     {
-                        Salt = "",
                         PasswordHash = EncryptionHelper.HashPassword(userSeedModel.Password)
                     },
                 };

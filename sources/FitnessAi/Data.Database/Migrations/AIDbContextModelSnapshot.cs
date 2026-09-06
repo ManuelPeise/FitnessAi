@@ -145,6 +145,69 @@ namespace Data.Database.Migrations
                     b.ToTable("HealthConnectDataTable");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Settings.AISettingsEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("CanUseHealthDataAcceptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("CanUseHealthDataForAiTraining")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("CanUseHealthDataRejectedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AiSettingsTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Settings.SettingsEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AiSettingsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiSettingsId")
+                        .IsUnique();
+
+                    b.ToTable("SettingsTable");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.User.UserCredentialsEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -163,10 +226,6 @@ namespace Data.Database.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("RefreshToken")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Salt")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -212,6 +271,9 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<long>("SettingsId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -224,6 +286,9 @@ namespace Data.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CredentialsId")
+                        .IsUnique();
+
+                    b.HasIndex("SettingsId")
                         .IsUnique();
 
                     b.ToTable("UserTable");
@@ -240,6 +305,17 @@ namespace Data.Database.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Settings.SettingsEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.Settings.AISettingsEntity", "AiSettings")
+                        .WithOne()
+                        .HasForeignKey("Data.Database.Entities.Settings.SettingsEntity", "AiSettingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AiSettings");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.User.UserEntity", b =>
                 {
                     b.HasOne("Data.Database.Entities.User.UserCredentialsEntity", "UserCredentials")
@@ -247,6 +323,14 @@ namespace Data.Database.Migrations
                         .HasForeignKey("Data.Database.Entities.User.UserEntity", "CredentialsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Data.Database.Entities.Settings.SettingsEntity", "Settings")
+                        .WithOne()
+                        .HasForeignKey("Data.Database.Entities.User.UserEntity", "SettingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Settings");
 
                     b.Navigation("UserCredentials");
                 });
