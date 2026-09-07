@@ -6,9 +6,9 @@ namespace Data.Database.Entities.Ai
     {
         /// <summary>
         /// defines the key of the entity, which is a combination 
-        /// userId_ExerciseType_StartDate_EndDate.
+        /// The id of the exercise.
         /// </summary>
-        public string Key { get; set; } = null!;
+        public string ExcerciseId { get; set; } = string.Empty;
         /// <summary>
         /// Type of exercise associated with the exercise session
         /// </summary>

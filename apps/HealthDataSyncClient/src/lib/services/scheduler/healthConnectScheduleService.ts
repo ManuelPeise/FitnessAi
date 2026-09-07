@@ -12,6 +12,7 @@ import {
   UserInfo,
 } from '../storage/secureStorage';
 import { getResource } from '../../localization';
+import { HealthConnectApiModel } from './scheduleTypes';
 
 const scheduleSyncServiceUrl = 'HealthConnectImport/ImportHealthData';
 
@@ -47,6 +48,7 @@ class HealthConnectScheduleService {
   ): Promise<ScheduleExecutionResult> {
     const userId = await this.getCurrentUserId();
     const currentTimeStamp = new Date();
+    currentTimeStamp.setHours(23, 59, 59, 999);
     const startTimeStamp =
       initialLoadDays != null
         ? utils.getStartOfDay(
@@ -135,7 +137,10 @@ class HealthConnectScheduleService {
         return { success: true, pushedItems: 0 };
       }
 
-      if (exportModel.payload?.length === 0) {
+      if (
+        exportModel.trainingData?.length === 0 &&
+        exportModel.healthData?.length === 0
+      ) {
         return {
           success: true,
           pushedItems: 0,
@@ -145,17 +150,20 @@ class HealthConnectScheduleService {
         };
       }
 
-      const response = await apiClient.post(
-        scheduleSyncServiceUrl,
-        exportModel.payload,
-      );
+      const apiModel: HealthConnectApiModel = {
+        trainingData: exportModel.trainingData,
+        healthData: exportModel.healthData,
+      };
+
+      const response = await apiClient.post(scheduleSyncServiceUrl, apiModel);
 
       if (response.status === 200) {
         await this.updateSchedule(exportModel.schedule, to, true);
 
         return {
           success: true,
-          pushedItems: exportModel.payload.length,
+          pushedItems:
+            exportModel.trainingData.length + exportModel.healthData.length,
         };
       }
 

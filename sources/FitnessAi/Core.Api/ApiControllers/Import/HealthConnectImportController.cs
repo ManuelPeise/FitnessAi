@@ -17,9 +17,9 @@ namespace Core.Api.ApiControllers.Import
 
         [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpPost(Name = "ImportHealthData")]
-        public async Task ImportHealthData([FromBody] List<HealthConnectDataExport> dataExportModels)
+        public async Task ImportHealthData([FromBody] HealthConnectApiModel requestModel)
         {
-            await _healthDataImport.ImportHealthData(dataExportModels);
+            await _healthDataImport.ImportHealthConnectData(requestModel);
         }
     }
 }

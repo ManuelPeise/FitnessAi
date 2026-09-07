@@ -5,8 +5,8 @@ using Shared.Enums.Authentication;
 
 namespace Core.Api.ApiControllers.Ai
 {
-    [ApiAuthentication(UserRoleEnum.MaintenanceRole)]
-    public class AiTrainingDataGenerationController: ControllerBase
+    
+    public class AiTrainingDataGenerationController: ApiControllerBase
     {
         private readonly IAiTrainingDataBuilder _aiTrainingDataBuilder;
 
@@ -15,10 +15,11 @@ namespace Core.Api.ApiControllers.Ai
             _aiTrainingDataBuilder = aiTrainingDataBuilder;
         }
 
-        [HttpPost]
+        //[MaintenanceApiAuthentication(UserRoleEnum.MaintenanceRole)]
+        [HttpPost(Name = "GenerateAiTrainingData")]
         public async Task GenerateAiTrainingData()
         {
-           await _aiTrainingDataBuilder.BuildAiExerciseTrainingData();
+          await _aiTrainingDataBuilder.BuildAiExerciseTrainingData();
         }
     }
 }

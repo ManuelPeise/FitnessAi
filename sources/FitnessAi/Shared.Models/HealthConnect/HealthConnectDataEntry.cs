@@ -4,6 +4,9 @@ namespace Shared.Models.HealthConnect
 {
     public class HealthConnectDataEntry
     {
+        public string RecordId { get; set; } = string.Empty;
+        public string? ExerciseId { get; set; }
+        public string Origin { get; set; } = string.Empty;
         public HealthConnectRecordTypeEnum Type { get; set; }
         public HealthConnectDataUnitEnum Unit { get; set; }
         /// <summary>

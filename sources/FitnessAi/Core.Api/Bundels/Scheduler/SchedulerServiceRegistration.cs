@@ -13,7 +13,7 @@ namespace Core.Api.Bundels.Scheduler
                 q.ConfigureWebJob(
                     url: "ScheduledTask/ProcessScheduledTasks",
                     triggerName: "ScheduledTaskTrigger",
-                    cronExpression: "0 0/5 * * * ?",  // "0 0/15 * * * ?"
+                    cronExpression: "0 0/1 * * * ?",  // "0 0/15 * * * ?"
                     now: utcNow,
                     minuteOffset: 2);
             });

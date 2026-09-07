@@ -4,6 +4,6 @@ namespace Logic.Services.Interfaces
 {
     public interface IHealthDataImport
     {
-        Task ImportHealthData(List<HealthConnectDataExport> dataExportModels);
+        Task ImportHealthConnectData(HealthConnectApiModel requestModel);
     }
 }

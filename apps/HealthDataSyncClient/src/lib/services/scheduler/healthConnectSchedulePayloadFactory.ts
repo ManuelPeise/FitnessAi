@@ -41,7 +41,7 @@ class HealthConnectSchedulePayloadFactory {
         )} "${userId}" and type "${request.type}".`,
         error,
       );
-      return { payload: [], schedule: null };
+      return { trainingData: [], healthData: [], schedule: null };
     }
   };
 
@@ -55,23 +55,28 @@ class HealthConnectSchedulePayloadFactory {
     );
 
     if (!scheduleData) {
-      return { payload: [], schedule: null };
+      return { trainingData: [], healthData: [], schedule: null };
     }
 
     const { originMappings, metricMappings, schedule } = scheduleData;
 
     if (!originMappings || !metricMappings) {
-      return { payload: [], schedule: schedule };
+      return { trainingData: [], healthData: [], schedule: schedule };
     }
 
-    const requestPayload: HealthConnectDataExport[] =
-      await this.getHealthDataExportPayload(
-        request,
-        originMappings,
-        metricMappings,
-      );
+    const trainingData = await this.getHealthConnectExerciseExportPayload(
+      request,
+      originMappings,
+      metricMappings,
+    );
 
-    return { payload: requestPayload, schedule: schedule };
+    const healthData = await this.getHealthDataExportPayload(
+      request,
+      originMappings,
+      metricMappings,
+    );
+
+    return { trainingData, healthData, schedule: schedule };
   };
 
   private getHealthConnectSchedule = async (
@@ -131,12 +136,95 @@ class HealthConnectSchedulePayloadFactory {
     return scheduleData;
   };
 
+  private getHealthConnectExerciseExportPayload = async (
+    request: HealthConnectExportRequest,
+    originMappings: HealthConnectMappingMap,
+    metricMappings: HealthConnectMappingMap,
+  ): Promise<HealthConnectDataExport[]> => {
+    const payload: HealthConnectDataExport[] = [];
+    const activeOriginMappings = Object.values(originMappings).filter(
+      mapping => mapping?.target && mapping.isActive,
+    );
+    const activeMetricMappings = Object.values(metricMappings).filter(
+      mapping =>
+        mapping?.isActive &&
+        ('ExerciseSession' as RecordType) !== mapping.source,
+    );
+    const exerciseRecords = await this.healthConnect.readMetric(
+      'ExerciseSession',
+      {
+        startTime: request.from,
+        endTime: request.to,
+      },
+    );
+
+    for (const originMapping of activeOriginMappings) {
+      const exercises = exerciseRecords.records.filter(
+        record => record.metadata?.dataOrigin == originMapping.source,
+      );
+
+      for (const exercise of exercises) {
+        const dataSet: HealthConnectDataExport = {
+          metadata: {
+            from: request.from,
+            to: request.to,
+            type: 'HealthConnectHealthDataExport',
+            origin: originMapping.target,
+          },
+          data: [],
+        };
+
+        const exerciseId = exercise.metadata?.id ?? null;
+        const mappedExercise = mapMetric(
+          'ExerciseSession' as RecordType,
+          { records: [exercise] },
+          exerciseId,
+        );
+
+        dataSet.data.push(...mappedExercise);
+
+        const exerciseMetaData = {
+          from: exercise.startTime,
+          to: exercise.endTime,
+        };
+
+        const metricData = await Promise.all(
+          activeMetricMappings.map(async mapping => {
+            const recordData = await this.healthConnect.readMetric(
+              mapping.source as RecordType,
+              {
+                startTime: exerciseMetaData.from,
+                endTime: exerciseMetaData.to,
+              },
+            );
+
+            return mapMetric(
+              mapping.source as RecordType,
+              {
+                records: recordData.records.filter(
+                  record => record.metadata?.dataOrigin == originMapping.source,
+                ),
+              },
+              exerciseId,
+            );
+          }),
+        );
+
+        metricData.forEach(mappedData => dataSet.data.push(...mappedData));
+        payload.push(dataSet);
+      }
+    }
+
+    return payload;
+  };
+
   private getHealthDataExportPayload = async (
     request: HealthConnectExportRequest,
     originMappings: HealthConnectMappingMap,
     metricMappings: HealthConnectMappingMap,
   ): Promise<HealthConnectDataExport[]> => {
     const payload: HealthConnectDataExport[] = [];
+
     for (
       let origin = 0;
       origin < Object.keys(originMappings).length;
@@ -144,7 +232,7 @@ class HealthConnectSchedulePayloadFactory {
     ) {
       const originMapping = originMappings[Object.keys(originMappings)[origin]];
 
-      if (!originMapping || !originMapping.target) {
+      if (!originMapping || !originMapping.target || !originMapping.isActive) {
         continue;
       }
 
@@ -165,6 +253,13 @@ class HealthConnectSchedulePayloadFactory {
       ) {
         const mapping = metricMappings[Object.keys(metricMappings)[metric]];
 
+        if (
+          !mapping ||
+          !mapping.isActive ||
+          ('ExerciseSession' as RecordType) === mapping.source
+        ) {
+          continue;
+        }
         const recordData = await this.healthConnect.readMetric(
           mapping.source as RecordType,
           {
@@ -173,14 +268,17 @@ class HealthConnectSchedulePayloadFactory {
           },
         );
 
-        const filteredRecords = recordData.records.every(
-          r => r.metadata?.dataOrigin === originMapping.source,
-        );
+        if (recordData.records.length > 0) {
+          const records = {
+            records: recordData.records.filter(
+              record => record.metadata?.dataOrigin == originMapping.source,
+            ),
+          };
 
-        if (filteredRecords) {
           const mappedData = mapMetric(
             mapping.source as RecordType,
-            recordData,
+            records,
+            null,
           );
 
           if (mappedData.length > 0) {

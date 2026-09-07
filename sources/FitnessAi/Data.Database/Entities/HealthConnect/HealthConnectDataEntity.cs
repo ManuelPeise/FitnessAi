@@ -6,7 +6,9 @@ namespace Data.Database.Entities.HealthConnect
 {
     public class HealthConnectDataEntity: AEntityBase
     {
-        public string Source { get; set; } = null!;
+        public string? ExerciseId { get; set; }
+        public string RecordId { get; set; } = string.Empty;
+        public string Origin { get; set; } = string.Empty;
         public HealthConnectRecordTypeEnum Type { get; set; }
         public HealthConnectDataUnitEnum Unit { get; set; }
         /// <summary>

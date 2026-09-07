@@ -50,15 +50,15 @@ namespace Data.Database.Migrations
                     b.Property<DateTime>("EndTimeStamp")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("ExcerciseId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("ExerciseType")
                         .HasColumnType("int");
 
                     b.Property<decimal>("HeartRateAvg")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<decimal>("LeanBodyMass")
                         .HasColumnType("decimal(18,2)");
@@ -124,10 +124,17 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ExerciseId")
+                        .HasColumnType("longtext");
+
                     b.Property<int?>("ExerciseType")
                         .HasColumnType("int");
 
-                    b.Property<string>("Source")
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RecordId")
                         .IsRequired()
                         .HasColumnType("longtext");
 

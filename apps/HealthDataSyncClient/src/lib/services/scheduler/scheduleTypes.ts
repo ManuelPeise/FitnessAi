@@ -145,6 +145,9 @@ export type HealthConnectExportMetaData = {
 };
 
 export type HealthConnectDataEntry = {
+  recordId: string | null;
+  exerciseId: string | null;
+  origin: string | null;
   type: HealthConnectRecordTypeEnum;
   unit: HealthConnectDataUnitEnum;
   exerciseType?: ExerciseTypeEnum;
@@ -159,6 +162,12 @@ export type HealthConnectDataExport = {
 };
 
 export type HealthConnectDataExportModel = {
-  payload: HealthConnectDataExport[];
+  trainingData: HealthConnectDataExport[];
+  healthData: HealthConnectDataExport[];
   schedule: ScheduleSettingsTableEntry | null;
+};
+
+export type HealthConnectApiModel = {
+  trainingData: HealthConnectDataExport[];
+  healthData: HealthConnectDataExport[];
 };

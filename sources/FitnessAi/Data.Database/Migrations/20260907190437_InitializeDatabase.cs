@@ -41,7 +41,7 @@ namespace Data.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Key = table.Column<string>(type: "longtext", nullable: false),
+                    ExcerciseId = table.Column<string>(type: "longtext", nullable: false),
                     ExerciseType = table.Column<int>(type: "int", nullable: false),
                     StartTimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     EndTimeStamp = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -184,7 +184,9 @@ namespace Data.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Source = table.Column<string>(type: "longtext", nullable: false),
+                    ExerciseId = table.Column<string>(type: "longtext", nullable: true),
+                    RecordId = table.Column<string>(type: "longtext", nullable: false),
+                    Origin = table.Column<string>(type: "longtext", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Unit = table.Column<int>(type: "int", nullable: false),
                     ExerciseType = table.Column<int>(type: "int", nullable: true),
