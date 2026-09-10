@@ -2,8 +2,7 @@ export type HealthConnectMappingType =
   | 'HealthConnectOrigin'
   | 'HealthConnectMetric';
 
-export type ScheduleSettingsType =
-  'HealthConnectHealthDataExport';
+export type ScheduleSettingsType = 'HealthConnectHealthDataExport';
 
 export const scheduleSettingsTypes: ScheduleSettingsType[] = [
   'HealthConnectHealthDataExport',
@@ -29,14 +28,6 @@ export type ApiAuthenticationTableEntry = {
   updated_at: string | null;
 };
 
-export type UserTableEntry = {
-  id: number;
-  email: string;
-  password: string;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
 export type ScheduleSettingsTableEntry = {
   id: number;
   userId: number;
@@ -51,26 +42,55 @@ export type ScheduleSettingsTableEntry = {
   lastExecutionError: string | null;
 };
 
-export type MappingTableEntry = {
+export type HealthConnectMetricMappingTableEntry = {
+  id: number;
+  userId: number;
+  source: string;
+  target: string;
+  isActive: boolean;
+};
+
+export type HealthConnectOriginMappingTableEntry = {
+  id: number;
+  userId: number;
+  source: string;
+  target: string;
+  isActive: boolean;
+  metricIds: number[];
+};
+
+export type HealthConnectMappingTableEntry = {
   id: number;
   userId: number;
   type: HealthConnectMappingType;
-  isActive: boolean;
   source: string;
   target: string;
+  isActive: boolean;
+  metricIds?: number[];
 };
 
 export const createDatabaseScript = `
-CREATE TABLE IF NOT EXISTS mapping_entries (
+CREATE TABLE IF NOT EXISTS health_connect_metric_mappings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('HealthConnectOrigin', 'HealthConnectMetric')),
   is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   source TEXT NOT NULL,
   target TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (user_id, type, source)
+  UNIQUE (user_id, source)
+);
+
+CREATE TABLE IF NOT EXISTS health_connect_origin_mappings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+  source TEXT NOT NULL,
+  target TEXT NOT NULL,
+  metric_ids TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, source)
 );
 
 CREATE TABLE IF NOT EXISTS api_authentication (
@@ -111,13 +131,24 @@ CREATE TABLE IF NOT EXISTS schedule_settings (
   UNIQUE (user_id, type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_mapping_entries_type
-  ON mapping_entries (type);
+CREATE INDEX IF NOT EXISTS idx_health_connect_metric_mappings_user
+  ON health_connect_metric_mappings (user_id);
 
-CREATE TRIGGER IF NOT EXISTS mapping_entries_updated_at
-AFTER UPDATE OF type, is_active, source, target ON mapping_entries
+CREATE INDEX IF NOT EXISTS idx_health_connect_origin_mappings_user
+  ON health_connect_origin_mappings (user_id);
+
+CREATE TRIGGER IF NOT EXISTS health_connect_metric_mappings_updated_at
+AFTER UPDATE OF is_active, source, target ON health_connect_metric_mappings
 BEGIN
-  UPDATE mapping_entries
+  UPDATE health_connect_metric_mappings
+  SET updated_at = CURRENT_TIMESTAMP
+  WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS health_connect_origin_mappings_updated_at
+AFTER UPDATE OF is_active, source, target, metric_ids ON health_connect_origin_mappings
+BEGIN
+  UPDATE health_connect_origin_mappings
   SET updated_at = CURRENT_TIMESTAMP
   WHERE id = NEW.id;
 END;

@@ -6,8 +6,8 @@
     "android": "react-native run-android",
     "run-android:dev": "adb reverse tcp:8081 tcp:8081 && react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
-    "lint:quiet": "eslint . --quiet",
+    "lint": "eslint src App.tsx index.js",
+    "lint:quiet": "eslint src App.tsx index.js --quiet",
     "prettify": "prettier --write .",
     "start": "react-native start",
     "test": "jest"

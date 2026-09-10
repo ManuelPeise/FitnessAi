@@ -3,14 +3,31 @@ import {
   WriteExerciseRoutePermission,
   BackgroundAccessPermission,
   ReadHealthDataHistoryPermission,
-  ReadRecordsResult,
+  AggregateResultRecordType,
 } from 'react-native-health-connect';
+import {
+  HealthConnectOriginMappingTableEntry,
+  HealthConnectMetricMappingTableEntry,
+} from '../../database/databaseTypes';
 
 export type HealthConnectPermission =
   | Permission
   | WriteExerciseRoutePermission
   | BackgroundAccessPermission
   | ReadHealthDataHistoryPermission;
+
+export type HealthConnectOriginMappingMap = {
+  [key: string]: HealthConnectOriginMappingTableEntry;
+};
+
+export type HealthConnectMetricMappingMap = {
+  key: AggregateResultRecordType;
+  mapping: HealthConnectMetricMappingTableEntry;
+};
+
+export type HealthConnectMetricActiveStateMap = {
+  [key: string]: boolean;
+};
 
 export type HealthConnectReadRange = {
   startTime: Date | string;
@@ -19,11 +36,6 @@ export type HealthConnectReadRange = {
   ascendingOrder?: boolean;
   pageSize?: number;
   pageToken?: string;
-};
-
-export type HealthConnectData = {
-  steps: ReadRecordsResult<'Steps'>;
-  exerciseSessions: ReadRecordsResult<'ExerciseSession'>;
 };
 
 export enum HealthConnectExerciseType {
@@ -156,47 +168,60 @@ export type TimeZoneInfo = {
   id: string;
 };
 
-export type HealthConnectTrainingMetricData = {
-  heartRate?: number;
-  maxHeartRate?: number;
-  heartRateVariability?: number;
-  oxygenSaturation?: number;
-  respiratoryRate?: number;
-  distance?: number;
-  pace?: number;
-  speed?: number;
-  maxSpeed?: number;
-  power?: number;
-  maxPower?: number;
-  elevation?: number;
-  calories?: number;
-  activeCalories?: number;
-  steps?: number;
-  cadence?: number;
-  vo2Max?: number;
+// new implemented types
+
+export type HealthConnectValues = {
+  avg: number | null;
+  min: number | null;
+  max: number | null;
 };
 
-export type TrainingSegments = {
-  segmentType: HealthConnectExerciseSegmentType;
-  replications: number;
-  startTime: Date | string;
-  endTime: Date | string;
-};
-
-export type TrainingLap = {
-  lengthInMeters: number;
-  startTime: Date | string;
-  endTime: Date | string;
-};
-
-export type HealthConnectTrainingData = {
-  appKey: string; // from db [api_authentication] table
-  startTime: Date | string;
+export type HealthConnectTrainingDataRecordData = {
+  origin: string;
+  activeCaloriesBurnedInKcal: number | null;
+  totalCaloriesBurnedInKcal: number | null;
+  cyclingPedalingCadence: HealthConnectValues | null;
+  distanceInMeters: number | null;
+  durationSeconds: number | null;
+  elevationAvg: number | null;
   endTime: Date | string;
   exerciseType: HealthConnectExerciseType;
-  origin: string;
-  timeZoneInfo?: TimeZoneInfo;
-  trainingMetricData: HealthConnectTrainingMetricData;
-  trainingSegments?: TrainingSegments[];
-  laps: TrainingLap[];
+  heartRate: HealthConnectValues | null;
+  hydrationAvg: number | null;
+  power: HealthConnectValues | null;
+  speed: HealthConnectValues | null;
+  restingHeartRate: HealthConnectValues | null;
+  startTime: Date | string;
+  stepCadence: HealthConnectValues | null;
+  steps: number | null;
+  timeZoneInfo: TimeZoneInfo | null;
+  weightAvg: number | null;
+};
+
+export type HealthConnectAggregatedData = {
+  source: string;
+  endTime: Date | string;
+  startTime: Date | string;
+  activeCaloriesBurnedInKcal: number | null;
+  totalCaloriesBurnedInKcal: number | null;
+  heartRate: HealthConnectValues | null;
+  hydrationAvg: number | null;
+  restingHeartRate: HealthConnectValues | null;
+  steps: number | null;
+  weightAvg: number | null;
+  sleepDurationInSeconds: number | null;
+  floorsClimbed: number | null;
+  basalMetabolicRateInKcal: number | null;
+  bloodPressure: {
+    systolic: number | null;
+    diastolic: number | null;
+  } | null;
+  wheelchairPushes: number | null;
+  heightInMeters: number | null;
+};
+
+export type HealthConnectDailyDataModel = {
+  date: Date | string;
+  aggregatedData: HealthConnectAggregatedData;
+  trainingData: HealthConnectTrainingDataRecordData[];
 };

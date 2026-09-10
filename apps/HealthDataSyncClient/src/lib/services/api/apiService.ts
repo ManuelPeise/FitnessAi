@@ -49,6 +49,10 @@ const apiService = {
       const data = (await response.json()) as TResponse;
       result.data = data;
     } catch (error) {
+      console.error(
+        error,
+        error instanceof Error ? error.stack : 'Unknown error',
+      );
       result.error =
         error instanceof Error
           ? error.message

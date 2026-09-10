@@ -14,8 +14,3 @@ export type DashboardProps = NativeStackScreenProps<
   AppStackParamList,
   'Dashboard'
 >;
-
-export type HealthConnectProps = NativeStackScreenProps<
-  AppStackParamList,
-  'HealthConnect'
->;

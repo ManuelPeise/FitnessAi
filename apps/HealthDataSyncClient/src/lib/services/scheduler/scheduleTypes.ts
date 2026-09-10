@@ -1,10 +1,13 @@
 import {
-  MappingTableEntry,
+  HealthConnectMetricMappingTableEntry,
+  HealthConnectOriginMappingTableEntry,
   ScheduleSettingsTableEntry,
   ScheduleSettingsType,
 } from '../../database/databaseTypes';
+import { HealthConnectDailyDataModel } from '../healthConnect/healthConnectTypes';
 
 export enum HealthConnectRecordTypeEnum {
+  Unknown = -1,
   ActiveCaloriesBurned = 0,
   BasalBodyTemperature = 1,
   BasalMetabolicRate = 2,
@@ -123,11 +126,9 @@ export enum ExerciseTypeEnum {
   Yoga = 83,
 }
 
-export type HealthConnectMappingMap = { [key: string]: MappingTableEntry };
-
 export type HealthConnectScheduleData = {
-  originMappings: HealthConnectMappingMap;
-  metricMappings: HealthConnectMappingMap;
+  originMappings: HealthConnectOriginMappingTableEntry[];
+  metricMappings: HealthConnectMetricMappingTableEntry[];
   schedule: ScheduleSettingsTableEntry | null;
 };
 
@@ -161,13 +162,7 @@ export type HealthConnectDataExport = {
   data: HealthConnectDataEntry[];
 };
 
-export type HealthConnectDataExportModel = {
-  trainingData: HealthConnectDataExport[];
-  healthData: HealthConnectDataExport[];
-  schedule: ScheduleSettingsTableEntry | null;
-};
-
-export type HealthConnectApiModel = {
-  trainingData: HealthConnectDataExport[];
-  healthData: HealthConnectDataExport[];
+export type HealthConnectExportPayload = {
+  scheduler: HealthConnectScheduleData | null;
+  dailyDataModels: HealthConnectDailyDataModel[];
 };

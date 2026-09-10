@@ -19,7 +19,6 @@ namespace Data.Database.Entities.User
         public long SettingsId { get; set; }
         [ForeignKey(nameof(SettingsId))]
         public SettingsEntity Settings { get; set; } = null!;
-        public HashSet<HealthConnectDataEntity> HealthData { get; set; } = [];
 
     }
 }

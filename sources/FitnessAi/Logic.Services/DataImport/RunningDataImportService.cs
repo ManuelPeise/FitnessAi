@@ -1,11 +1,6 @@
 ﻿using Data.Accessor.Interfaces;
-using Data.Database.Entities.Ai;
-using Data.Database.Entities.User;
-using Logic.Parsing.CSV;
-using Logic.Parsing.CSV.Enums;
 using Logic.Services.Interfaces;
-using Shared.Models.Running.Import;
-using System.Linq.Expressions;
+
 
 namespace Logic.Services.DataImport
 {
@@ -40,26 +35,7 @@ namespace Logic.Services.DataImport
                 return;
             }
 
-            var parser = CsvParserFactory<RunningDataImportModel>
-                .CreateCsvParser(CsvTypeEnum.Running, new Dictionary<string, int>());
-
-            var models = parser.ParseCsv(csvContentRows, delimiter);
-
-            //var entities = MapModelsToEntity(models, userEntity.UserAi.RunningTrainingDataGuid);
-
-            //await _aiUnitOfWork.RunningTrainingDataRepository.AddRangeAsync(entities, cancellationToken);
-
-            //await _aiUnitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
-        private List<AiHealthConnectExerciseTrainingDataEntity> MapModelsToEntity(IReadOnlyList<RunningDataImportModel> models, Guid runningTrainingDataGuid)
-        {
-            var entities = models.Select(model => new AiHealthConnectExerciseTrainingDataEntity
-            {
-                
-            }).ToList();
-
-            return entities;
-        }
+           
+        }      
     }
 }

@@ -1,11 +1,11 @@
 import React from 'react';
-import { MappingTableEntry } from '../../../lib/database/databaseTypes';
+import { HealthConnectMappingTableEntry } from '../../../lib/database/databaseTypes';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import IconComponent from '../../../components/IconComponent';
 import { colorMap } from '../../../lib/styles/colorMap';
 
 type IProps = {
-  mapping: MappingTableEntry;
+  mapping: HealthConnectMappingTableEntry;
   disabled?: boolean;
   onClick: () => void;
 };

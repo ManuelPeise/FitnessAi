@@ -1,8 +1,8 @@
 import { open } from '@op-engineering/op-sqlite';
 import {
   ApiAuthenticationTableEntry,
-  HealthConnectMappingType,
-  MappingTableEntry,
+  HealthConnectMetricMappingTableEntry,
+  HealthConnectOriginMappingTableEntry,
   ScheduleExecutionStatus,
   ScheduleFrequency,
   ScheduleSettingsTableEntry,
@@ -17,15 +17,25 @@ export const database = open({
   name: databaseName,
 });
 
-const mapMappingEntryRow = (
+const mapMetricMappingRow = (
   row: Record<string, unknown>,
-): MappingTableEntry => ({
+): HealthConnectMetricMappingTableEntry => ({
   id: Number(row.id),
   userId: Number(row.user_id),
-  type: row.type as HealthConnectMappingType,
   isActive: Boolean(row.is_active),
   source: String(row.source),
   target: String(row.target),
+});
+
+const mapOriginMappingRow = (
+  row: Record<string, unknown>,
+): HealthConnectOriginMappingTableEntry => ({
+  id: Number(row.id),
+  userId: Number(row.user_id),
+  isActive: Boolean(row.is_active),
+  source: String(row.source),
+  target: String(row.target),
+  metricIds: JSON.parse(String(row.metric_ids ?? '[]')) as number[],
 });
 
 const mapScheduleRow = (
@@ -220,104 +230,106 @@ export const databaseAccessor = {
       return databaseAccessor.schedule.saveSchedule(nextSchedule);
     },
   },
-  mappingTable: {
+  originMappingTable: {
     getMappingEntries: async (
       userId: number,
-      type: HealthConnectMappingType,
-    ): Promise<MappingTableEntry[]> => {
+    ): Promise<HealthConnectOriginMappingTableEntry[]> => {
       const result = await database.execute(
-        'SELECT id, user_id, type, is_active, source, target FROM mapping_entries WHERE user_id = ? AND type = ?',
-        [userId, type],
+        `SELECT id, user_id, is_active, source, target, metric_ids FROM health_connect_origin_mappings WHERE user_id = ?`,
+        [userId],
       );
 
-      return result.rows.map(mapMappingEntryRow);
+      return result.rows.map(mapOriginMappingRow);
     },
     addMappingEntries: async (
       userId: number,
-      entries: MappingTableEntry[],
-    ): Promise<MappingTableEntry[]> => {
-      if (entries.length === 0) {
-        return [];
-      }
-
-      const insertPromises = entries.map(entry =>
-        database.execute(
-          `INSERT INTO mapping_entries (user_id, type, is_active, source, target)
-           VALUES (?, ?, ?, ?, ?)
-           ON CONFLICT(user_id, type, source) DO UPDATE SET
-             is_active = excluded.is_active,
-             target = excluded.target`,
-          [
-            userId,
-            entry.type,
-            entry.isActive ? 1 : 0,
-            entry.source,
-            entry.target,
-          ],
+      entries: HealthConnectOriginMappingTableEntry[],
+    ): Promise<HealthConnectOriginMappingTableEntry[]> => {
+      await Promise.all(
+        entries.map(entry =>
+          database.execute(
+            `INSERT INTO health_connect_origin_mappings
+              (user_id, is_active, source, target, metric_ids)
+             VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(user_id, source) DO UPDATE SET
+              is_active = excluded.is_active,
+              target = excluded.target,
+              metric_ids = excluded.metric_ids`,
+            [
+              userId,
+              entry.isActive ? 1 : 0,
+              entry.source,
+              entry.target,
+              JSON.stringify(entry.metricIds),
+            ],
+          ),
         ),
       );
-      await Promise.all(insertPromises);
-      return databaseAccessor.mappingTable.getMappingEntries(
-        userId,
-        entries[0].type,
-      );
+      return databaseAccessor.originMappingTable.getMappingEntries(userId);
     },
     updateMappingEntry: async (
       userId: number,
       id: number,
-      mappingUpdate: MappingTableEntry,
-    ): Promise<MappingTableEntry[]> => {
-      const updatedPromise = await database.execute(
-        'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ? AND user_id = ?',
+      entry: HealthConnectOriginMappingTableEntry,
+    ): Promise<HealthConnectOriginMappingTableEntry[]> => {
+      await database.execute(
+        `UPDATE health_connect_origin_mappings
+         SET is_active = ?, source = ?, target = ?, metric_ids = ?
+         WHERE id = ? AND user_id = ?`,
         [
-          mappingUpdate.type,
-          mappingUpdate.isActive ? 1 : 0,
-          mappingUpdate.source,
-          mappingUpdate.target,
+          entry.isActive ? 1 : 0,
+          entry.source,
+          entry.target,
+          JSON.stringify(entry.metricIds),
           id,
           userId,
         ],
       );
-
-      await Promise.all([updatedPromise]);
-
-      return databaseAccessor.mappingTable.getMappingEntries(
-        userId,
-        mappingUpdate.type,
-      );
+      return databaseAccessor.originMappingTable.getMappingEntries(userId);
     },
-    updateMappingEntries: async (
+  },
+  metricMappingTable: {
+    getMappingEntries: async (
       userId: number,
-      entries: MappingTableEntry[],
-      type: HealthConnectMappingType,
-    ): Promise<MappingTableEntry[]> => {
-      const updatePromises = entries.map(entry =>
-        database.execute(
-          'UPDATE mapping_entries SET type = ?, is_active = ?, source = ?, target = ? WHERE id = ? AND user_id = ?',
-          [
-            entry.type,
-            entry.isActive ? 1 : 0,
-            entry.source,
-            entry.target,
-            entry.id,
-            userId,
-          ],
+    ): Promise<HealthConnectMetricMappingTableEntry[]> => {
+      const result = await database.execute(
+        `SELECT id, user_id, is_active, source, target FROM health_connect_metric_mappings WHERE user_id = ?`,
+        [userId],
+      );
+
+      return result.rows.map(mapMetricMappingRow);
+    },
+    addMappingEntries: async (
+      userId: number,
+      entries: HealthConnectMetricMappingTableEntry[],
+    ): Promise<HealthConnectMetricMappingTableEntry[]> => {
+      await Promise.all(
+        entries.map(entry =>
+          database.execute(
+            `INSERT INTO health_connect_metric_mappings
+              (user_id, is_active, source, target)
+             VALUES (?, ?, ?, ?)
+             ON CONFLICT(user_id, source) DO UPDATE SET
+              is_active = excluded.is_active,
+              target = excluded.target`,
+            [userId, entry.isActive ? 1 : 0, entry.source, entry.target],
+          ),
         ),
       );
-      await Promise.all(updatePromises);
-
-      return databaseAccessor.mappingTable.getMappingEntries(userId, type);
+      return databaseAccessor.metricMappingTable.getMappingEntries(userId);
     },
-    deleteMappingEntry: async (
+    updateMappingEntry: async (
       userId: number,
       id: number,
-      type: HealthConnectMappingType,
-    ): Promise<MappingTableEntry[]> => {
+      entry: HealthConnectMetricMappingTableEntry,
+    ): Promise<HealthConnectMetricMappingTableEntry[]> => {
       await database.execute(
-        'DELETE FROM mapping_entries WHERE id = ? AND user_id = ?',
-        [id, userId],
+        `UPDATE health_connect_metric_mappings
+         SET is_active = ?, source = ?, target = ?
+         WHERE id = ? AND user_id = ?`,
+        [entry.isActive ? 1 : 0, entry.source, entry.target, id, userId],
       );
-      return databaseAccessor.mappingTable.getMappingEntries(userId, type);
+      return databaseAccessor.metricMappingTable.getMappingEntries(userId);
     },
   },
 };

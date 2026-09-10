@@ -11,6 +11,9 @@ import {
   type ReadRecordsOptions,
   type ReadRecordsResult,
   AggregateResult,
+  ReadHealthDataHistoryPermission,
+  AggregateRequest,
+  AggregateResultRecordType,
 } from 'react-native-health-connect';
 import {
   HealthConnectPermission,
@@ -18,179 +21,62 @@ import {
 } from './healthConnectTypes';
 import { getResource } from '../../localization';
 
-export type HealthConnectTrainingAggregateRecordType =
-  | 'ActiveCaloriesBurned'
-  | 'CyclingPedalingCadence'
-  | 'Distance'
-  | 'ElevationGained'
-  | 'ExerciseSession'
-  | 'FloorsClimbed'
-  | 'HeartRate'
-  | 'Power'
-  | 'Speed'
-  | 'Steps'
-  | 'StepsCadence'
-  | 'TotalCaloriesBurned';
+// Must stay in sync with the read permissions declared in AndroidManifest.xml.
+const REQUIRED_HEALTH_CONNECT_RECORD_TYPES: RecordType[] = [
+  'ActiveCaloriesBurned',
+  'BasalBodyTemperature',
+  'BasalMetabolicRate',
+  'BloodGlucose',
+  'BloodPressure',
+  'BodyFat',
+  'BodyTemperature',
+  'BodyWaterMass',
+  'BoneMass',
+  'CervicalMucus',
+  'CyclingPedalingCadence',
+  'Distance',
+  'ElevationGained',
+  'ExerciseSession',
+  'FloorsClimbed',
+  'HeartRate',
+  'HeartRateVariabilityRmssd',
+  'Height',
+  'Hydration',
+  'IntermenstrualBleeding',
+  'LeanBodyMass',
+  'MenstruationFlow',
+  'MenstruationPeriod',
+  'Nutrition',
+  'OvulationTest',
+  'OxygenSaturation',
+  'Power',
+  'RespiratoryRate',
+  'RestingHeartRate',
+  'SexualActivity',
+  'SkinTemperature',
+  'SleepSession',
+  'Speed',
+  'Steps',
+  'StepsCadence',
+  'TotalCaloriesBurned',
+  'Vo2Max',
+  'Weight',
+  'WheelchairPushes',
+];
 
 class HealthConnectService {
   private initialized = false;
 
-  private requiredHealthConnectPermissions: Permission[] = [
+  private requiredHealthConnectPermissions: Permission[] =
+    REQUIRED_HEALTH_CONNECT_RECORD_TYPES.map(recordType => ({
+      accessType: 'read',
+      recordType,
+    }));
+
+  private historyPermission: ReadHealthDataHistoryPermission[] = [
     {
       accessType: 'read',
-      recordType: 'ActiveCaloriesBurned',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BasalBodyTemperature',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BasalMetabolicRate',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BloodGlucose',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BloodPressure',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BodyFat',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BodyTemperature',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BodyWaterMass',
-    },
-    {
-      accessType: 'read',
-      recordType: 'BoneMass',
-    },
-    {
-      accessType: 'read',
-      recordType: 'CervicalMucus',
-    },
-    {
-      accessType: 'read',
-      recordType: 'CyclingPedalingCadence',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Distance',
-    },
-    {
-      accessType: 'read',
-      recordType: 'ElevationGained',
-    },
-    {
-      accessType: 'read',
-      recordType: 'ExerciseSession',
-    },
-    {
-      accessType: 'read',
-      recordType: 'FloorsClimbed',
-    },
-    {
-      accessType: 'read',
-      recordType: 'HeartRate',
-    },
-    {
-      accessType: 'read',
-      recordType: 'HeartRateVariabilityRmssd',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Height',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Hydration',
-    },
-    {
-      accessType: 'read',
-      recordType: 'IntermenstrualBleeding',
-    },
-    {
-      accessType: 'read',
-      recordType: 'LeanBodyMass',
-    },
-    {
-      accessType: 'read',
-      recordType: 'MenstruationFlow',
-    },
-    {
-      accessType: 'read',
-      recordType: 'MenstruationPeriod',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Nutrition',
-    },
-    {
-      accessType: 'read',
-      recordType: 'OvulationTest',
-    },
-    {
-      accessType: 'read',
-      recordType: 'OxygenSaturation',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Power',
-    },
-    {
-      accessType: 'read',
-      recordType: 'RespiratoryRate',
-    },
-    {
-      accessType: 'read',
-      recordType: 'RestingHeartRate',
-    },
-    {
-      accessType: 'read',
-      recordType: 'SexualActivity',
-    },
-    {
-      accessType: 'read',
-      recordType: 'SkinTemperature',
-    },
-    {
-      accessType: 'read',
-      recordType: 'SleepSession',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Speed',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Steps',
-    },
-    {
-      accessType: 'read',
-      recordType: 'StepsCadence',
-    },
-    {
-      accessType: 'read',
-      recordType: 'TotalCaloriesBurned',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Vo2Max',
-    },
-    {
-      accessType: 'read',
-      recordType: 'Weight',
-    },
-    {
-      accessType: 'read',
-      recordType: 'WheelchairPushes',
+      recordType: 'ReadHealthDataHistory',
     },
   ];
 
@@ -222,9 +108,11 @@ class HealthConnectService {
   async requestPermissions(): Promise<HealthConnectPermission[]> {
     await this.ensureInitialized();
 
-    return requestHealthConnectPermission(
-      this.requiredHealthConnectPermissions,
-    );
+    const permissions = [
+      ...this.requiredHealthConnectPermissions,
+      ...this.historyPermission,
+    ];
+    return await requestHealthConnectPermission(permissions);
   }
 
   async getGrantedPermissions(): Promise<HealthConnectPermission[]> {
@@ -270,7 +158,21 @@ class HealthConnectService {
   ): Promise<ReadRecordsResult<T>> {
     await this.ensureInitialized();
 
-    return readHealthConnectRecords(metricType, this.createReadOptions(range));
+    const records: ReadRecordsResult<T>['records'] = [];
+
+    let pageToken: string | undefined;
+
+    do {
+      const result = await readHealthConnectRecords(
+        metricType,
+        this.createReadOptions({ ...range, pageToken }),
+      );
+
+      records.push(...result.records);
+      pageToken = result.pageToken;
+    } while (pageToken);
+
+    return { records };
   }
 
   async readLastMetric<T extends RecordType>(
@@ -287,17 +189,6 @@ class HealthConnectService {
       ascendingOrder: false,
       pageSize: 1,
     });
-  }
-
-  async readAggregatedMetric<
-    T extends HealthConnectTrainingAggregateRecordType,
-  >(metricType: T, range: HealthConnectReadRange): Promise<AggregateResult<T>> {
-    const result = await aggregateHealthConnectRecord({
-      recordType: metricType,
-      timeRangeFilter: this.createReadOptions(range).timeRangeFilter,
-    });
-
-    return result;
   }
 
   async getAvailableOrigins(range?: HealthConnectReadRange): Promise<string[]> {
@@ -333,6 +224,20 @@ class HealthConnectService {
     });
 
     return Array.from(origins).sort();
+  }
+
+  async getAggregateResult<TModel extends AggregateResultRecordType>(
+    recordType: AggregateRequest<TModel>['recordType'],
+    readRange: HealthConnectReadRange,
+    origins: string[],
+  ): Promise<AggregateResult<TModel>> {
+    const result = await aggregateHealthConnectRecord({
+      recordType: recordType,
+      timeRangeFilter: this.createReadOptions(readRange).timeRangeFilter,
+      dataOriginFilter: [...origins],
+    });
+
+    return result;
   }
 
   private areAllRequiredPermissionsGranted(

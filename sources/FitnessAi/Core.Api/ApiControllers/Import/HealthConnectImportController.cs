@@ -15,11 +15,12 @@ namespace Core.Api.ApiControllers.Import
             _healthDataImport = healthDataImport;
         }
 
+        [RequestSizeLimit(300 * 1024 * 1024)]
         [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpPost(Name = "ImportHealthData")]
-        public async Task ImportHealthData([FromBody] HealthConnectApiModel requestModel)
+        public async Task ImportHealthData([FromBody] List<HealthConnectMetricApiMetric> metrics)
         {
-            await _healthDataImport.ImportHealthConnectData(requestModel);
+            await _healthDataImport.ImportHealthConnectData(metrics);
         }
     }
 }

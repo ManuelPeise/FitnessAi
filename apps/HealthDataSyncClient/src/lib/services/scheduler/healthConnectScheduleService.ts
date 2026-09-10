@@ -12,7 +12,7 @@ import {
   UserInfo,
 } from '../storage/secureStorage';
 import { getResource } from '../../localization';
-import { HealthConnectApiModel } from './scheduleTypes';
+import { isAxiosError } from 'axios';
 
 const scheduleSyncServiceUrl = 'HealthConnectImport/ImportHealthData';
 
@@ -47,14 +47,15 @@ class HealthConnectScheduleService {
     initialLoadDays?: number,
   ): Promise<ScheduleExecutionResult> {
     const userId = await this.getCurrentUserId();
-    const currentTimeStamp = new Date();
-    currentTimeStamp.setHours(23, 59, 59, 999);
+    const endTimeStamp = new Date();
+    endTimeStamp.setHours(23, 59, 59, 999);
+
     const startTimeStamp =
       initialLoadDays != null
         ? utils.getStartOfDay(
-            utils.getPreviousDate(currentTimeStamp, initialLoadDays),
+            utils.getPreviousDate(endTimeStamp, initialLoadDays),
           )
-        : utils.getStartOfDay(currentTimeStamp);
+        : utils.getStartOfDay(endTimeStamp);
 
     if (type !== 'HealthConnectHealthDataExport') {
       return {
@@ -70,7 +71,7 @@ class HealthConnectScheduleService {
       userId,
       type,
       startTimeStamp,
-      currentTimeStamp,
+      endTimeStamp,
     );
   }
 
@@ -127,20 +128,19 @@ class HealthConnectScheduleService {
     );
 
     try {
-      if (exportModel.schedule == null) {
+      if (exportModel.scheduler?.schedule == null) {
         throw new Error(
           getResource('healthConnect.descriptionNoScheduleForCurrentUser'),
         );
       }
 
-      if (!exportModel.schedule?.isActive) {
+      const schedule = exportModel.scheduler.schedule;
+
+      if (!schedule.isActive) {
         return { success: true, pushedItems: 0 };
       }
 
-      if (
-        exportModel.trainingData?.length === 0 &&
-        exportModel.healthData?.length === 0
-      ) {
+      if (exportModel == null) {
         return {
           success: true,
           pushedItems: 0,
@@ -150,44 +150,60 @@ class HealthConnectScheduleService {
         };
       }
 
-      const apiModel: HealthConnectApiModel = {
-        trainingData: exportModel.trainingData,
-        healthData: exportModel.healthData,
-      };
+      const response = await apiClient.post(
+        scheduleSyncServiceUrl,
+        exportModel.dailyDataModels,
+      );
 
-      const response = await apiClient.post(scheduleSyncServiceUrl, apiModel);
-
-      if (response.status === 200) {
-        await this.updateSchedule(exportModel.schedule, to, true);
-
-        return {
-          success: true,
-          pushedItems:
-            exportModel.trainingData.length + exportModel.healthData.length,
-        };
+      if (response.status !== 200) {
+        throw new Error(
+          `${getResource(
+            'healthConnect.descriptionScheduleSyncFailedPrefix',
+          )} ${response.status}.`,
+        );
       }
 
-      throw new Error(
-        `${getResource('healthConnect.descriptionScheduleSyncFailedPrefix')} ${
-          response.status
-        }.`,
-      );
+      await this.updateSchedule(schedule, to, true);
+      return {
+        success: true,
+        pushedItems: exportModel.dailyDataModels.length,
+      };
     } catch (error) {
-      if (exportModel.schedule) {
+      const errorMessage = this.getScheduleSyncErrorMessage(error);
+
+      if (exportModel.scheduler?.schedule) {
         await this.updateSchedule(
-          exportModel.schedule,
+          exportModel.scheduler?.schedule,
           to,
           false,
-          String(error),
+          errorMessage,
         );
       }
 
       return {
         success: false,
         pushedItems: 0,
-        message: String(error),
+        message: errorMessage,
       };
     }
+  }
+
+  private getScheduleSyncErrorMessage(error: unknown) {
+    const failurePrefix = getResource(
+      'healthConnect.descriptionScheduleSyncFailedPrefix',
+    );
+
+    if (isAxiosError(error)) {
+      const responseStatus = error.response?.status;
+
+      if (responseStatus != null) {
+        return `${failurePrefix} ${responseStatus}.`;
+      }
+
+      return `${failurePrefix}: ${error.message}`;
+    }
+
+    return error instanceof Error ? error.message : String(error);
   }
 
   private async updateSchedule(

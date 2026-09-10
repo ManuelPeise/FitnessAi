@@ -9,6 +9,7 @@ namespace Data.Accessor.DI
         {
             services.AddScoped<IAiUnitOfWork, AIUnitOfWork>();
             services.AddScoped<IApplicationUnitOfWork, ApplicationUnitOfWork>();
+            services.AddScoped<IHealthUnitOfWork, HealthUnitOfWork>();
         }
     }
 }

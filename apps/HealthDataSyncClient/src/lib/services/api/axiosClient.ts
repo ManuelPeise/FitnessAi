@@ -34,7 +34,7 @@ const ApiBaseUrl = getApiBaseUrl();
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: ApiBaseUrl,
-  timeout: 30_000,
+  timeout: 5 * 60 * 1000,
   fetchOptions: {
     mode: 'cors',
     keepalive: true,

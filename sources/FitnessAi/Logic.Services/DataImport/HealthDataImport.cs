@@ -1,10 +1,13 @@
-﻿using Data.Accessor.Interfaces;
+using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.HealthConnect;
 using Data.Database.Models.Scheduler;
 using Logic.Services.Interfaces;
 using Logic.Shared.Interfaces;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Shared.Enums.HealthConnect;
 using Shared.Models.HealthConnect;
 
 namespace Logic.Services.DataImport
@@ -15,28 +18,28 @@ namespace Logic.Services.DataImport
         private const string HealthConnectTrainingJobDescription = "Train the Ai model with the imported health data.";
         private const string HealthConnectTrainingJobUrl = "AiTrainingDataGeneration/GenerateAiTrainingData";
         private readonly ILogger<HealthDataImport> _logger;
-        private readonly IApplicationUnitOfWork _applicationUnitOfWork;
+        private readonly IHealthUnitOfWork _healthUnitOfWork;
         private readonly IScheduledJobService _scheduledJobService;
         private readonly ICurrentUserService _currentUserService;
 
         public HealthDataImport(
             ILogger<HealthDataImport> logger,
-            IApplicationUnitOfWork applicationUnitOfWork,
+            IHealthUnitOfWork healthUnitOfWork,
             IScheduledJobService scheduledJobService,
             ICurrentUserService currentUserService)
         {
             _logger = logger;
-            _applicationUnitOfWork = applicationUnitOfWork;
+            _healthUnitOfWork = healthUnitOfWork;
             _scheduledJobService = scheduledJobService;
             _currentUserService = currentUserService;
         }
 
-        public async Task ImportHealthConnectData(HealthConnectApiModel requestModel)
+        public async Task ImportHealthConnectData(List<HealthConnectMetricApiMetric> metrics)
         {
             try
             {
-                await ImportData(requestModel.TrainingData, true);
-                await ImportData(requestModel.HealthData, false);
+                await ImportData(metrics);
+
             }
             catch (Exception exception)
             {
@@ -44,101 +47,118 @@ namespace Logic.Services.DataImport
             }
         }
 
-        private async Task ImportData(List<HealthConnectDataExport> dataExportModels, bool triggerScheduler = false)
+        private async Task ImportData(List<HealthConnectMetricApiMetric> metrics)
         {
 
-            if (dataExportModels.Count == 0)
+            if (!metrics.Any())
             {
                 return;
             }
 
             var userId = _currentUserService.UserId;
+            var healthConnectRecordData = new List<HealthConnectMetricResult>();
 
-            if (!dataExportModels.Any())
+            foreach (var metric in metrics)
             {
-                return;
-            }
-
-            var existingDataEntries = await _applicationUnitOfWork
-                .HealthConnectDataRepository
-                .GetAsync(new DbQueryOptions<HealthConnectDataEntity>
+                if (string.IsNullOrWhiteSpace(metric.DataJson))
                 {
-                    AsNoTracking = true,
-                    WhereExpression = entity => entity.UserId == userId
-                });
-
-            var knownKeys = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var existingDataEntry in existingDataEntries)
-            {
-                knownKeys.Add(existingDataEntry.RecordId);
-            }
-
-            var entitiesToPersist = new List<HealthConnectDataEntity>();
-            var skippedEntries = 0;
-
-            foreach (var dataExportModel in dataExportModels)
-            {
-                var dataToImport = dataExportModel.Data;
-
-                foreach (var entry in dataToImport)
-                {
-                    if (!knownKeys.Add(entry.RecordId))
-                    {
-                        skippedEntries++;
-                        continue;
-                    }
-
-                    entitiesToPersist.Add(new HealthConnectDataEntity
-                    {
-                        ExerciseId = entry.ExerciseId,
-                        RecordId = entry.RecordId,
-                        Origin = entry.Origin,
-                        UserId = userId,
-                        Type = entry.Type,
-                        Unit = entry.Unit,
-                        ExerciseType = entry.ExerciseType,
-                        Value = entry.Value,
-                        StartTimestamp = entry.StartTimestamp,
-                        EndTimestamp = entry.EndTimestamp
-                    });
+                    _logger.LogWarning(
+                        "Health data import skipped metric of type {MetricType} from origin {Origin} because the DataJson is null or empty for user {UserId}.",
+                        metric.MetricType,
+                        metric.Origin,
+                        userId);
+                    continue;
                 }
+
+                var healthDataRecords = HealthConnectParsingFactory.ParseMetric(metric.MetricType, metric.DataJson);
+
+                if (healthDataRecords == null)
+                {
+                    _logger.LogWarning(
+                        "Health data import skipped metric of type {MetricType} from origin {Origin} because the DataJson could not be deserialized for user {UserId}.",
+                        metric.MetricType,
+                        metric.Origin,
+                        userId);
+                    continue;
+                }
+
+                healthConnectRecordData.AddRange(healthDataRecords);
             }
 
-            if (entitiesToPersist.Count == 0)
+            var metricProcessor = new MetricProcessor(_logger);
+            var healthConnectMetricEntities = new List<HealthConnectRecordEntity>();
+
+            foreach (var model in healthConnectRecordData)
             {
-                _logger.LogInformation(
-                    "Health data import skipped all {SkippedEntries} entries because duplicates already exist for user {UserId}.",
-                    skippedEntries,
-                    userId);
-                return;
+                var entities = metricProcessor.ProcessMetric(model, userId);
+
+                healthConnectMetricEntities.AddRange(entities);
             }
 
-            await _applicationUnitOfWork
-                .HealthConnectDataRepository
-                .AddRangeAsync(entitiesToPersist);
+            healthConnectMetricEntities = await FilterDuplicateRecordsAsync(userId, healthConnectMetricEntities);
 
-            var addedRows = await _applicationUnitOfWork.SaveChangesAsync();
-
-            if (addedRows > 0 && triggerScheduler)
+            if (healthConnectMetricEntities.Any())
             {
-                await _scheduledJobService.AddJobAsync(
-                    HealthConnectTrainingJobName,
-                    HealthConnectTrainingJobDescription,
-                    new WebServiceModel
+                await _healthUnitOfWork.HealthConnectRecordRepository.AddRangeAsync(healthConnectMetricEntities);
+                await _healthUnitOfWork.SaveChangesAsync();
+              
+                await _scheduledJobService.AddJobAsync(HealthConnectTrainingJobName, HealthConnectTrainingJobDescription, new WebServiceModel
+                {
+                    Url = new Uri(HealthConnectTrainingJobUrl, UriKind.Relative),
+                });
+            }
+
+            var json = JsonConvert.SerializeObject(healthConnectRecordData);
+
+        }
+
+        private async Task<List<HealthConnectRecordEntity>> FilterDuplicateRecordsAsync(
+            long userId,
+            List<HealthConnectRecordEntity> entities)
+        {
+            // Records without a client record id cannot be reliably deduplicated, so keep them as is.
+            var identifiableRecords = entities
+                .Where(entity => !string.IsNullOrWhiteSpace(entity.ClientRecordId))
+                .ToList();
+
+            var nonIdentifiableRecords = entities
+                .Where(entity => string.IsNullOrWhiteSpace(entity.ClientRecordId))
+                .ToList();
+
+            // Remove duplicates within the current batch, keeping the first occurrence per client record id.
+            var deduplicatedRecords = identifiableRecords
+                .GroupBy(entity => entity.ClientRecordId)
+                .Select(group => group.First())
+                .ToList();
+
+            var clientRecordIds = deduplicatedRecords
+                .Select(entity => entity.ClientRecordId)
+                .ToList();
+
+            if (clientRecordIds.Count > 0)
+            {
+                // Remove records that were already imported previously for the same user.
+                var existingRecords = await _healthUnitOfWork.HealthConnectRecordRepository.GetAsync(
+                    new DbQueryOptions<HealthConnectRecordEntity>
                     {
-                        Url = new Uri(HealthConnectTrainingJobUrl, UriKind.Relative),
+                        AsNoTracking = true,
+                        WhereExpression = record =>
+                            record.UserId == userId
+                            && clientRecordIds.Contains(record.ClientRecordId)
                     });
+
+                var existingClientRecordIds = existingRecords
+                    .Select(record => record.ClientRecordId)
+                    .ToHashSet();
+
+                deduplicatedRecords = deduplicatedRecords
+                    .Where(entity => !existingClientRecordIds.Contains(entity.ClientRecordId))
+                    .ToList();
             }
 
-            _logger.LogInformation(
-                "Health data import persisted {ImportedEntries} entries and skipped {SkippedEntries} duplicates for user {UserId}.",
-                entitiesToPersist.Count,
-                skippedEntries,
-                userId);
-
-
+            return deduplicatedRecords
+                .Concat(nonIdentifiableRecords)
+                .ToList();
         }
     }
 }
-

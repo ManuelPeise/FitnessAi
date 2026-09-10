@@ -40,7 +40,7 @@ const TextField: React.FC<IProps> = ({
     <View style={styles.container}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
-        style={styles.input}
+        style={[styles.input, disabled && styles.disabledInput]}
         value={value}
         placeholder={placeholder}
         placeholderTextColor={colorMap.textMuted}
@@ -76,6 +76,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: colorMap.textPrimary,
     backgroundColor: colorMap.backgroundAlt,
+  },
+  disabledInput: {
+    backgroundColor: colorMap.background,
+    color: colorMap.textMuted,
   },
 });
 

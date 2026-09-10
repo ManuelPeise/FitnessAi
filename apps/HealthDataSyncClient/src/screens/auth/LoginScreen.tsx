@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
 import { colorMap } from '../../lib/styles/colorMap';
 import TextField from '../../components/inputComponents/TextField';

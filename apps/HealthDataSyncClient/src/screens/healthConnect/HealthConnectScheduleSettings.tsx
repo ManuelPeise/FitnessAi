@@ -145,7 +145,7 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
           pushedItems: result.pushedItems,
           message,
         };
-      } catch (executionError) {
+      } catch {
         return {
           success: false,
           pushedItems: 0,

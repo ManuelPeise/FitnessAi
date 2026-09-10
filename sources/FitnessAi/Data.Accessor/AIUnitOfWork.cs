@@ -11,16 +11,17 @@ namespace Data.Accessor
     {
         private readonly AIDbContext _context;
         private readonly HttpContext _httpContext;
-        private IRepositoryBase<AiHealthConnectExerciseTrainingDataEntity> _aiHealthConnectExerciseTrainingDataRepository;
+      
+        private IRepositoryBase<HealthConnectRunningAiTrainingDataEntity> _healthConnectRunningAiTrainingDataRepository;
 
-        public IRepositoryBase<AiHealthConnectExerciseTrainingDataEntity> AiHealthConnectExerciseTrainingDataRepository => 
-            _aiHealthConnectExerciseTrainingDataRepository ??= new RepositoryBase<AiHealthConnectExerciseTrainingDataEntity>(_context);
+        public IRepositoryBase<HealthConnectRunningAiTrainingDataEntity> HealthConnectRunningAiTrainingDataRepository
+            => _healthConnectRunningAiTrainingDataRepository ??= new RepositoryBase<HealthConnectRunningAiTrainingDataEntity>(_context);
 
         public AIUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
-            _aiHealthConnectExerciseTrainingDataRepository = new RepositoryBase<AiHealthConnectExerciseTrainingDataEntity>(context);
+            _healthConnectRunningAiTrainingDataRepository = new RepositoryBase<HealthConnectRunningAiTrainingDataEntity>(context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

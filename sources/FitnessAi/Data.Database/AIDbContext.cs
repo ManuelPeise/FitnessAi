@@ -11,13 +11,20 @@ namespace Data.Database
     {
         public AIDbContext(DbContextOptions options) : base(options) { }
 
+        // user tables
         public DbSet<UserEntity> UserTable => Set<UserEntity>();
         public DbSet<UserCredentialsEntity> UserCredentialsTable => Set<UserCredentialsEntity>();
-        public DbSet<AiHealthConnectExerciseTrainingDataEntity> RunningTrainingDataTable => Set<AiHealthConnectExerciseTrainingDataEntity>();
-        public DbSet<HealthConnectDataEntity> HealthConnectDataTable => Set<HealthConnectDataEntity>();
+        // health connect tables
+        public DbSet<HealthConnectRecordEntity> HealthConnectRecordTable => Set<HealthConnectRecordEntity>();
+        public DbSet<HealthConnectValueEntity> HealthConnectValueTable => Set<HealthConnectValueEntity>();
+        public DbSet<HealthConnectSegmentEntity> HealthConnectSegmentTable => Set<HealthConnectSegmentEntity>();
+        // settings tables
         public DbSet<SettingsEntity> SettingsTable => Set<SettingsEntity>();
         public DbSet<AISettingsEntity> AiSettingsTable => Set<AISettingsEntity>();
+        // scheduler tables
         public DbSet<ScheduledJobEntity> ScheduledJobsTable => Set<ScheduledJobEntity>();
+        // ai training data tables
+        public DbSet<HealthConnectRunningAiTrainingDataEntity> HealthConnectRunningAiTrainingDataTable => Set<HealthConnectRunningAiTrainingDataEntity>();
 
         override protected void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,12 +34,6 @@ namespace Data.Database
                 .HasOne(u => u.UserCredentials)
                 .WithOne()
                 .HasForeignKey<UserEntity>(u => u.CredentialsId)
-                .OnDelete(DeleteBehavior.Cascade);
-            
-            modelBuilder.Entity<UserEntity>()
-                .HasMany(u => u.HealthData)
-                .WithOne(h => h.User)
-                .HasForeignKey(h => h.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             
             modelBuilder.Entity<UserEntity>()

@@ -3,28 +3,32 @@ using Data.Accessor.Models;
 using Data.Database.Entities.Ai;
 using Data.Database.Entities.HealthConnect;
 using Data.Database.Entities.Settings;
-using Data.Database.Entities.User;
 using Logic.Ai.Interfaces;
-using Microsoft.EntityFrameworkCore.Storage.Json;
+using Logic.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
 using Shared.Enums.HealthConnect;
-using System.Linq.Expressions;
 
 namespace Logic.Ai.Training
 {
     public class AiTrainingDataBuilder : IAiTrainingDataBuilder
     {
         private readonly ILogger<AiTrainingDataBuilder> _logger;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
+        private readonly IHealthUnitOfWork _healthUnitOfWork;
         private readonly IAiUnitOfWork _aiUnitOfWork;
 
         public AiTrainingDataBuilder(
             ILogger<AiTrainingDataBuilder> logger,
+            ICurrentUserService currentUserService,
             IApplicationUnitOfWork applicationUnitOfWork,
+            IHealthUnitOfWork healthUnitOfWork,
             IAiUnitOfWork aiUnitOfWork)
         {
             _logger = logger;
+            _currentUserService = currentUserService;
             _applicationUnitOfWork = applicationUnitOfWork;
+            _healthUnitOfWork = healthUnitOfWork;
             _aiUnitOfWork = aiUnitOfWork;
         }
 
@@ -32,113 +36,77 @@ namespace Logic.Ai.Training
         {
             try
             {
-                var newAiTrainingDataEntities = new List<AiHealthConnectExerciseTrainingDataEntity>();
-                var activeAiSettingsGrouping = await GetAiSettingsGrouping();
-                var exerciseEntities = await GetAllHealthConnectExerciseEntities();
+                var exerciseRecords = await _healthUnitOfWork.HealthConnectRecordRepository.GetAsync(
+                    new DbQueryOptions<HealthConnectRecordEntity>
+                    {
+                        AsNoTracking = true,
+                        WhereExpression = record => record.RecordType == HealthConnectRecordTypeEnum.ExerciseSession,
+                        Includes =
+                        {
+                            record => record.Values,
+                            record => record.Segments
+                        }
+                    });
 
-                if (!activeAiSettingsGrouping.Any() || !exerciseEntities.Any())
+                if (exerciseRecords.Count == 0)
                 {
-                    _logger.LogInformation("No active AI settings or exercise entities found for AI training data build.");
+                    _logger.LogInformation("No exercise session records found for AI training data generation.");
                     return;
                 }
 
-                var existingAiTrainingData = await _aiUnitOfWork.AiHealthConnectExerciseTrainingDataRepository.GetAsync();
+                var trainingDataEntities = new List<HealthConnectRunningAiTrainingDataEntity>();
 
-                var existingEntitiesDictionary = existingAiTrainingData.ToDictionary(e => e.ExcerciseId, x => x);
-
-                foreach (var kvp in activeAiSettingsGrouping)
+                foreach (var userGroup in exerciseRecords.GroupBy(record => record.UserId))
                 {
-                    var exercisesToProcessForUser = exerciseEntities.Where(e => e.UserId == kvp.Key);
+                    var userId = userGroup.Key;
 
-                    foreach (var excercise in exercisesToProcessForUser)
+                   
+                    if (!await CanUseHealthDataForAiTraining(userId))
                     {
-                        if (string.IsNullOrEmpty(excercise.ExerciseId))
+                        _logger.LogInformation(
+                            "Skipping AI exercise training data for user {UserId} because health data usage is not allowed.",
+                            userId);
+                        continue;
+                    }
+
+                    foreach (var exercise in userGroup)
+                    {
+                        if (exercise.StartTime is null || exercise.EndTime is null)
                         {
-                            _logger.LogInformation(
-                                $"Exercise entity {excercise.Id} for user {excercise.UserId} has no ExerciseId " +
-                                $"or already exists in training data. Skipping.");
                             continue;
                         }
 
-                        var relatedHealthConnectEntities = await GetRelatedHealthConnectData(excercise.UserId, excercise.ExerciseId);
-
-                        if (!relatedHealthConnectEntities.Any())
-                        {
-                            _logger.LogInformation(
-                                $"No related health connect entities found for exercise entity {excercise.Id} of user {excercise.UserId}");
-                            continue;
-                        }
-
-                        // Parse timestamps once and validate
-                        if (!DateTime.TryParse(excercise.StartTimestamp, out var startTimeStamp) || !DateTime.TryParse(excercise.EndTimestamp, out var endTimeStamp))
-                        {
-                            _logger.LogInformation($"Invalid timestamps for exercise entity {excercise.Id} of user {excercise.UserId}. Skipping.");
-                            continue;
-                        }
-
-                        var generalHealthConnectEntities = relatedHealthConnectEntities.Where(x =>
-                            x.Type != HealthConnectRecordTypeEnum.ExerciseSession &&
-                            DateTime.TryParse(x.StartTimestamp, out var st) && st.Date == startTimeStamp.Date &&
-                            DateTime.TryParse(x.EndTimestamp, out var endTimestamp) && endTimestamp.Date == endTimeStamp.Date).ToList();
-
-                        if (existingEntitiesDictionary.TryGetValue(excercise.ExerciseId, out var existingEntity))
-                        {
-                            _logger.LogInformation($"Exercise entity {excercise.Id} for user {excercise.UserId} already exists in training data. Updating Entity.");
-
-                            existingEntity.Weight = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Weight);
-                            existingEntity.DistanceInMeters = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Distance);
-                            existingEntity.Steps = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Steps);
-                            existingEntity.Vo2Max = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Vo2Max);
-                            existingEntity.LeanBodyMass = GetValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.LeanBodyMass);
-                            existingEntity.MaxHeartRate = GetMaxValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate);
-                            existingEntity.MinHeartRate = GetMinValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate);
-                            existingEntity.ElevationGain = GetValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.ElevationGained);
-                            existingEntity.CaloriesBurned = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.ActiveCaloriesBurned);
-                            existingEntity.BodyFat = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.BodyFat);
-                            existingEntity.OxygenSaturationAvg = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.OxygenSaturation);
-                            existingEntity.RespiratoryRatePerMinuteAvg = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.RespiratoryRate);
-                            existingEntity.HeartRateAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate);
-                            existingEntity.CyclingPedalingCadenceAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.CyclingPedalingCadence);
-                            existingEntity.SpeedAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Speed);
-                            existingEntity.PowerAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Power);
-                            existingEntity.StepsCadenceAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.StepsCadence);
-
-                            await _aiUnitOfWork.AiHealthConnectExerciseTrainingDataRepository.UpdateAsync(existingEntity);
-                        }
-                        else
-                        {
-                            var newAiTrainingDataEntity = new AiHealthConnectExerciseTrainingDataEntity
+                        var healthRecords = await _healthUnitOfWork.HealthConnectRecordRepository.GetAsync(
+                            new DbQueryOptions<HealthConnectRecordEntity>
                             {
-                                ExcerciseId = excercise.ExerciseId,
-                                ExerciseType = excercise.ExerciseType ?? ExerciseTypeEnum.OtherWorkout,
-                                StartTimeStamp = startTimeStamp,
-                                EndTimeStamp = endTimeStamp,
-                                Weight = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Weight),
-                                DistanceInMeters = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Distance),
-                                Steps = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Steps),
-                                Vo2Max = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Vo2Max),
-                                LeanBodyMass = GetValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.LeanBodyMass),
-                                MaxHeartRate = GetMaxValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate),
-                                MinHeartRate = GetMinValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate),
-                                ElevationGain = GetValue(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.ElevationGained),
-                                CaloriesBurned = GetSumOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.ActiveCaloriesBurned),
-                                BodyFat = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.BodyFat),
-                                OxygenSaturationAvg = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.OxygenSaturation),
-                                RespiratoryRatePerMinuteAvg = GetAvgOf(generalHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.RespiratoryRate),
-                                HeartRateAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.HeartRate),
-                                CyclingPedalingCadenceAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.CyclingPedalingCadence),
-                                SpeedAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Speed),
-                                PowerAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.Power),
-                                StepsCadenceAvg = GetAvgOf(relatedHealthConnectEntities, x => x.Type == HealthConnectRecordTypeEnum.StepsCadence)
-                            };
+                                AsNoTracking = true,
+                                WhereExpression = record =>
+                                    record.UserId == userId
+                                    && record.RecordType != HealthConnectRecordTypeEnum.ExerciseSession
+                                    && record.StartTime != null
+                                    // Include every record whose time interval overlaps the exercise session.
+                                    && record.StartTime <= exercise.EndTime
+                                    && ((record.EndTime != null && record.EndTime >= exercise.StartTime)
+                                        || (record.EndTime == null && record.StartTime >= exercise.StartTime)),
+                                Includes =
+                                {
+                                    record => record.Values
+                                }
+                            });
 
-                            newAiTrainingDataEntities.Add(newAiTrainingDataEntity);
-                        }
+                        var fallbackVo2Max = await GetLatestVo2MaxAsync(userId, exercise.EndTime.Value);
+
+                        trainingDataEntities.Add(BuildExerciseTrainingDataEntity(userId, exercise, healthRecords, fallbackVo2Max));
                     }
                 }
 
-                await _aiUnitOfWork.AiHealthConnectExerciseTrainingDataRepository.AddRangeAsync(newAiTrainingDataEntities);
+                if (trainingDataEntities.Count == 0)
+                {
+                    _logger.LogInformation("No AI exercise training data entities were created.");
+                    return;
+                }
 
+                await _aiUnitOfWork.HealthConnectRunningAiTrainingDataRepository.AddRangeAsync(trainingDataEntities);
                 await _aiUnitOfWork.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -147,80 +115,265 @@ namespace Logic.Ai.Training
             }
         }
 
-        private async Task<List<KeyValuePair<long, AISettingsEntity>>> GetAiSettingsGrouping()
+        private async Task<bool> CanUseHealthDataForAiTraining(long userId)
         {
-            var entities = await _applicationUnitOfWork.UserRepository.GetAsync(
-                new DbQueryOptions<UserEntity>
+            var user = await _applicationUnitOfWork.UserRepository.GetByIdAsync(userId, asNoTracking: true);
+
+            if (user is null)
+            {
+                return false;
+            }
+
+            var settings = await _applicationUnitOfWork.SettingsRepository.GetSingleAsync(
+                new DbQueryOptions<SettingsEntity>
                 {
-                    Includes = new List<Expression<Func<UserEntity, object>>>
+                    WhereExpression = entity => entity.Id == user.SettingsId,
+                    Includes =
                     {
-                                    x => x.Settings.AiSettings
-                    },
-                    WhereExpression = x => x.Settings.AiSettings.CanUseHealthDataForAiTraining
+                        entity => entity.AiSettings
+                    }
+                },
+                asNoTracking: true);
+
+            return settings?.AiSettings?.CanUseHealthDataForAiTraining == true;
+        }
+
+        private async Task<decimal> GetLatestVo2MaxAsync(long userId, DateTimeOffset endTime)
+        {
+            // Vo2Max is measured occasionally rather than during every activity, so fall back to the
+            // most recent value recorded on or before the day the exercise ended.
+            var cutoff = new DateTimeOffset(endTime.Date.AddDays(1), endTime.Offset);
+
+            var vo2MaxRecords = await _healthUnitOfWork.HealthConnectRecordRepository.GetAsync(
+                new DbQueryOptions<HealthConnectRecordEntity>
+                {
+                    AsNoTracking = true,
+                    WhereExpression = record =>
+                        record.UserId == userId
+                        && record.RecordType == HealthConnectRecordTypeEnum.Vo2Max
+                        && record.StartTime != null
+                        && record.StartTime < cutoff,
+                    Includes =
+                    {
+                        record => record.Values
+                    }
                 });
 
-            return entities
-                .Select(user => new KeyValuePair<long, AISettingsEntity>(user.Id, user.Settings.AiSettings))
+            var latestRecord = vo2MaxRecords
+                .Where(record => record.StartTime != null)
+                .OrderByDescending(record => record.StartTime)
+                .FirstOrDefault();
+
+            return latestRecord?.Values
+                .FirstOrDefault(value => value.ValueType == HealthConnectValueTypeEnum.Vo2Max)?.Value ?? 0.00m;
+        }
+
+        private static HealthConnectRunningAiTrainingDataEntity BuildExerciseTrainingDataEntity(
+            long userId,
+            HealthConnectRecordEntity exercise,
+            IReadOnlyList<HealthConnectRecordEntity> healthRecords,
+            decimal fallbackVo2Max)
+        {
+            var startTime = exercise.StartTime!.Value;
+            var endTime = exercise.EndTime!.Value;
+
+            // Guard against duplicate records that share the same client record id (e.g. imported more
+            // than once) so cumulative metrics are not counted multiple times.
+            var deduplicatedRecords = healthRecords
+                .GroupBy(record => string.IsNullOrWhiteSpace(record.ClientRecordId)
+                    ? Guid.NewGuid().ToString()
+                    : record.ClientRecordId)
+                .Select(group => group.First())
+                .ToList();
+
+            var healthValues = deduplicatedRecords
+                .SelectMany(record => record.Values)
+                .ToList();
+
+            var exerciseValue = exercise.Values
+                .FirstOrDefault(value => value.ValueType == HealthConnectValueTypeEnum.ExerciseSession);
+
+            var heartRateValues = ValuesOf(healthValues, HealthConnectValueTypeEnum.HeartRate);
+            // Speed samples are stored in meters per second, convert them to km/h for the training data.
+            var speedInKmhValues = ValuesOf(healthValues, HealthConnectValueTypeEnum.Speed)
+                .Select(value => value * 3.6m)
+                .ToList();
+            var powerValues = ValuesOf(healthValues, HealthConnectValueTypeEnum.Power);
+
+            // Cumulative metrics (distance, steps, calories, elevation) are often recorded by
+            // multiple data sources (e.g. phone and watch) for the same activity. Summing across all
+            // records would double count them, so aggregate per data source and take the maximum.
+            var distanceInMeters = SumByOrigin(deduplicatedRecords, HealthConnectValueTypeEnum.Distance);
+            var durationSeconds = (decimal)(endTime - startTime).TotalSeconds;
+
+            // Prefer the recorded speed samples. When none are available (e.g. only distance was
+            // tracked) derive the average speed from the total distance and duration and use it as
+            // the min/max value as well.
+            var hasSpeedSamples = speedInKmhValues.Count > 0;
+            var averageSpeedInKmh = hasSpeedSamples
+                ? Average(speedInKmhValues)
+                : CalculateAverageSpeedInKmh(distanceInMeters, durationSeconds);
+            var minSpeedInKmh = hasSpeedSamples ? Min(speedInKmhValues) : averageSpeedInKmh;
+            var maxSpeedInKmh = hasSpeedSamples ? Max(speedInKmhValues) : averageSpeedInKmh;
+
+            var vo2MaxInWindow = First(healthValues, HealthConnectValueTypeEnum.Vo2Max);
+
+            return new HealthConnectRunningAiTrainingDataEntity
+            {
+                UserId = userId,
+                ExerciseType = (ExerciseTypeEnum)(exerciseValue?.CategoryValue ?? 0),
+                StartTime = startTime,
+                EndTime = endTime,
+                DurationSeconds = durationSeconds,
+                DistanceInMeters = distanceInMeters,
+                Pace = CalculatePace(distanceInMeters, durationSeconds),
+                SpeedInKilometersPerHourAvg = averageSpeedInKmh,
+                MinSpeedInKilometersPerHour = minSpeedInKmh,
+                MaxSpeedInKilometersPerHour = maxSpeedInKmh,
+                Steps = (int)SumByOrigin(deduplicatedRecords, HealthConnectValueTypeEnum.Steps),
+                StepCadence = (int)First(healthValues, HealthConnectValueTypeEnum.StepsCadence),
+                HeartRateAvg = Average(heartRateValues),
+                MinHeartRate = Min(heartRateValues),
+                MaxHeartRate = Max(heartRateValues),
+                PowerInWattsAvg = Average(powerValues),
+                ElevationGainedInMeters = SumByOrigin(deduplicatedRecords, HealthConnectValueTypeEnum.ElevationGained),
+                OxygenSaturationAvg = Average(ValuesOf(healthValues, HealthConnectValueTypeEnum.OxygenSaturation)),
+                CaloriesBurned = Math.Max(
+                    SumByOrigin(deduplicatedRecords, HealthConnectValueTypeEnum.ActiveCaloriesBurned),
+                    SumByOrigin(deduplicatedRecords, HealthConnectValueTypeEnum.TotalCaloriesBurned)),
+                Vo2Max = vo2MaxInWindow > 0 ? vo2MaxInWindow : fallbackVo2Max
+            };
+        }
+
+        private static List<decimal> ValuesOf(IEnumerable<HealthConnectValueEntity> values, HealthConnectValueTypeEnum valueType)
+        {
+            return values
+                .Where(value => value.ValueType == valueType)
+                .Select(value => value.Value)
                 .ToList();
         }
 
-        private async Task<IReadOnlyList<HealthConnectDataEntity>> GetAllHealthConnectExerciseEntities()
+        private static decimal SumByOrigin(IEnumerable<HealthConnectRecordEntity> records, HealthConnectValueTypeEnum valueType)
         {
-            var entities = await _applicationUnitOfWork.HealthConnectDataRepository.GetAsync(
-                new DbQueryOptions<HealthConnectDataEntity>
+            // Sum the metric per data source and take the largest total to avoid double counting the
+            // same activity that was tracked by more than one source (e.g. phone and watch).
+            var totalsByOrigin = records
+                .Select(record => new
                 {
-                    WhereExpression = x => x.Type == HealthConnectRecordTypeEnum.ExerciseSession
-                });
+                    Origin = record.Origin ?? string.Empty,
+                    record.StartTime,
+                    record.EndTime,
+                    Total = record.Values
+                        .Where(value => value.ValueType == valueType)
+                        .Sum(value => value.Value)
+                })
+                .Where(entry => entry.Total > 0)
+                .GroupBy(entry => entry.Origin)
+                .Select(group => SumNonOverlapping(
+                    group.Select(entry => (entry.StartTime, entry.EndTime, entry.Total))))
+                .ToList();
 
-            return entities;
+            return totalsByOrigin.Count > 0 ? totalsByOrigin.Max() : 0.00m;
         }
 
-        private async Task<IReadOnlyList<HealthConnectDataEntity>> GetRelatedHealthConnectData(long userId, string? exerciseId)
+        private static decimal SumNonOverlapping(IEnumerable<(DateTimeOffset? Start, DateTimeOffset? End, decimal Total)> entries)
         {
-            if (string.IsNullOrEmpty(exerciseId))
+            // Within a single data source the watch/phone often reports a summary record that spans
+            // the whole activity alongside granular sub-interval records (e.g. a full-session distance
+            // of 10 km plus an intermediate 5 km segment). Simply summing them would count the nested
+            // segment twice, so records that are fully contained in an already accepted interval are
+            // skipped. Larger intervals are processed first so the summary record wins.
+            var ordered = entries
+                .OrderByDescending(entry => IntervalLengthSeconds(entry.Start, entry.End))
+                .ToList();
+
+            var acceptedIntervals = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+            var total = 0.00m;
+
+            foreach (var entry in ordered)
             {
-                return new List<HealthConnectDataEntity>();
+                if (entry.Start is null || entry.End is null)
+                {
+                    // Records without a usable interval cannot be checked for overlap, so keep them.
+                    total += entry.Total;
+                    continue;
+                }
+
+                var start = entry.Start.Value;
+                var end = entry.End.Value;
+
+                var isContained = acceptedIntervals.Any(interval =>
+                    start >= interval.Start && end <= interval.End);
+
+                if (isContained)
+                {
+                    continue;
+                }
+
+                acceptedIntervals.Add((start, end));
+                total += entry.Total;
             }
 
-            var entities = await _applicationUnitOfWork.HealthConnectDataRepository.GetAsync(
-                new DbQueryOptions<HealthConnectDataEntity>
-                {
-                    WhereExpression = x =>
-                        !string.IsNullOrEmpty(x.ExerciseId) &&
-                        x.ExerciseId == exerciseId &&
-                        x.UserId == userId &&
-                        x.Type != HealthConnectRecordTypeEnum.ExerciseSession
-                });
-            return entities;
+            return total;
         }
 
-        private decimal GetValue(IEnumerable<HealthConnectDataEntity> entities, Func<HealthConnectDataEntity, bool> predicate)
+        private static double IntervalLengthSeconds(DateTimeOffset? start, DateTimeOffset? end)
         {
-            return entities.FirstOrDefault(predicate)?.Value ?? 0;
+            if (start is null || end is null)
+            {
+                return 0;
+            }
+
+            return (end.Value - start.Value).TotalSeconds;
         }
 
-        private decimal GetMaxValue(IEnumerable<HealthConnectDataEntity> entities, Func<HealthConnectDataEntity, bool> predicate)
+        private static decimal First(IEnumerable<HealthConnectValueEntity> values, HealthConnectValueTypeEnum valueType)
         {
-            var vals = entities.Where(predicate).Select(x => x.Value);
-            return vals.Any() ? vals.Max() : 0;
+            var match = values.FirstOrDefault(value => value.ValueType == valueType);
+
+            return match?.Value ?? 0.00m;
         }
 
-        private decimal GetMinValue(IEnumerable<HealthConnectDataEntity> entities, Func<HealthConnectDataEntity, bool> predicate)
+        private static decimal Average(IReadOnlyCollection<decimal> values)
         {
-            var vals = entities.Where(predicate).Select(x => x.Value);
-            return vals.Any() ? vals.Min() : 0;
+            return values.Count > 0 ? values.Average() : 0.00m;
         }
 
-        private decimal GetSumOf(IEnumerable<HealthConnectDataEntity> entities, Func<HealthConnectDataEntity, bool> predicate)
+        private static decimal Min(IReadOnlyCollection<decimal> values)
         {
-            return entities.Where(predicate).Sum(x => x.Value);
+            return values.Count > 0 ? values.Min() : 0.00m;
         }
 
-        private decimal GetAvgOf(IEnumerable<HealthConnectDataEntity> entities, Func<HealthConnectDataEntity, bool> predicate)
+        private static decimal Max(IReadOnlyCollection<decimal> values)
         {
-            var filtered = entities.Where(predicate);
-            return filtered.Any() ? filtered.Average(x => x.Value) : 0;
+            return values.Count > 0 ? values.Max() : 0.00m;
         }
 
+        private static decimal CalculatePace(decimal distanceInMeters, decimal durationSeconds)
+        {
+            if (distanceInMeters <= 0)
+            {
+                return 0.00m;
+            }
+
+            // Pace in minutes per kilometer.
+            var distanceInKilometers = distanceInMeters / 1000m;
+            var durationInMinutes = durationSeconds / 60m;
+
+            return durationInMinutes / distanceInKilometers;
+        }
+
+        private static decimal CalculateAverageSpeedInKmh(decimal distanceInMeters, decimal durationSeconds)
+        {
+            if (distanceInMeters <= 0 || durationSeconds <= 0)
+            {
+                return 0.00m;
+            }
+
+            var distanceInKilometers = distanceInMeters / 1000m;
+            var durationInHours = durationSeconds / 3600m;
+
+            return distanceInKilometers / durationInHours;
+        }
     }
 }

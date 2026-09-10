@@ -14,7 +14,7 @@ const SwitchComponent: React.FC<IProps> = props => {
   return (
     <View style={styles.container}>
       <Switch
-        style={styles.switch}
+        style={[styles.switch, disabled && styles.switchDisabled]}
         trackColor={{
           true: colorMap.primary,
           false: colorMap.disabled,
@@ -37,6 +37,9 @@ const styles = StyleSheet.create({
   },
   switch: {
     marginRight: 10,
+  },
+  switchDisabled: {
+    opacity: 0.5,
   },
 });
 
