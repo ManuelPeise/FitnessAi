@@ -88,15 +88,15 @@ class HealthConnectSchedulePayloadFactory {
 
     for (const date of datesToProcess) {
       const dailyData: HealthConnectDailyDataModel = {
-        date,
+        date: date.toISOString(),
         aggregatedData: await this.getAggregatedDataForDate(
-          date,
+          date.toISOString(),
           originMappingMap,
           metricMappingMap,
           activeMetricMappingMap,
         ),
         trainingData: await this.getTrainingDataForDate(
-          date,
+          date.toISOString(),
           originMappingMap,
           metricMappingMap,
           activeMetricMappingMap,
@@ -180,7 +180,7 @@ class HealthConnectSchedulePayloadFactory {
   };
 
   private async getAggregatedDataForDate(
-    date: Date,
+    date: string,
     originMappingMap: HealthConnectOriginMappingMap,
     metricMappingMap: HealthConnectMetricMappingMap[],
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
@@ -190,7 +190,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const heartRateResult = metricActiveStateMap['heartRate']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'HeartRate',
           mapping('HeartRate') ?? null,
           this.getOriginsForMetric('HeartRate', originMappingMap),
@@ -199,7 +199,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const restingHeartRateResult = metricActiveStateMap['restingHeartRate']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'RestingHeartRate',
           mapping('RestingHeartRate') ?? null,
           this.getOriginsForMetric('RestingHeartRate', originMappingMap),
@@ -208,7 +208,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const sleepResult = metricActiveStateMap['sleepDurationInSeconds']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'SleepSession',
           mapping('SleepSession') ?? null,
           this.getOriginsForMetric('SleepSession', originMappingMap),
@@ -217,7 +217,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const floorsClimbedResult = metricActiveStateMap['floorsClimbed']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'FloorsClimbed',
           mapping('FloorsClimbed') ?? null,
           this.getOriginsForMetric('FloorsClimbed', originMappingMap),
@@ -226,7 +226,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const basalMetabolicRateResult = metricActiveStateMap['basalMetabolicRate']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'BasalMetabolicRate',
           mapping('BasalMetabolicRate') ?? null,
           this.getOriginsForMetric('BasalMetabolicRate', originMappingMap),
@@ -235,7 +235,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const activeCaloriesResult = metricActiveStateMap['calories']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'ActiveCaloriesBurned',
           mapping('ActiveCaloriesBurned') ?? null,
           this.getOriginsForMetric('ActiveCaloriesBurned', originMappingMap),
@@ -244,7 +244,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const totalCaloriesResult = metricActiveStateMap['calories']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'TotalCaloriesBurned',
           mapping('TotalCaloriesBurned') ?? null,
           this.getOriginsForMetric('TotalCaloriesBurned', originMappingMap),
@@ -253,7 +253,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const weightResult = metricActiveStateMap['weight']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'Weight',
           mapping('Weight') ?? null,
           this.getOriginsForMetric('Weight', originMappingMap),
@@ -262,7 +262,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const stepsResult = metricActiveStateMap['steps']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'Steps',
           mapping('Steps') ?? null,
           this.getOriginsForMetric('Steps', originMappingMap),
@@ -271,7 +271,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const hydrationResult = metricActiveStateMap['hydration']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'Hydration',
           mapping('Hydration') ?? null,
           this.getOriginsForMetric('Hydration', originMappingMap),
@@ -280,7 +280,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const bloodPressureResult = metricActiveStateMap['bloodPressure']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'BloodPressure',
           mapping('BloodPressure') ?? null,
           this.getOriginsForMetric('BloodPressure', originMappingMap),
@@ -289,7 +289,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const wheelchairPushesResult = metricActiveStateMap['wheelchairPushes']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'WheelchairPushes',
           mapping('WheelchairPushes') ?? null,
           this.getOriginsForMetric('WheelchairPushes', originMappingMap),
@@ -298,7 +298,7 @@ class HealthConnectSchedulePayloadFactory {
 
     const heightResult = metricActiveStateMap['height']
       ? await this.getValueOrNull(
-          date,
+          new Date(date),
           'Height',
           mapping('Height') ?? null,
           this.getOriginsForMetric('Height', originMappingMap),
@@ -307,8 +307,8 @@ class HealthConnectSchedulePayloadFactory {
 
     return {
       source: 'HealthConnectSyncClient',
-      endTime: utils.getEndOfDay(date),
-      startTime: utils.getStartOfDay(date),
+      endTime: utils.getEndOfDay(new Date(date)).toDateString(),
+      startTime: utils.getStartOfDay(new Date(date)).toDateString(),
       activeCaloriesBurnedInKcal:
         activeCaloriesResult?.ACTIVE_CALORIES_TOTAL.inKilocalories ?? null,
       totalCaloriesBurnedInKcal:
@@ -342,7 +342,7 @@ class HealthConnectSchedulePayloadFactory {
   }
 
   private async getTrainingDataForDate(
-    date: Date,
+    date: string,
     originMappingMap: HealthConnectOriginMappingMap,
     metricMappingMap: HealthConnectMetricMappingMap[],
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
@@ -350,8 +350,8 @@ class HealthConnectSchedulePayloadFactory {
     const trainingData: HealthConnectTrainingDataRecordData[] = [];
 
     const exercises = await healthConnectService.readExerciseSessions({
-      startTime: utils.getStartOfDay(date),
-      endTime: utils.getEndOfDay(date),
+      startTime: utils.getStartOfDay(new Date(date)),
+      endTime: utils.getEndOfDay(new Date(date)),
     });
 
     if (!exercises || !exercises.records || exercises.records.length === 0) {
@@ -361,7 +361,7 @@ class HealthConnectSchedulePayloadFactory {
     for (const record of exercises.records) {
       const trainingEntry: HealthConnectTrainingDataRecordData | null =
         await this.getTrainingDataEntry(
-          date,
+          new Date(date),
           record,
           originMappingMap,
           metricMappingMap,

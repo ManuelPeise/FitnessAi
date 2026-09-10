@@ -20,5 +20,8 @@ namespace Data.Database.Entities.User
         [ForeignKey(nameof(SettingsId))]
         public SettingsEntity Settings { get; set; } = null!;
 
+        public ICollection<HealthConnectHealthDataEntity> HealthData { get; set; } = [];
+        public ICollection<HealthConnectTrainingDataEntity> TrainingData { get; set; } = [];
+
     }
 }

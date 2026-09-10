@@ -2,7 +2,7 @@
 using Logic.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Enums.Authentication;
-using Shared.Models.HealthConnect;
+using Shared.Models.HealthConnect.ImportModels;
 
 namespace Core.Api.ApiControllers.Import
 {
@@ -18,9 +18,11 @@ namespace Core.Api.ApiControllers.Import
         [RequestSizeLimit(300 * 1024 * 1024)]
         [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpPost(Name = "ImportHealthData")]
-        public async Task ImportHealthData([FromBody] List<HealthConnectMetricApiMetric> metrics)
+        public async Task ImportHealthData([FromBody] List<HealthConnectDailyDataModel> dailyDataModels)
         {
-            await _healthDataImport.ImportHealthConnectData(metrics);
+            var json = System.Text.Json.JsonSerializer.Serialize(dailyDataModels);
+
+            await _healthDataImport.ImportHealthConnectData(dailyDataModels);
         }
     }
 }

@@ -12,24 +12,44 @@ namespace Data.Accessor
         private readonly AIDbContext _context;
         private readonly HttpContext _httpContext;
 
-        private IRepositoryBase<HealthConnectRecordEntity> _healthConnectRecordRepository;
-        private IRepositoryBase<HealthConnectValueEntity> _healthConnectValueRepository;
-        private IRepositoryBase<HealthConnectSegmentEntity> _healthConnectSegmentRepository;
+        private IRepositoryBase<HealthConnectUnitEntity> _healthConnectUnitRepository;
+        private IRepositoryBase<HealthConnectAvgEntity> _healthConnectAvgRepository;
+        private IRepositoryBase<HealthConnectBloodPressureEntity> _healthConnectBloodPressureRepository;
+        private IRepositoryBase<HealthConnectValuesEntity> _healthConnectValuesRepository;
+        private IRepositoryBase<HealthConnectHealthDataEntity> _healthConnectHealthDataRepository;
+        private IRepositoryBase<HealthConnectTimeZoneEntity> _healthConnectTimeZoneRepository;
+        private IRepositoryBase<HealthConnectTrainingDataEntity> _healthConnectTrainingDataRepository;
+        private IRepositoryBase<HealthConnectTrainingDataValuesEntity> _healthConnectTrainingDataValuesRepository;
 
-        public IRepositoryBase<HealthConnectRecordEntity> HealthConnectRecordRepository =>
-            _healthConnectRecordRepository ??= new RepositoryBase<HealthConnectRecordEntity>(_context);
-        public IRepositoryBase<HealthConnectValueEntity> HealthConnectValueRepository =>
-            _healthConnectValueRepository ??= new RepositoryBase<HealthConnectValueEntity>(_context);
-        public IRepositoryBase<HealthConnectSegmentEntity> HealthConnectSegmentRepository =>
-            _healthConnectSegmentRepository ??= new RepositoryBase<HealthConnectSegmentEntity>(_context);
+        public IRepositoryBase<HealthConnectUnitEntity> HealthConnectUnitRepository =>
+            _healthConnectUnitRepository ??= new RepositoryBase<HealthConnectUnitEntity>(_context);
+        public IRepositoryBase<HealthConnectAvgEntity> HealthConnectAvgRepository =>
+            _healthConnectAvgRepository ??= new RepositoryBase<HealthConnectAvgEntity>(_context);
+        public IRepositoryBase<HealthConnectBloodPressureEntity> HealthConnectBloodPressureRepository =>
+            _healthConnectBloodPressureRepository ??= new RepositoryBase<HealthConnectBloodPressureEntity>(_context);
+        public IRepositoryBase<HealthConnectValuesEntity> HealthConnectValuesRepository =>
+            _healthConnectValuesRepository ??= new RepositoryBase<HealthConnectValuesEntity>(_context);
+        public IRepositoryBase<HealthConnectHealthDataEntity> HealthConnectHealthDataRepository =>
+            _healthConnectHealthDataRepository ??= new RepositoryBase<HealthConnectHealthDataEntity>(_context);
+        public IRepositoryBase<HealthConnectTimeZoneEntity> HealthConnectTimeZoneRepository =>
+            _healthConnectTimeZoneRepository ??= new RepositoryBase<HealthConnectTimeZoneEntity>(_context);
+        public IRepositoryBase<HealthConnectTrainingDataEntity> HealthConnectTrainingDataRepository =>
+            _healthConnectTrainingDataRepository ??= new RepositoryBase<HealthConnectTrainingDataEntity>(_context);
+        public IRepositoryBase<HealthConnectTrainingDataValuesEntity> HealthConnectTrainingDataValuesRepository =>
+            _healthConnectTrainingDataValuesRepository ??= new RepositoryBase<HealthConnectTrainingDataValuesEntity>(_context);
 
         public HealthUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
-            _healthConnectRecordRepository = new RepositoryBase<HealthConnectRecordEntity>(context);
-            _healthConnectValueRepository = new RepositoryBase<HealthConnectValueEntity>(context);
-            _healthConnectSegmentRepository = new RepositoryBase<HealthConnectSegmentEntity>(context);
+            _healthConnectUnitRepository = new RepositoryBase<HealthConnectUnitEntity>(context);
+            _healthConnectAvgRepository = new RepositoryBase<HealthConnectAvgEntity>(context);
+            _healthConnectBloodPressureRepository = new RepositoryBase<HealthConnectBloodPressureEntity>(context);
+            _healthConnectValuesRepository = new RepositoryBase<HealthConnectValuesEntity>(context);
+            _healthConnectHealthDataRepository = new RepositoryBase<HealthConnectHealthDataEntity>(context);
+            _healthConnectTimeZoneRepository = new RepositoryBase<HealthConnectTimeZoneEntity>(context);
+            _healthConnectTrainingDataRepository = new RepositoryBase<HealthConnectTrainingDataEntity>(context);
+            _healthConnectTrainingDataValuesRepository = new RepositoryBase<HealthConnectTrainingDataValuesEntity>(context);
         }
 
 

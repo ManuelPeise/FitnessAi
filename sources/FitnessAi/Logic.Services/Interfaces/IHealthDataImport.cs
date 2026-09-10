@@ -1,9 +1,10 @@
 ﻿using Shared.Models.HealthConnect;
+using Shared.Models.HealthConnect.ImportModels;
 
 namespace Logic.Services.Interfaces
 {
     public interface IHealthDataImport
     {
-        Task ImportHealthConnectData(List<HealthConnectMetricApiMetric> metrics);
+        Task ImportHealthConnectData(List<HealthConnectDailyDataModel> models);
     }
 }
