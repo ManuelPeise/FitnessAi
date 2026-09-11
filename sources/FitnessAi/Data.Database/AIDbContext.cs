@@ -74,12 +74,6 @@ namespace Data.Database
         {
             // HealthConnectAvgEntity
             modelBuilder.Entity<HealthConnectAvgEntity>()
-                .HasOne(a => a.Values)
-                .WithMany()
-                .HasForeignKey(a => a.HealthConnectValuesId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAvgEntity>()
                 .HasOne(a => a.Unit)
                 .WithMany()
                 .HasForeignKey(a => a.UnitId)

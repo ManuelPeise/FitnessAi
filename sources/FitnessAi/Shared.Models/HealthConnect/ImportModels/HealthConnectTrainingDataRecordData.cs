@@ -1,21 +1,18 @@
 ﻿using Newtonsoft.Json;
 using Shared.Enums.HealthConnect;
-using Shared.Models.HealthConnect.ImportModels;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Shared.Models.HealthConnect.ImportModels
 {
     public class HealthConnectTrainingDataRecordData
     {
+        [JsonProperty("exerciseMetricId")]
+        public string? ExerciseMetricId { get; set; }
         [JsonProperty("origin")]
         public string Origin { get; set; } = string.Empty;
+        [JsonProperty("system")]
+        public string System { get; set; } = string.Empty;
         [JsonProperty("activeCaloriesBurnedInKcal")]
         public decimal? ActiveCaloriesBurnedInKcal { get; set; }
-        [JsonProperty("totalCaloriesBurnedInKcal")]
-        public decimal? TotalCaloriesBurnedInKcal { get; set; }
         [JsonProperty("cyclingPedalingCadence")]
         public HealthConnectValues? CyclingPedalingCadence { get; set; }
         [JsonProperty("distanceInMeters")]
@@ -48,5 +45,11 @@ namespace Shared.Models.HealthConnect.ImportModels
         public HealthConnectTimeZoneModel? TimeZoneInfo { get; set; }
         [JsonProperty("weightAvg")]
         public decimal? WeightAvg { get; set; }
+        [JsonProperty("notes")]
+        public string? Notes { get; set; }
+        [JsonProperty("laps")]
+        public List<HealthConnectLap> Laps { get; set; } = [];
+        [JsonProperty("segments")]
+        public List<HealthConnectSegment> Segments { get; set; } = [];
     }
 }

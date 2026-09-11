@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(AIDbContext))]
-    [Migration("20260910215804_InitializeDatabase")]
+    [Migration("20260911143808_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -122,9 +122,6 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<long>("HealthConnectValuesId")
-                        .HasColumnType("bigint");
-
                     b.Property<decimal?>("Max")
                         .HasColumnType("decimal(18,2)");
 
@@ -141,8 +138,6 @@ namespace Data.Database.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("HealthConnectValuesId");
 
                     b.HasIndex("UnitId");
 
@@ -238,6 +233,85 @@ namespace Data.Database.Migrations
                     b.ToTable("HealthConnectHealthDataTable");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectLapEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("LengthInMeters")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("TrainingDataValuesId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrainingDataValuesId");
+
+                    b.ToTable("HealthConnectLapEntity");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectSegmentEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Repetitions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SegmentType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("TrainingDataValuesId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrainingDataValuesId");
+
+                    b.ToTable("HealthConnectSegmentEntity");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectTimeZoneEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -271,6 +345,9 @@ namespace Data.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("AllowedForAiTraining")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -300,6 +377,10 @@ namespace Data.Database.Migrations
 
                     b.Property<DateTime?>("StartTime")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("System")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -355,6 +436,9 @@ namespace Data.Database.Migrations
                     b.Property<decimal?>("HydrationAvg")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("longtext");
+
                     b.Property<long>("PowerId")
                         .HasColumnType("bigint");
 
@@ -368,9 +452,6 @@ namespace Data.Database.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<decimal?>("Steps")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("TotalCaloriesBurnedInKcal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1075,12 +1156,6 @@ namespace Data.Database.Migrations
 
             modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", b =>
                 {
-                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectValuesEntity", "Values")
-                        .WithMany()
-                        .HasForeignKey("HealthConnectValuesId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectUnitEntity", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
@@ -1088,8 +1163,6 @@ namespace Data.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Unit");
-
-                    b.Navigation("Values");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectBloodPressureEntity", b =>
@@ -1128,6 +1201,28 @@ namespace Data.Database.Migrations
                     b.Navigation("User");
 
                     b.Navigation("Values");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectLapEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectTrainingDataValuesEntity", "TrainingDataValue")
+                        .WithMany("Laps")
+                        .HasForeignKey("TrainingDataValuesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TrainingDataValue");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectSegmentEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectTrainingDataValuesEntity", "TrainingDataValue")
+                        .WithMany("Segments")
+                        .HasForeignKey("TrainingDataValuesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TrainingDataValue");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectTrainingDataEntity", b =>
@@ -1256,6 +1351,13 @@ namespace Data.Database.Migrations
                     b.Navigation("Settings");
 
                     b.Navigation("UserCredentials");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectTrainingDataValuesEntity", b =>
+                {
+                    b.Navigation("Laps");
+
+                    b.Navigation("Segments");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.HealthConnect.HealthConnectValuesEntity", b =>

@@ -15,13 +15,10 @@ namespace Core.Api.ApiControllers.Import
             _healthDataImport = healthDataImport;
         }
 
-        [RequestSizeLimit(300 * 1024 * 1024)]
         [ApiAuthentication(UserRoleEnum.UserRole | UserRoleEnum.AdminRole)]
         [HttpPost(Name = "ImportHealthData")]
         public async Task ImportHealthData([FromBody] List<HealthConnectDailyDataModel> dailyDataModels)
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(dailyDataModels);
-
             await _healthDataImport.ImportHealthConnectData(dailyDataModels);
         }
     }

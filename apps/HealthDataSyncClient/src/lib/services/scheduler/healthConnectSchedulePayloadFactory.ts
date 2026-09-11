@@ -20,6 +20,7 @@ import { getResource } from '../../localization';
 import {
   HealthConnectAggregatedData,
   HealthConnectDailyDataModel,
+  HealthConnectLength,
   HealthConnectMetricActiveStateMap,
   HealthConnectMetricMappingMap,
   HealthConnectOriginMappingMap,
@@ -29,7 +30,6 @@ import { utils } from '../../utils';
 
 class HealthConnectSchedulePayloadFactory {
   private readonly databaseService = databaseAccessor;
-  private readonly healthConnect = healthConnectService;
 
   create = async (
     userId: number,
@@ -80,9 +80,11 @@ class HealthConnectSchedulePayloadFactory {
 
     const activeMetricMappingMap: HealthConnectMetricActiveStateMap = {};
 
-    metricMappingMap.forEach(metric => {
-      if (this.isActiveMetric(metric.mapping)) {
-        activeMetricMappingMap[metric.key] = true;
+    Object.values(metricMappingMap).forEach(key => {
+      const metricMapping = metricMappingMap[key.source];
+
+      if (this.isActiveMetric(metricMapping)) {
+        activeMetricMappingMap[metricMapping.source] = true;
       }
     });
 
@@ -137,14 +139,11 @@ class HealthConnectSchedulePayloadFactory {
 
   private getActiveMetricMappingMap = (
     metricMappings: HealthConnectMetricMappingTableEntry[],
-  ): HealthConnectMetricMappingMap[] => {
-    const mappingMap: HealthConnectMetricMappingMap[] = [];
+  ): HealthConnectMetricMappingMap => {
+    const mappingMap: HealthConnectMetricMappingMap = {};
 
     metricMappings.forEach(mapping => {
-      mappingMap.push({
-        key: mapping.source as AggregateResultRecordType,
-        mapping: mapping,
-      });
+      mappingMap[mapping.source] = mapping;
     });
     return mappingMap;
   };
@@ -182,133 +181,192 @@ class HealthConnectSchedulePayloadFactory {
   private async getAggregatedDataForDate(
     date: string,
     originMappingMap: HealthConnectOriginMappingMap,
-    metricMappingMap: HealthConnectMetricMappingMap[],
+    metricMappingMap: HealthConnectMetricMappingMap,
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
   ): Promise<HealthConnectAggregatedData> {
-    const mapping = (key: string) =>
-      metricMappingMap.find(m => m.key === key)?.mapping;
+    const origins = this.getOriginsForMetric(
+      'HeartRate',
+      originMappingMap,
+      metricMappingMap,
+    );
 
-    const heartRateResult = metricActiveStateMap['heartRate']
-      ? await this.getValueOrNull(
+    const heartRateResult = metricActiveStateMap['HeartRate']
+      ? await this.getValue(
           new Date(date),
           'HeartRate',
-          mapping('HeartRate') ?? null,
-          this.getOriginsForMetric('HeartRate', originMappingMap),
+          this.getOriginsForMetric(
+            'HeartRate',
+            originMappingMap,
+            metricMappingMap,
+          ),
         )
       : null;
 
-    const restingHeartRateResult = metricActiveStateMap['restingHeartRate']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'RestingHeartRate',
-          mapping('RestingHeartRate') ?? null,
-          this.getOriginsForMetric('RestingHeartRate', originMappingMap),
-        )
-      : null;
+    console.log(
+      'HeartRate result for date',
+      date,
+      ':',
+      JSON.stringify(heartRateResult),
+    );
+    const restingHeartRateResult =
+      metricActiveStateMap['RestingHeartRate'] === true
+        ? await this.getValue(
+            new Date(date),
+            'RestingHeartRate',
+            this.getOriginsForMetric(
+              'RestingHeartRate',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const sleepResult = metricActiveStateMap['sleepDurationInSeconds']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'SleepSession',
-          mapping('SleepSession') ?? null,
-          this.getOriginsForMetric('SleepSession', originMappingMap),
-        )
-      : null;
+    const sleepResult =
+      metricActiveStateMap['SleepSession'] === true
+        ? await this.getValue(
+            new Date(date),
+            'SleepSession',
+            this.getOriginsForMetric(
+              'SleepSession',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const floorsClimbedResult = metricActiveStateMap['floorsClimbed']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'FloorsClimbed',
-          mapping('FloorsClimbed') ?? null,
-          this.getOriginsForMetric('FloorsClimbed', originMappingMap),
-        )
-      : null;
+    const floorsClimbedResult =
+      metricActiveStateMap['FloorsClimbed'] === true
+        ? await this.getValue(
+            new Date(date),
+            'FloorsClimbed',
+            this.getOriginsForMetric(
+              'FloorsClimbed',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const basalMetabolicRateResult = metricActiveStateMap['basalMetabolicRate']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'BasalMetabolicRate',
-          mapping('BasalMetabolicRate') ?? null,
-          this.getOriginsForMetric('BasalMetabolicRate', originMappingMap),
-        )
-      : null;
+    const basalMetabolicRateResult =
+      metricActiveStateMap['BasalMetabolicRate'] === true
+        ? await this.getValue(
+            new Date(date),
+            'BasalMetabolicRate',
+            this.getOriginsForMetric(
+              'BasalMetabolicRate',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const activeCaloriesResult = metricActiveStateMap['calories']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'ActiveCaloriesBurned',
-          mapping('ActiveCaloriesBurned') ?? null,
-          this.getOriginsForMetric('ActiveCaloriesBurned', originMappingMap),
-        )
-      : null;
+    const activeCaloriesResult =
+      metricActiveStateMap['ActiveCaloriesBurned'] === true
+        ? await this.getValue(
+            new Date(date),
+            'ActiveCaloriesBurned',
+            this.getOriginsForMetric(
+              'ActiveCaloriesBurned',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const totalCaloriesResult = metricActiveStateMap['calories']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'TotalCaloriesBurned',
-          mapping('TotalCaloriesBurned') ?? null,
-          this.getOriginsForMetric('TotalCaloriesBurned', originMappingMap),
-        )
-      : null;
+    const totalCaloriesResult =
+      metricActiveStateMap['TotalCaloriesBurned'] === true
+        ? await this.getValue(
+            new Date(date),
+            'TotalCaloriesBurned',
+            this.getOriginsForMetric(
+              'TotalCaloriesBurned',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const weightResult = metricActiveStateMap['weight']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'Weight',
-          mapping('Weight') ?? null,
-          this.getOriginsForMetric('Weight', originMappingMap),
-        )
-      : null;
+    const weightResult =
+      metricActiveStateMap['Weight'] === true
+        ? await this.getValue(
+            new Date(date),
+            'Weight',
+            this.getOriginsForMetric(
+              'Weight',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const stepsResult = metricActiveStateMap['steps']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'Steps',
-          mapping('Steps') ?? null,
-          this.getOriginsForMetric('Steps', originMappingMap),
-        )
-      : null;
+    const stepsResult =
+      metricActiveStateMap['Steps'] === true
+        ? await this.getValue(
+            new Date(date),
+            'Steps',
+            this.getOriginsForMetric(
+              'Steps',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const hydrationResult = metricActiveStateMap['hydration']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'Hydration',
-          mapping('Hydration') ?? null,
-          this.getOriginsForMetric('Hydration', originMappingMap),
-        )
-      : null;
+    const hydrationResult =
+      metricActiveStateMap['Hydration'] === true
+        ? await this.getValue(
+            new Date(date),
+            'Hydration',
+            this.getOriginsForMetric(
+              'Hydration',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const bloodPressureResult = metricActiveStateMap['bloodPressure']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'BloodPressure',
-          mapping('BloodPressure') ?? null,
-          this.getOriginsForMetric('BloodPressure', originMappingMap),
-        )
-      : null;
+    const bloodPressureResult =
+      metricActiveStateMap['BloodPressure'] === true
+        ? await this.getValue(
+            new Date(date),
+            'BloodPressure',
+            this.getOriginsForMetric(
+              'BloodPressure',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const wheelchairPushesResult = metricActiveStateMap['wheelchairPushes']
-      ? await this.getValueOrNull(
-          new Date(date),
-          'WheelchairPushes',
-          mapping('WheelchairPushes') ?? null,
-          this.getOriginsForMetric('WheelchairPushes', originMappingMap),
-        )
-      : null;
+    const wheelchairPushesResult =
+      metricActiveStateMap['WheelchairPushes'] === true
+        ? await this.getValue(
+            new Date(date),
+            'WheelchairPushes',
+            this.getOriginsForMetric(
+              'WheelchairPushes',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const heightResult = metricActiveStateMap['height']
-      ? await this.getValueOrNull(
+    const heightResult = metricActiveStateMap['Height']
+      ? await this.getValue(
           new Date(date),
           'Height',
-          mapping('Height') ?? null,
-          this.getOriginsForMetric('Height', originMappingMap),
+          this.getOriginsForMetric(
+            'Height',
+            originMappingMap,
+            metricMappingMap,
+          ),
         )
       : null;
 
     return {
       source: 'HealthConnectSyncClient',
-      endTime: utils.getEndOfDay(new Date(date)).toDateString(),
-      startTime: utils.getStartOfDay(new Date(date)).toDateString(),
+      endTime: utils.getEndOfDay(new Date(date)).toISOString(),
+      startTime: utils.getStartOfDay(new Date(date)).toISOString(),
       activeCaloriesBurnedInKcal:
         activeCaloriesResult?.ACTIVE_CALORIES_TOTAL.inKilocalories ?? null,
       totalCaloriesBurnedInKcal:
@@ -344,19 +402,37 @@ class HealthConnectSchedulePayloadFactory {
   private async getTrainingDataForDate(
     date: string,
     originMappingMap: HealthConnectOriginMappingMap,
-    metricMappingMap: HealthConnectMetricMappingMap[],
+    metricMappingMap: HealthConnectMetricMappingMap,
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
   ): Promise<HealthConnectTrainingDataRecordData[]> {
     const trainingData: HealthConnectTrainingDataRecordData[] = [];
 
-    const exercises = await healthConnectService.readExerciseSessions({
-      startTime: utils.getStartOfDay(new Date(date)),
-      endTime: utils.getEndOfDay(new Date(date)),
-    });
+    const origins = this.getOriginsForMetric(
+      'ExerciseSession',
+      originMappingMap,
+      metricMappingMap,
+    );
+    const exercises = await healthConnectService.readExerciseSessions(
+      {
+        startTime: utils.getStartOfDay(new Date(date)),
+        endTime: utils.getEndOfDay(new Date(date)),
+      },
+      origins,
+    );
 
     if (!exercises || !exercises.records || exercises.records.length === 0) {
       return trainingData;
     }
+
+    const originTargetValues = origins.map(o => {
+      const mapping = originMappingMap[o];
+      return mapping?.target ?? 'HealthConnectSyncClient';
+    });
+
+    const originNamesAsString = utils.getArrayValuesAsString(
+      originTargetValues,
+      o => o,
+    );
 
     for (const record of exercises.records) {
       const trainingEntry: HealthConnectTrainingDataRecordData | null =
@@ -366,6 +442,7 @@ class HealthConnectSchedulePayloadFactory {
           originMappingMap,
           metricMappingMap,
           metricActiveStateMap,
+          originNamesAsString,
         );
 
       if (trainingEntry) {
@@ -380,132 +457,167 @@ class HealthConnectSchedulePayloadFactory {
     date: Date,
     record: RecordResult<'ExerciseSession'>,
     originMappingMap: HealthConnectOriginMappingMap,
-    metricMappingMap: HealthConnectMetricMappingMap[],
+    metricMappingMap: HealthConnectMetricMappingMap,
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
+    originNamesAsString: string,
   ): Promise<HealthConnectTrainingDataRecordData | null> {
     if (!originMappingMap) {
       return null;
     }
 
-    const mapping = (key: string) =>
-      metricMappingMap.find(m => m.key === key)?.mapping;
+    const distanceResult =
+      metricActiveStateMap['Distance'] === true
+        ? await this.getValue(
+            date,
+            'Distance',
+            this.getOriginsForMetric(
+              'Distance',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
-    const distanceResult = metricActiveStateMap['Distance']
-      ? await this.getValueOrNull(
-          date,
-          'Distance',
-          mapping('Distance') ?? null,
-          this.getOriginsForMetric('Distance', originMappingMap),
-        )
-      : null;
-    const stepsResult = metricActiveStateMap['Steps']
-      ? await this.getValueOrNull(
-          date,
-          'Steps',
-          mapping('Steps') ?? null,
-          this.getOriginsForMetric('Steps', originMappingMap),
-        )
-      : null;
-    const activeCaloriesBurnedResult = metricActiveStateMap[
-      'ActiveCaloriesBurned'
-    ]
-      ? await this.getValueOrNull(
-          date,
-          'ActiveCaloriesBurned',
-          mapping('ActiveCaloriesBurned') ?? null,
-          this.getOriginsForMetric('ActiveCaloriesBurned', originMappingMap),
-        )
-      : null;
-    const totalCaloriesBurnedResult = metricActiveStateMap[
-      'TotalCaloriesBurned'
-    ]
-      ? await this.getValueOrNull(
-          date,
-          'TotalCaloriesBurned',
-          mapping('TotalCaloriesBurned') ?? null,
-          this.getOriginsForMetric('TotalCaloriesBurned', originMappingMap),
-        )
-      : null;
-    const heartRateResult = metricActiveStateMap['HeartRate']
-      ? await this.getValueOrNull(
-          date,
-          'HeartRate',
-          mapping('HeartRate') ?? null,
-          this.getOriginsForMetric('HeartRate', originMappingMap),
-        )
-      : null;
-    const speedResult = metricActiveStateMap['Speed']
-      ? await this.getValueOrNull(
-          date,
-          'Speed',
-          mapping('Speed') ?? null,
-          this.getOriginsForMetric('Speed', originMappingMap),
-        )
-      : null;
-    const elevationResult = metricActiveStateMap['ElevationGained']
-      ? await this.getValueOrNull(
-          date,
-          'ElevationGained',
-          mapping('ElevationGained') ?? null,
-          this.getOriginsForMetric('ElevationGained', originMappingMap),
-        )
-      : null;
-    const powerResult = metricActiveStateMap['Power']
-      ? await this.getValueOrNull(
-          date,
-          'Power',
-          mapping('Power') ?? null,
-          this.getOriginsForMetric('Power', originMappingMap),
-        )
-      : null;
-    const cyclingPedalingCadenceResult = metricActiveStateMap[
-      'CyclingPedalingCadence'
-    ]
-      ? await this.getValueOrNull(
-          date,
-          'CyclingPedalingCadence',
-          mapping('CyclingPedalingCadence') ?? null,
-          this.getOriginsForMetric('CyclingPedalingCadence', originMappingMap),
-        )
-      : null;
-    const hydrationResult = metricActiveStateMap['Hydration']
-      ? await this.getValueOrNull(
-          date,
-          'Hydration',
-          mapping('Hydration') ?? null,
-          this.getOriginsForMetric('Hydration', originMappingMap),
-        )
-      : null;
-    const restingHeartRateResult = metricActiveStateMap['RestingHeartRate']
-      ? await this.getValueOrNull(
-          date,
-          'RestingHeartRate',
-          mapping('RestingHeartRate') ?? null,
-          this.getOriginsForMetric('RestingHeartRate', originMappingMap),
-        )
-      : null;
-    const stepsCadenceResult = metricActiveStateMap['StepsCadence']
-      ? await this.getValueOrNull(
-          date,
-          'StepsCadence',
-          mapping('StepsCadence') ?? null,
-          this.getOriginsForMetric('StepsCadence', originMappingMap),
-        )
-      : null;
-    const weightResult = metricActiveStateMap['Weight']
-      ? await this.getValueOrNull(
-          date,
-          'Weight',
-          mapping('Weight') ?? null,
-          this.getOriginsForMetric('Weight', originMappingMap),
-        )
-      : null;
+    const stepsResult =
+      metricActiveStateMap['Steps'] === true
+        ? await this.getValue(
+            date,
+            'Steps',
+            this.getOriginsForMetric(
+              'Steps',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const activeCaloriesBurnedResult =
+      metricActiveStateMap['ActiveCaloriesBurned'] === true
+        ? await this.getValue(
+            date,
+            'ActiveCaloriesBurned',
+            this.getOriginsForMetric(
+              'ActiveCaloriesBurned',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const heartRateResult =
+      metricActiveStateMap['HeartRate'] === true
+        ? await this.getValue(
+            date,
+            'HeartRate',
+            this.getOriginsForMetric(
+              'HeartRate',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const speedResult =
+      metricActiveStateMap['Speed'] === true
+        ? await this.getValue(
+            date,
+            'Speed',
+            this.getOriginsForMetric(
+              'Speed',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const elevationResult =
+      metricActiveStateMap['ElevationGained'] === true
+        ? await this.getValue(
+            date,
+            'ElevationGained',
+            this.getOriginsForMetric(
+              'ElevationGained',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const powerResult =
+      metricActiveStateMap['Power'] === true
+        ? await this.getValue(
+            date,
+            'Power',
+            this.getOriginsForMetric(
+              'Power',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const cyclingPedalingCadenceResult =
+      metricActiveStateMap['CyclingPedalingCadence'] === true
+        ? await this.getValue(
+            date,
+            'CyclingPedalingCadence',
+            this.getOriginsForMetric(
+              'CyclingPedalingCadence',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const hydrationResult =
+      metricActiveStateMap['Hydration'] === true
+        ? await this.getValue(
+            date,
+            'Hydration',
+            this.getOriginsForMetric(
+              'Hydration',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const restingHeartRateResult =
+      metricActiveStateMap['RestingHeartRate'] === true
+        ? await this.getValue(
+            date,
+            'RestingHeartRate',
+            this.getOriginsForMetric(
+              'RestingHeartRate',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const stepsCadenceResult =
+      metricActiveStateMap['StepsCadence'] === true
+        ? await this.getValue(
+            date,
+            'StepsCadence',
+            this.getOriginsForMetric(
+              'StepsCadence',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
+    const weightResult =
+      metricActiveStateMap['Weight'] === true
+        ? await this.getValue(
+            date,
+            'Weight',
+            this.getOriginsForMetric(
+              'Weight',
+              originMappingMap,
+              metricMappingMap,
+            ),
+          )
+        : null;
 
     const model: HealthConnectTrainingDataRecordData = {
+      exerciseMetricId: record.metadata?.id,
       startTime: record.startTime,
       endTime: record.endTime,
       exerciseType: record.exerciseType,
-      origin: 'HealthConnectSyncClient',
+      origin: record.metadata?.dataOrigin ?? 'HealthConnectSyncClient',
+      system: originNamesAsString,
       timeZoneInfo: record.startZoneOffset
         ? {
             offset: record.startZoneOffset?.totalSeconds ?? 0,
@@ -521,8 +633,6 @@ class HealthConnectSchedulePayloadFactory {
       activeCaloriesBurnedInKcal:
         activeCaloriesBurnedResult?.ACTIVE_CALORIES_TOTAL?.inKilocalories ??
         null,
-      totalCaloriesBurnedInKcal:
-        totalCaloriesBurnedResult?.ENERGY_TOTAL?.inKilocalories ?? null,
       heartRate: {
         avg: heartRateResult?.BPM_AVG ?? null,
         min: heartRateResult?.BPM_MIN ?? null,
@@ -556,6 +666,27 @@ class HealthConnectSchedulePayloadFactory {
         max: stepsCadenceResult?.RATE_MAX ?? null,
       },
       weightAvg: weightResult?.WEIGHT_AVG.inKilograms ?? null,
+      notes: record.notes ?? null,
+      segments: record.segments?.length
+        ? record.segments.map(s => {
+            return {
+              segmentType: s.segmentType,
+              repetitions: s.repetitions,
+              startTime: s.startTime,
+              endTime: s.endTime,
+            };
+          })
+        : [],
+      laps: record.laps?.length
+        ? record.laps.map(lap => {
+            const length = lap.length as unknown as HealthConnectLength;
+            return {
+              startTime: lap.startTime,
+              endTime: lap.endTime,
+              lengthInMeters: length.inMeters,
+            };
+          })
+        : [],
     };
 
     return model;
@@ -567,43 +698,46 @@ class HealthConnectSchedulePayloadFactory {
     return metricMapping.isActive;
   }
 
-  private async getValueOrNull<TMetricResult extends AggregateResultRecordType>(
+  private async getValue<TMetricResult extends AggregateResultRecordType>(
     date: Date,
     record: TMetricResult,
-    mapping: HealthConnectMetricMappingTableEntry | null,
     origens: string[],
-  ): Promise<AggregateResult<TMetricResult> | null> {
-    if (!mapping || !mapping.isActive) {
-      return null;
-    }
-
-    const metricResult =
-      await healthConnectService.getAggregateResult<TMetricResult>(
-        record,
-        {
-          startTime: utils.getStartOfDay(date),
-          endTime: utils.getEndOfDay(date),
-        },
-        origens,
-      );
-    return metricResult;
+  ): Promise<AggregateResult<TMetricResult>> {
+    return await healthConnectService.getAggregateResult<TMetricResult>(
+      record,
+      {
+        startTime: utils.getStartOfDay(date),
+        endTime: utils.getEndOfDay(date),
+      },
+      origens,
+    );
   }
 
   private getOriginsForMetric(
     key: AggregateResultRecordType,
     originMappingMappingMap: HealthConnectOriginMappingMap | null,
+    metricMappingMap: HealthConnectMetricMappingMap,
   ): string[] {
     const origins: string[] = [];
 
-    if (!originMappingMappingMap) {
+    if (originMappingMappingMap == null) {
+      return origins;
+    }
+
+    // origin mappings link to a metric via metricIds, not via the record type key directly
+    const metricMapping = metricMappingMap[key];
+
+    if (!metricMapping) {
       return origins;
     }
 
     for (const mappingKey in originMappingMappingMap) {
-      const mapping = originMappingMappingMap[mappingKey];
-
-      if (mapping.isActive && mapping.source === key) {
-        origins.push(mapping.source);
+      const originMapping = originMappingMappingMap[mappingKey];
+      if (
+        originMapping.isActive &&
+        (originMapping.metricIds ?? []).includes(metricMapping.id)
+      ) {
+        origins.push(originMapping.source);
       }
     }
     return origins;

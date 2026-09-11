@@ -180,6 +180,33 @@ namespace Data.Database.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "HealthConnectAvgTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Avg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Min = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Max = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    UnitId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectAvgTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAvgTable_HealthConnectUnitTable_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "HealthConnectUnitTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "UserTable",
                 columns: table => new
                 {
@@ -216,47 +243,19 @@ namespace Data.Database.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "HealthConnectAvgTable",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Avg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Min = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Max = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    HealthConnectValuesId = table.Column<long>(type: "bigint", nullable: false),
-                    UnitId = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HealthConnectAvgTable", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_HealthConnectAvgTable_HealthConnectUnitTable_UnitId",
-                        column: x => x.UnitId,
-                        principalTable: "HealthConnectUnitTable",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "HealthConnectTrainingDataValuesTable",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     ActiveCaloriesBurnedInKcal = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    TotalCaloriesBurnedInKcal = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     DistanceInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     DurationSeconds = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     ElevationAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     HydrationAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Steps = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     WeightAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Notes = table.Column<string>(type: "longtext", nullable: true),
                     CyclingPedalingCadenceId = table.Column<long>(type: "bigint", nullable: false),
                     HeartRateId = table.Column<long>(type: "bigint", nullable: false),
                     PowerId = table.Column<long>(type: "bigint", nullable: false),
@@ -352,6 +351,61 @@ namespace Data.Database.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "HealthConnectLapEntity",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    StartTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    LengthInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TrainingDataValuesId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectLapEntity", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectLapEntity_HealthConnectTrainingDataValuesTable_~",
+                        column: x => x.TrainingDataValuesId,
+                        principalTable: "HealthConnectTrainingDataValuesTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "HealthConnectSegmentEntity",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    SegmentType = table.Column<int>(type: "int", nullable: false),
+                    Repetitions = table.Column<int>(type: "int", nullable: false),
+                    StartTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    TrainingDataValuesId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectSegmentEntity", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectSegmentEntity_HealthConnectTrainingDataValuesTa~",
+                        column: x => x.TrainingDataValuesId,
+                        principalTable: "HealthConnectTrainingDataValuesTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "HealthConnectTrainingDataTable",
                 columns: table => new
                 {
@@ -359,9 +413,11 @@ namespace Data.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     DataKey = table.Column<string>(type: "longtext", nullable: false),
                     Origin = table.Column<string>(type: "longtext", nullable: false),
+                    System = table.Column<string>(type: "longtext", nullable: false),
                     ExerciseType = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     EndTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    AllowedForAiTraining = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     HealthConnectTimeZoneEntityId = table.Column<long>(type: "bigint", nullable: false),
                     HealthConnectTrainingDataValuesId = table.Column<long>(type: "bigint", nullable: false),
                     UserId = table.Column<long>(type: "bigint", nullable: false),
@@ -512,11 +568,6 @@ namespace Data.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HealthConnectAvgTable_HealthConnectValuesId",
-                table: "HealthConnectAvgTable",
-                column: "HealthConnectValuesId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_HealthConnectAvgTable_UnitId",
                 table: "HealthConnectAvgTable",
                 column: "UnitId");
@@ -542,6 +593,16 @@ namespace Data.Database.Migrations
                 name: "IX_HealthConnectHealthDataTable_UserId",
                 table: "HealthConnectHealthDataTable",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectLapEntity_TrainingDataValuesId",
+                table: "HealthConnectLapEntity",
+                column: "TrainingDataValuesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectSegmentEntity_TrainingDataValuesId",
+                table: "HealthConnectSegmentEntity",
+                column: "TrainingDataValuesId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HealthConnectTrainingDataTable_HealthConnectTimeZoneEntityId",
@@ -615,27 +676,11 @@ namespace Data.Database.Migrations
                 table: "UserTable",
                 column: "SettingsId",
                 unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_HealthConnectAvgTable_HealthConnectValuesTable_HealthConnect~",
-                table: "HealthConnectAvgTable",
-                column: "HealthConnectValuesId",
-                principalTable: "HealthConnectValuesTable",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_HealthConnectAvgTable_HealthConnectUnitTable_UnitId",
-                table: "HealthConnectAvgTable");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_HealthConnectAvgTable_HealthConnectValuesTable_HealthConnect~",
-                table: "HealthConnectAvgTable");
-
             migrationBuilder.DropTable(
                 name: "HealthConnectBloodPressureTable");
 
@@ -643,13 +688,22 @@ namespace Data.Database.Migrations
                 name: "HealthConnectHealthDataTable");
 
             migrationBuilder.DropTable(
+                name: "HealthConnectLapEntity");
+
+            migrationBuilder.DropTable(
                 name: "HealthConnectRunningAiTrainingDataTable");
+
+            migrationBuilder.DropTable(
+                name: "HealthConnectSegmentEntity");
 
             migrationBuilder.DropTable(
                 name: "HealthConnectTrainingDataTable");
 
             migrationBuilder.DropTable(
                 name: "ScheduledJobsTable");
+
+            migrationBuilder.DropTable(
+                name: "HealthConnectValuesTable");
 
             migrationBuilder.DropTable(
                 name: "HealthConnectTimeZoneTable");
@@ -661,22 +715,19 @@ namespace Data.Database.Migrations
                 name: "UserTable");
 
             migrationBuilder.DropTable(
+                name: "HealthConnectAvgTable");
+
+            migrationBuilder.DropTable(
                 name: "SettingsTable");
 
             migrationBuilder.DropTable(
                 name: "UserCredentialsTable");
 
             migrationBuilder.DropTable(
-                name: "AiSettingsTable");
-
-            migrationBuilder.DropTable(
                 name: "HealthConnectUnitTable");
 
             migrationBuilder.DropTable(
-                name: "HealthConnectValuesTable");
-
-            migrationBuilder.DropTable(
-                name: "HealthConnectAvgTable");
+                name: "AiSettingsTable");
         }
     }
 }

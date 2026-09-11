@@ -68,4 +68,10 @@ export const utils = {
     const end = new Date(endDate).getTime();
     return Math.floor((end - start) / 1000);
   },
+  getArrayValuesAsString: <TArray>(
+    array: TArray[],
+    keyFn: (item: TArray) => unknown,
+  ): string => {
+    return array.map(item => String(keyFn(item))).join(', ');
+  },
 };

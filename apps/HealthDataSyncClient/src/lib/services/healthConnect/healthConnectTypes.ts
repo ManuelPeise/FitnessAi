@@ -21,8 +21,7 @@ export type HealthConnectOriginMappingMap = {
 };
 
 export type HealthConnectMetricMappingMap = {
-  key: AggregateResultRecordType;
-  mapping: HealthConnectMetricMappingTableEntry;
+  [key: string]: HealthConnectMetricMappingTableEntry;
 };
 
 export type HealthConnectMetricActiveStateMap = {
@@ -176,10 +175,32 @@ export type HealthConnectValues = {
   max: number | null;
 };
 
+export type HealthConnectSegment = {
+  segmentType: number;
+  repetitions: number | null;
+  startTime: Date | string;
+  endTime: Date | string;
+};
+
+export type HealthConnectLength = {
+  inMeters: number;
+  inKilometers: number;
+  inMiles: number;
+  inFeet: number;
+  inInches: number;
+};
+
+export type HealthConnectLap = {
+  startTime: Date | string;
+  endTime: Date | string;
+  lengthInMeters: number | null;
+};
+
 export type HealthConnectTrainingDataRecordData = {
+  exerciseMetricId?: string;
   origin: string;
+  system: string;
   activeCaloriesBurnedInKcal: number | null;
-  totalCaloriesBurnedInKcal: number | null;
   cyclingPedalingCadence: HealthConnectValues | null;
   distanceInMeters: number | null;
   durationSeconds: number | null;
@@ -196,6 +217,9 @@ export type HealthConnectTrainingDataRecordData = {
   steps: number | null;
   timeZoneInfo: TimeZoneInfo | null;
   weightAvg: number | null;
+  notes: string | null;
+  segments: HealthConnectSegment[];
+  laps: HealthConnectLap[];
 };
 
 export type HealthConnectAggregatedData = {

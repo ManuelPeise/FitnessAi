@@ -143,13 +143,19 @@ class HealthConnectService {
 
   async readExerciseSessions(
     range: HealthConnectReadRange,
+    origins: string[],
   ): Promise<ReadRecordsResult<'ExerciseSession'>> {
     await this.ensureInitialized();
 
-    return readHealthConnectRecords(
+    const result = await readHealthConnectRecords(
       'ExerciseSession',
       this.createReadOptions(range),
     );
+    const records = result.records.filter(record =>
+      origins.includes(record.metadata?.dataOrigin ?? ''),
+    );
+
+    return { ...result, records };
   }
 
   async readMetric<T extends RecordType>(

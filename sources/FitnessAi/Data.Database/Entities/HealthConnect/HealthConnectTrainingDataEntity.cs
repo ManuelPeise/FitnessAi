@@ -8,9 +8,11 @@ namespace Data.Database.Entities.HealthConnect
     {
         public string DataKey { get; set; } = null!;
         public string Origin { get; set; } = string.Empty;
+        public string System { get; set; } = string.Empty;
         public ExerciseTypeEnum ExerciseType { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public bool AllowedForAiTraining { get; set; }
 
         public long HealthConnectTimeZoneEntityId { get; set; }
         [ForeignKey(nameof(HealthConnectTimeZoneEntityId))]

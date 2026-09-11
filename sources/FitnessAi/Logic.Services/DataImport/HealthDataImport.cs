@@ -87,7 +87,14 @@ namespace Logic.Services.DataImport
 
                 foreach (var model in healthData)
                 {
-                    var dataKey = $"{userId}_{model.Date:yyyy-MM-dd}";
+                    var dataKey = $"{model.Date.ToString("yyyy-MM-dd")}_{userId}";
+
+                    if (string.IsNullOrEmpty(dataKey))
+                    {
+                        _logger.LogWarning($"Health data for user {userId} has no valid date, skipping...");
+                        continue;
+                    }
+                    
 
                     var existingEntity = await GetExistingHealthDataEntity(dataKey);
 
@@ -227,7 +234,13 @@ namespace Logic.Services.DataImport
 
                 foreach (var data in trainingData)
                 {
-                    var dataKey = $"{userId}_{data.Date:yyyy-MM-dd}";
+                    if(string.IsNullOrEmpty(data.TrainingData.ExerciseMetricId))
+                    {
+                        _logger.LogWarning($"Training data for user {userId} on {data.Date:yyyy-MM-dd} has no ExerciseMetricId, skipping...");
+                        continue;
+                    }
+
+                    var dataKey = data.TrainingData.ExerciseMetricId;
 
                     var existingEntity = await GetExistingTrainingDataEntity(dataKey);
 
@@ -312,24 +325,28 @@ namespace Logic.Services.DataImport
 
             var timeZoneEntity = await GetTimeZoneEntity(trainingData.TimeZoneInfo?.Offset);
 
+            var allowedForAiTraining = await GetAllowedForAiTraining(userId);
+
             return new HealthConnectTrainingDataEntity
             {
                 DataKey = dataKey,
                 Origin = trainingData.Origin ?? "Unknown",
+                System = trainingData.System ?? "Unknown",
                 StartTime = trainingData.StartTime,
                 EndTime = trainingData.EndTime,
                 UserId = userId,
+                AllowedForAiTraining = allowedForAiTraining,
                 ExerciseType = trainingData.ExerciseType,
                 HealthConnectTimeZoneEntityId = timeZoneEntity?.Id ?? 0,
                 HealthConnectTimeZoneEntity = timeZoneEntity ?? new HealthConnectTimeZoneEntity { Offset = trainingData.TimeZoneInfo?.Offset ?? 0 },
                 HealthConnectTrainingDataValues = new HealthConnectTrainingDataValuesEntity
                 {
                     ActiveCaloriesBurnedInKcal = trainingData.ActiveCaloriesBurnedInKcal,
-                    TotalCaloriesBurnedInKcal = trainingData.TotalCaloriesBurnedInKcal,
                     DistanceInMeters = trainingData.DistanceInMeters,
                     DurationSeconds = trainingData.DurationSeconds,
                     ElevationAvg = trainingData.ElevationAvg,
                     HydrationAvg = trainingData.HydrationAvg,
+                    Notes = !string.IsNullOrEmpty(trainingData.Notes) ? trainingData.Notes : null,
                     RestingHeartRate = new HealthConnectAvgEntity
                     {
                         Avg = trainingData.RestingHeartRate?.Avg,
@@ -372,6 +389,19 @@ namespace Logic.Services.DataImport
                         Max = trainingData.Speed?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.KilometersPerHour
                     },
+                    Segments = trainingData.Segments.Select(segment => new HealthConnectSegmentEntity
+                    {
+                        StartTime = segment.StartTime,
+                        EndTime = segment.EndTime,
+                        SegmentType = segment.SegmentType,
+                        Repetitions = segment.Repetitions
+                    }).ToList(),
+                    Laps = trainingData.Laps.Select(lap => new HealthConnectLapEntity
+                    {
+                        StartTime = lap.StartTime,
+                        EndTime = lap.EndTime,
+                        LengthInMeters = lap.LengthInMeters
+                    }).ToList(),
 
                 }
             };
@@ -380,6 +410,7 @@ namespace Logic.Services.DataImport
         private void UpdateTrainingData(HealthConnectTrainingDataEntity existingEntity, HealthConnectTrainingDataRecordData trainingData, long userId)
         {
             existingEntity.Origin = trainingData.Origin ?? "Unknown";
+            existingEntity.System = trainingData.System ?? "Unknown";
             existingEntity.StartTime = trainingData.StartTime;
             existingEntity.EndTime = trainingData.EndTime;
             existingEntity.ExerciseType = trainingData.ExerciseType;
@@ -393,7 +424,6 @@ namespace Logic.Services.DataImport
             }
 
             values.ActiveCaloriesBurnedInKcal = trainingData.ActiveCaloriesBurnedInKcal;
-            values.TotalCaloriesBurnedInKcal = trainingData.TotalCaloriesBurnedInKcal;
             values.DistanceInMeters = trainingData.DistanceInMeters;
             values.DurationSeconds = trainingData.DurationSeconds;
             values.ElevationAvg = trainingData.ElevationAvg;
@@ -407,6 +437,8 @@ namespace Logic.Services.DataImport
             values.Speed = UpdateAvgEntity(values.Speed, trainingData.Speed, HealthConnectUnitTypeEnum.KilometersPerHour);
             values.RestingHeartRate = UpdateAvgEntity(values.RestingHeartRate, trainingData.RestingHeartRate, HealthConnectUnitTypeEnum.BeatsPerMinute);
             values.StepCadence = UpdateAvgEntity(values.StepCadence, trainingData.StepCadence, HealthConnectUnitTypeEnum.StepsPerMinute);
+            values.Laps = UpdateLapEntities(values.Laps, trainingData.Laps);
+            values.Segments = UpdateSegmentEntities(values.Segments, trainingData.Segments);
         }
 
         private static HealthConnectAvgEntity? UpdateAvgEntity(HealthConnectAvgEntity? existingAvg, HealthConnectValues? source, HealthConnectUnitTypeEnum unitType)
@@ -425,6 +457,84 @@ namespace Logic.Services.DataImport
 
             return existingAvg;
         }
+
+        private static ICollection<HealthConnectLapEntity> UpdateLapEntities(ICollection<HealthConnectLapEntity> existingLaps, List<HealthConnectLap> laps)
+        {
+            if (laps == null)
+            {
+                return existingLaps;
+            }
+
+            foreach (var lap in laps)
+            {
+                var existingLap = existingLaps.FirstOrDefault(l => l.StartTime == lap.StartTime && l.EndTime == lap.EndTime);
+                
+                if (existingLap != null)
+                {   
+                    existingLap.StartTime = lap.StartTime;
+                    existingLap.EndTime = lap.EndTime;
+                    existingLap.LengthInMeters = lap.LengthInMeters;
+                }
+                else
+                {
+                    existingLaps.Add(new HealthConnectLapEntity
+                    {
+                        StartTime = lap.StartTime,
+                        EndTime = lap.EndTime,
+                        LengthInMeters = lap.LengthInMeters
+                    });
+                }
+            }
+
+            return existingLaps;
+        }
+
+        private static ICollection<HealthConnectSegmentEntity> UpdateSegmentEntities(ICollection<HealthConnectSegmentEntity> existingSegments, List<HealthConnectSegment> segments)
+        {
+            if (segments == null)
+            {
+                return existingSegments;
+            }
+
+            foreach(var segment in segments)
+            {
+                var existingSegment = existingSegments.FirstOrDefault(s => s.StartTime == segment.StartTime && s.EndTime == segment.EndTime);
+
+                if (existingSegment != null)
+                {
+                    existingSegment.StartTime = segment.StartTime;
+                    existingSegment.EndTime = segment.EndTime;
+                    existingSegment.SegmentType = segment.SegmentType;
+                    existingSegment.Repetitions = segment.Repetitions;
+                }
+                else
+                {
+                    existingSegments.Add(new HealthConnectSegmentEntity
+                    {
+                        StartTime = segment.StartTime,
+                        EndTime = segment.EndTime,
+                        SegmentType = segment.SegmentType,
+                        Repetitions = segment.Repetitions
+                    });
+                }
+            }
+
+            return existingSegments;
+        }
+
+        private async Task<bool> GetAllowedForAiTraining(long userId)
+        {
+            var userEntity = await _applicationUnitOfWork.UserRepository.GetSingleAsync(new DbQueryOptions<UserEntity>
+            {
+                WhereExpression = entity => entity.Id == userId,
+                Includes = new List<System.Linq.Expressions.Expression<Func<UserEntity, object>>>
+                {
+                    entity => entity.Settings.AiSettings
+                }
+            });
+
+            return userEntity?.Settings?.AiSettings?.CanUseHealthDataForAiTraining ?? false;
+        }
     }
 
     public sealed class HealthConnectHealthDataModel
@@ -438,5 +548,7 @@ namespace Logic.Services.DataImport
         public DateTime Date { get; set; }
         public HealthConnectTrainingDataRecordData TrainingData { get; set; } = new();
     }
+
+   
 }
 
