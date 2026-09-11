@@ -22,11 +22,11 @@ namespace Shared.Models.HealthConnect.ImportModels
         [JsonProperty("elevationAvg")]
         public decimal? ElevationAvg { get; set; }
         [JsonProperty("endTime")]
-        public DateTime? EndTime { get; set; }
+        public DateTime EndTime { get; set; }
         [JsonProperty("exerciseType")]
         public ExerciseTypeEnum ExerciseType { get; set; }
         [JsonProperty("startTime")]
-        public DateTime? StartTime { get; set; }
+        public DateTime StartTime { get; set; }
         [JsonProperty("heartRate")]
         public HealthConnectValues? HeartRate { get; set; }
         [JsonProperty("hydrationAvg")]
@@ -45,6 +45,8 @@ namespace Shared.Models.HealthConnect.ImportModels
         public HealthConnectTimeZoneModel? TimeZoneInfo { get; set; }
         [JsonProperty("weightAvg")]
         public decimal? WeightAvg { get; set; }
+        [JsonProperty("bodyFatPercentageAvg")]
+        public decimal? BodyFatPercentage { get; set; }
         [JsonProperty("notes")]
         public string? Notes { get; set; }
         [JsonProperty("laps")]

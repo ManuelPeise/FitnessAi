@@ -15,7 +15,7 @@ namespace Core.Api.ApiControllers.Ai
             _aiTrainingDataBuilder = aiTrainingDataBuilder;
         }
 
-        [MaintenanceApiAuthentication(UserRoleEnum.MaintenanceRole)]
+        // [MaintenanceApiAuthentication(UserRoleEnum.MaintenanceRole)]
         [HttpPost(Name = "GenerateAiTrainingData")]
         public async Task GenerateAiTrainingData()
         {

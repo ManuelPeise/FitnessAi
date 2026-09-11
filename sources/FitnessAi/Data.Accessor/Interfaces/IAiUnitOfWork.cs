@@ -4,7 +4,9 @@ namespace Data.Accessor.Interfaces
 {
     public interface IAiUnitOfWork
     {
-        IRepositoryBase<HealthConnectRunningAiTrainingDataEntity> HealthConnectRunningAiTrainingDataRepository { get; }
+        IRepositoryBase<HealthConnectAiTrainingDataEntity> HealthConnectAiTrainingDataRepository { get; }
+        IRepositoryBase<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapRepository { get; }
+        IRepositoryBase<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentRepository { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

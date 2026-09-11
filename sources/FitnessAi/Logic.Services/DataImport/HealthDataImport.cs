@@ -52,7 +52,22 @@ namespace Logic.Services.DataImport
                     AggregatedData = m.AggregatedData
                 }).ToHashSet();
 
-                var healthDataAddedOrUpdated = await ProcessHealthData(healthData, userId);
+                var weightDictionary = models.ToDictionary(x => x.Date.Date, x => x.AggregatedData.WeightAvg);
+                var bodyFatDictionary = models.ToDictionary(x => x.Date.Date, x => x.AggregatedData.BodyFatPercentageAvg);
+
+                var lastAggregatedData = healthData.OrderByDescending(h => h.Date).FirstOrDefault()?.AggregatedData;
+                var maxDate = models.Max(h => h.Date);
+
+                var bodyDataEntity = await UpdateBodyData(userId, maxDate, lastAggregatedData);
+                var healthDataHelper = new HealthDataImportHelper(bodyDataEntity);
+
+                var healthDataAddedOrUpdated = await ProcessHealthData(
+                    healthData,
+                    healthDataHelper,
+                    weightDictionary,
+                    bodyFatDictionary,
+                    userId,
+                    maxDate);
 
                 var trainingData = models.SelectMany(m => m.TrainingData.Select(t => new HealthConnectTrainingData
                 {
@@ -60,7 +75,7 @@ namespace Logic.Services.DataImport
                     TrainingData = t
                 })).ToHashSet();
 
-                var trainingDataAddedOrUpdated = await ProcessTrainingData(trainingData, userId);
+                var trainingDataAddedOrUpdated = await ProcessTrainingData(trainingData, healthDataHelper, weightDictionary, bodyFatDictionary, userId, maxDate);
 
                 if (healthDataAddedOrUpdated || trainingDataAddedOrUpdated)
                 {
@@ -73,7 +88,13 @@ namespace Logic.Services.DataImport
             }
         }
 
-        private async Task<bool> ProcessHealthData(HashSet<HealthConnectHealthDataModel> healthData, long userId)
+        private async Task<bool> ProcessHealthData(
+            HashSet<HealthConnectHealthDataModel> healthData,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            long userId,
+            DateTime maxDate)
         {
             try
             {
@@ -85,6 +106,7 @@ namespace Logic.Services.DataImport
                     return false;
                 }
 
+
                 foreach (var model in healthData)
                 {
                     var dataKey = $"{model.Date.ToString("yyyy-MM-dd")}_{userId}";
@@ -94,7 +116,7 @@ namespace Logic.Services.DataImport
                         _logger.LogWarning($"Health data for user {userId} has no valid date, skipping...");
                         continue;
                     }
-                    
+
 
                     var existingEntity = await GetExistingHealthDataEntity(dataKey);
 
@@ -102,12 +124,13 @@ namespace Logic.Services.DataImport
                     {
                         _logger.LogInformation($"Health data for user {userId} on {model.Date:yyyy-MM-dd} already exists, update data...");
 
-                        UpdateExistingHealthDataEntity(existingEntity, model);
+                        UpdateExistingHealthDataEntity(existingEntity, model, healthDataHelper, weightDictionary, bodyFatDictionary, maxDate);
+
                         databaseChanged = true;
                         continue;
                     }
 
-                    var entity = CreateHealthEntity(model, dataKey, userId);
+                    var entity = await CreateHealthEntity(model, healthDataHelper, weightDictionary, bodyFatDictionary, dataKey, userId);
 
                     await _healthUnitOfWork.HealthConnectHealthDataRepository.AddAsync(entity);
                     databaseChanged = true;
@@ -132,7 +155,13 @@ namespace Logic.Services.DataImport
             return existingEntity;
         }
 
-        private HealthConnectHealthDataEntity CreateHealthEntity(HealthConnectHealthDataModel model, string dataKey, long userId)
+        private async Task<HealthConnectHealthDataEntity> CreateHealthEntity(
+            HealthConnectHealthDataModel model,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            string dataKey,
+            long userId)
         {
             return new HealthConnectHealthDataEntity
             {
@@ -147,12 +176,13 @@ namespace Logic.Services.DataImport
                     TotalCaloriesBurnedInKcal = model.AggregatedData.TotalCaloriesBurnedInKcal,
                     HydrationAvg = model.AggregatedData.HydrationAvg,
                     Steps = model.AggregatedData.Steps,
-                    WeightAvg = model.AggregatedData.WeightAvg,
+                    Weight = healthDataHelper.GetWeight(weightDictionary, model.Date),
                     SleepDurationInSeconds = model.AggregatedData.SleepDurationInSeconds,
                     FloorsClimbed = model.AggregatedData.FloorsClimbed,
                     BasalMetabolicRateInKcal = model.AggregatedData.BasalMetabolicRateInKcal,
                     WheelchairPushes = model.AggregatedData.WheelchairPushes,
-                    HeightInMeters = model.AggregatedData.HeightInMeters,
+                    HeightInMeters = healthDataHelper.GetHeight(),
+                    BodyFatPercentageAvg = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, model.Date),
                     HeartRate = new HealthConnectAvgEntity
                     {
                         Avg = model.AggregatedData.HeartRate?.Avg,
@@ -172,12 +202,18 @@ namespace Logic.Services.DataImport
                         Min = model.AggregatedData.RestingHeartRate?.Min,
                         Max = model.AggregatedData.RestingHeartRate?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.BeatsPerMinute
-                    },
+                    }
                 }
             };
         }
 
-        private void UpdateExistingHealthDataEntity(HealthConnectHealthDataEntity existingEntity, HealthConnectHealthDataModel model)
+        private void UpdateExistingHealthDataEntity(
+            HealthConnectHealthDataEntity existingEntity,
+            HealthConnectHealthDataModel model,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            DateTime maxDate)
         {
             existingEntity.TimeStamp = model.Date.Date;
             existingEntity.StartTime = model.Date;
@@ -194,12 +230,18 @@ namespace Logic.Services.DataImport
             values.TotalCaloriesBurnedInKcal = model.AggregatedData.TotalCaloriesBurnedInKcal;
             values.HydrationAvg = model.AggregatedData.HydrationAvg;
             values.Steps = model.AggregatedData.Steps;
-            values.WeightAvg = model.AggregatedData.WeightAvg;
+
             values.SleepDurationInSeconds = model.AggregatedData.SleepDurationInSeconds;
             values.FloorsClimbed = model.AggregatedData.FloorsClimbed;
             values.BasalMetabolicRateInKcal = model.AggregatedData.BasalMetabolicRateInKcal;
             values.WheelchairPushes = model.AggregatedData.WheelchairPushes;
             values.HeightInMeters = model.AggregatedData.HeightInMeters;
+
+            if (maxDate.Date == DateTime.UtcNow.Date)
+            {
+                values.Weight = healthDataHelper.GetWeight(weightDictionary, model.Date);
+                values.BodyFatPercentageAvg = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, model.Date);
+            }
 
             if (model.AggregatedData.HeartRate != null)
             {
@@ -220,7 +262,13 @@ namespace Logic.Services.DataImport
             }
         }
 
-        private async Task<bool> ProcessTrainingData(HashSet<HealthConnectTrainingData> trainingData, long userId)
+        private async Task<bool> ProcessTrainingData(
+            HashSet<HealthConnectTrainingData> trainingData,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            long userId,
+            DateTime maxDate)
         {
             try
             {
@@ -234,7 +282,7 @@ namespace Logic.Services.DataImport
 
                 foreach (var data in trainingData)
                 {
-                    if(string.IsNullOrEmpty(data.TrainingData.ExerciseMetricId))
+                    if (string.IsNullOrEmpty(data.TrainingData.ExerciseMetricId))
                     {
                         _logger.LogWarning($"Training data for user {userId} on {data.Date:yyyy-MM-dd} has no ExerciseMetricId, skipping...");
                         continue;
@@ -248,12 +296,26 @@ namespace Logic.Services.DataImport
                     {
                         _logger.LogInformation($"Training data for user {userId} on {data.Date:yyyy-MM-dd} already exists, update data...");
 
-                        UpdateTrainingData(existingEntity, data.TrainingData, userId);
+                        UpdateTrainingData(
+                            existingEntity,
+                            data.TrainingData,
+                            healthDataHelper,
+                            weightDictionary,
+                            bodyFatDictionary,
+                            maxDate,
+                            userId);
+
                         databaseChanged = true;
                         continue;
                     }
 
-                    var entity = await CreateNewTrainingDataEntity(data.TrainingData, dataKey, userId);
+                    var entity = await CreateNewTrainingDataEntity(
+                        data.TrainingData,
+                        healthDataHelper,
+                        weightDictionary,
+                        bodyFatDictionary,
+                        dataKey,
+                        userId);
 
                     if (entity == null)
                     {
@@ -316,7 +378,13 @@ namespace Logic.Services.DataImport
             return existingEntity;
         }
 
-        private async Task<HealthConnectTrainingDataEntity?> CreateNewTrainingDataEntity(HealthConnectTrainingDataRecordData trainingData, string dataKey, long userId)
+        private async Task<HealthConnectTrainingDataEntity?> CreateNewTrainingDataEntity(
+            HealthConnectTrainingDataRecordData trainingData,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            string dataKey,
+            long userId)
         {
             if (trainingData == null)
             {
@@ -346,57 +414,60 @@ namespace Logic.Services.DataImport
                     DurationSeconds = trainingData.DurationSeconds,
                     ElevationAvg = trainingData.ElevationAvg,
                     HydrationAvg = trainingData.HydrationAvg,
-                    Notes = !string.IsNullOrEmpty(trainingData.Notes) ? trainingData.Notes : null,
+                    Steps = trainingData.Steps,
+                    BodyFatPercentage = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, trainingData.StartTime),
+                    WeightAvg = healthDataHelper.GetWeight(weightDictionary, trainingData.StartTime),
+                    Notes = !string.IsNullOrEmpty(trainingData?.Notes) ? trainingData.Notes : null,
                     RestingHeartRate = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.RestingHeartRate?.Avg,
-                        Min = trainingData.RestingHeartRate?.Min,
-                        Max = trainingData.RestingHeartRate?.Max,
+                        Avg = trainingData?.RestingHeartRate?.Avg,
+                        Min = trainingData?.RestingHeartRate?.Min,
+                        Max = trainingData?.RestingHeartRate?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.BeatsPerMinute
                     },
                     StepCadence = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.StepCadence?.Avg,
-                        Min = trainingData.StepCadence?.Min,
-                        Max = trainingData.StepCadence?.Max,
+                        Avg = trainingData?.StepCadence?.Avg,
+                        Min = trainingData?.StepCadence?.Min,
+                        Max = trainingData?.StepCadence?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.StepsPerMinute
                     },
                     CyclingPedalingCadence = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.CyclingPedalingCadence?.Avg,
-                        Min = trainingData.CyclingPedalingCadence?.Min,
-                        Max = trainingData.CyclingPedalingCadence?.Max,
+                        Avg = trainingData?.CyclingPedalingCadence?.Avg,
+                        Min = trainingData?.CyclingPedalingCadence?.Min,
+                        Max = trainingData?.CyclingPedalingCadence?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.RevolutionsPerMinute
                     },
                     HeartRate = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.HeartRate?.Avg,
-                        Min = trainingData.HeartRate?.Min,
-                        Max = trainingData.HeartRate?.Max,
+                        Avg = trainingData?.HeartRate?.Avg,
+                        Min = trainingData?.HeartRate?.Min,
+                        Max = trainingData?.HeartRate?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.BeatsPerMinute
                     },
                     Power = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.Power?.Avg,
-                        Min = trainingData.Power?.Min,
-                        Max = trainingData.Power?.Max,
+                        Avg = trainingData?.Power?.Avg,
+                        Min = trainingData?.Power?.Min,
+                        Max = trainingData?.Power?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.Watts
                     },
                     Speed = new HealthConnectAvgEntity
                     {
-                        Avg = trainingData.Speed?.Avg,
-                        Min = trainingData.Speed?.Min,
-                        Max = trainingData.Speed?.Max,
+                        Avg = trainingData?.Speed?.Avg,
+                        Min = trainingData?.Speed?.Min,
+                        Max = trainingData?.Speed?.Max,
                         UnitId = (long)HealthConnectUnitTypeEnum.KilometersPerHour
                     },
-                    Segments = trainingData.Segments.Select(segment => new HealthConnectSegmentEntity
+                    Segments = (trainingData?.Segments ?? new List<HealthConnectSegment>()).Select(segment => new HealthConnectSegmentEntity
                     {
                         StartTime = segment.StartTime,
                         EndTime = segment.EndTime,
                         SegmentType = segment.SegmentType,
                         Repetitions = segment.Repetitions
                     }).ToList(),
-                    Laps = trainingData.Laps.Select(lap => new HealthConnectLapEntity
+                    Laps = (trainingData?.Laps ?? new List<HealthConnectLap>()).Select(lap => new HealthConnectLapEntity
                     {
                         StartTime = lap.StartTime,
                         EndTime = lap.EndTime,
@@ -407,7 +478,14 @@ namespace Logic.Services.DataImport
             };
         }
 
-        private void UpdateTrainingData(HealthConnectTrainingDataEntity existingEntity, HealthConnectTrainingDataRecordData trainingData, long userId)
+        private void UpdateTrainingData(
+            HealthConnectTrainingDataEntity existingEntity,
+            HealthConnectTrainingDataRecordData trainingData,
+            HealthDataImportHelper healthDataHelper,
+            Dictionary<DateTime, decimal?> weightDictionary,
+            Dictionary<DateTime, decimal?> bodyFatDictionary,
+            DateTime maxDate,
+            long userId)
         {
             existingEntity.Origin = trainingData.Origin ?? "Unknown";
             existingEntity.System = trainingData.System ?? "Unknown";
@@ -429,8 +507,6 @@ namespace Logic.Services.DataImport
             values.ElevationAvg = trainingData.ElevationAvg;
             values.HydrationAvg = trainingData.HydrationAvg;
             values.Steps = trainingData.Steps;
-            values.WeightAvg = trainingData.WeightAvg;
-
             values.CyclingPedalingCadence = UpdateAvgEntity(values.CyclingPedalingCadence, trainingData.CyclingPedalingCadence, HealthConnectUnitTypeEnum.RevolutionsPerMinute);
             values.HeartRate = UpdateAvgEntity(values.HeartRate, trainingData.HeartRate, HealthConnectUnitTypeEnum.BeatsPerMinute);
             values.Power = UpdateAvgEntity(values.Power, trainingData.Power, HealthConnectUnitTypeEnum.Watts);
@@ -439,6 +515,12 @@ namespace Logic.Services.DataImport
             values.StepCadence = UpdateAvgEntity(values.StepCadence, trainingData.StepCadence, HealthConnectUnitTypeEnum.StepsPerMinute);
             values.Laps = UpdateLapEntities(values.Laps, trainingData.Laps);
             values.Segments = UpdateSegmentEntities(values.Segments, trainingData.Segments);
+
+            if (maxDate.Date == DateTime.UtcNow.Date)
+            {
+                values.WeightAvg = healthDataHelper.GetWeight(weightDictionary, trainingData.StartTime);
+                values.BodyFatPercentage = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, trainingData.StartTime);
+            }
         }
 
         private static HealthConnectAvgEntity? UpdateAvgEntity(HealthConnectAvgEntity? existingAvg, HealthConnectValues? source, HealthConnectUnitTypeEnum unitType)
@@ -468,9 +550,9 @@ namespace Logic.Services.DataImport
             foreach (var lap in laps)
             {
                 var existingLap = existingLaps.FirstOrDefault(l => l.StartTime == lap.StartTime && l.EndTime == lap.EndTime);
-                
+
                 if (existingLap != null)
-                {   
+                {
                     existingLap.StartTime = lap.StartTime;
                     existingLap.EndTime = lap.EndTime;
                     existingLap.LengthInMeters = lap.LengthInMeters;
@@ -496,7 +578,7 @@ namespace Logic.Services.DataImport
                 return existingSegments;
             }
 
-            foreach(var segment in segments)
+            foreach (var segment in segments)
             {
                 var existingSegment = existingSegments.FirstOrDefault(s => s.StartTime == segment.StartTime && s.EndTime == segment.EndTime);
 
@@ -535,20 +617,35 @@ namespace Logic.Services.DataImport
 
             return userEntity?.Settings?.AiSettings?.CanUseHealthDataForAiTraining ?? false;
         }
-    }
 
-    public sealed class HealthConnectHealthDataModel
-    {
-        public DateTime Date { get; set; }
-        public HealthConnectAggregatedData AggregatedData { get; set; } = new();
-    }
+        private async Task<UserBodyDataEntity?> UpdateBodyData(long userId, DateTime modelDate, HealthConnectAggregatedData? model = null)
+        {
+            var bodyData = await _applicationUnitOfWork.UserBodyDataRepository.GetSingleAsync(new DbQueryOptions<UserBodyDataEntity>
+            {
+                WhereExpression = x => x.UserId == userId,
+            });
 
-    public sealed class HealthConnectTrainingData
-    {
-        public DateTime Date { get; set; }
-        public HealthConnectTrainingDataRecordData TrainingData { get; set; } = new();
-    }
+            if (bodyData != null && model != null && modelDate.Date == DateTime.UtcNow.Date)
+            {
+                bodyData.Weight = bodyData.CanUpdateWeightOnHealthDataImport ? model.WeightAvg : bodyData.Weight;
+                bodyData.BodyFatPercentageAvg = bodyData.CanUpdateBodyFatPercentageOnHealthDataImport ? model.BodyFatPercentageAvg : bodyData.BodyFatPercentageAvg;
+            }
 
-   
+            return bodyData;
+        }
+
+        public sealed class HealthConnectHealthDataModel
+        {
+            public DateTime Date { get; set; }
+            public HealthConnectAggregatedData AggregatedData { get; set; } = new();
+        }
+
+        public sealed class HealthConnectTrainingData
+        {
+            public DateTime Date { get; set; }
+            public HealthConnectTrainingDataRecordData TrainingData { get; set; } = new();
+        }
+
+    }
 }
 

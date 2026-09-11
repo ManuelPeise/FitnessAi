@@ -15,6 +15,8 @@ namespace Data.Database
         // user tables
         public DbSet<UserEntity> UserTable => Set<UserEntity>();
         public DbSet<UserCredentialsEntity> UserCredentialsTable => Set<UserCredentialsEntity>();
+        public DbSet<UserBodyDataEntity> UserBodyDataTable => Set<UserBodyDataEntity>();
+        
         // health connect tables
         public DbSet<HealthConnectUnitEntity> HealthConnectUnitTable => Set<HealthConnectUnitEntity>();
         public DbSet<HealthConnectAvgEntity> HealthConnectAvgTable => Set<HealthConnectAvgEntity>();
@@ -24,13 +26,18 @@ namespace Data.Database
         public DbSet<HealthConnectTimeZoneEntity> HealthConnectTimeZoneTable => Set<HealthConnectTimeZoneEntity>();
         public DbSet<HealthConnectTrainingDataEntity> HealthConnectTrainingDataTable => Set<HealthConnectTrainingDataEntity>();
         public DbSet<HealthConnectTrainingDataValuesEntity> HealthConnectTrainingDataValuesTable => Set<HealthConnectTrainingDataValuesEntity>();
+        
         // settings tables
         public DbSet<SettingsEntity> SettingsTable => Set<SettingsEntity>();
         public DbSet<AISettingsEntity> AiSettingsTable => Set<AISettingsEntity>();
+        
         // scheduler tables
         public DbSet<ScheduledJobEntity> ScheduledJobsTable => Set<ScheduledJobEntity>();
+        
         // ai training data tables
-        public DbSet<HealthConnectRunningAiTrainingDataEntity> HealthConnectRunningAiTrainingDataTable => Set<HealthConnectRunningAiTrainingDataEntity>();
+        public DbSet<HealthConnectAiTrainingDataEntity> HealthConnectAiTrainingDataTable => Set<HealthConnectAiTrainingDataEntity>();
+        public DbSet<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapTable => Set<HealthConnectAiTrainingLap>();
+        public DbSet<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentTable => Set<HealthConnectAiTrainingSegmentEntity>();
 
         override protected void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,13 +67,18 @@ namespace Data.Database
              .HasForeignKey(h => h.UserId)
              .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<UserBodyDataEntity>()
+                .HasOne(b => b.User)
+                .WithOne()
+                .HasForeignKey<UserBodyDataEntity>(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<SettingsEntity>()
                 .HasOne(s => s.AiSettings)
                 .WithOne()
                 .HasForeignKey<SettingsEntity>(s => s.AiSettingsId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-          
             ConfigureHealthConnect(modelBuilder);
         }
 

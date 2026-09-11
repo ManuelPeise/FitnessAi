@@ -10,27 +10,31 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data.Accessor
 {
-    public class ApplicationUnitOfWork: IApplicationUnitOfWork
+    public class ApplicationUnitOfWork : IApplicationUnitOfWork
     {
         private readonly AIDbContext _context;
         private readonly HttpContext _httpContext;
         private IRepositoryBase<UserEntity>? _userRepository;
         private IRepositoryBase<UserCredentialsEntity> _userCredentialsRepository;
+        private IRepositoryBase<UserBodyDataEntity> _userBodyDataRepository;
         private IRepositoryBase<SettingsEntity> _settingsRepository;
         private IRepositoryBase<AISettingsEntity> _aiSettingsRepository;
         private IRepositoryBase<ScheduledJobEntity> _scheduledJobsRepository;
 
         public IRepositoryBase<UserEntity> UserRepository => _userRepository ?? new RepositoryBase<UserEntity>(_context);
         public IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository => _userCredentialsRepository ?? new RepositoryBase<UserCredentialsEntity>(_context);
+        public IRepositoryBase<UserBodyDataEntity> UserBodyDataRepository => _userBodyDataRepository ?? new RepositoryBase<UserBodyDataEntity>(_context);
         public IRepositoryBase<SettingsEntity> SettingsRepository => _settingsRepository ?? new RepositoryBase<SettingsEntity>(_context);
         public IRepositoryBase<AISettingsEntity> AISettingsRepository => _aiSettingsRepository ?? new RepositoryBase<AISettingsEntity>(_context);
         public IRepositoryBase<ScheduledJobEntity> ScheduledJobsRepository => _scheduledJobsRepository ?? new RepositoryBase<ScheduledJobEntity>(_context);
+
         public ApplicationUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
             _userRepository = new RepositoryBase<UserEntity>(_context);
             _userCredentialsRepository = new RepositoryBase<UserCredentialsEntity>(_context);
+            _userBodyDataRepository = new RepositoryBase<UserBodyDataEntity>(_context);
             _settingsRepository = new RepositoryBase<SettingsEntity>(_context);
             _aiSettingsRepository = new RepositoryBase<AISettingsEntity>(_context);
             _scheduledJobsRepository = new RepositoryBase<ScheduledJobEntity>(_context);

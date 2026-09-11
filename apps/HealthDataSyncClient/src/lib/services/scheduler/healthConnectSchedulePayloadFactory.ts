@@ -1,6 +1,7 @@
 import {
   AggregateResult,
   AggregateResultRecordType,
+  ReadRecordsResult,
   RecordResult,
 } from 'react-native-health-connect';
 import { databaseAccessor } from '../../database/database';
@@ -202,12 +203,6 @@ class HealthConnectSchedulePayloadFactory {
         )
       : null;
 
-    console.log(
-      'HeartRate result for date',
-      date,
-      ':',
-      JSON.stringify(heartRateResult),
-    );
     const restingHeartRateResult =
       metricActiveStateMap['RestingHeartRate'] === true
         ? await this.getValue(
@@ -363,6 +358,15 @@ class HealthConnectSchedulePayloadFactory {
         )
       : null;
 
+    const bodyFatResult =
+      metricActiveStateMap['BodyFat'] === true
+        ? await this.getBodyFat(
+            new Date(date),
+            originMappingMap,
+            metricMappingMap,
+          )
+        : null;
+
     return {
       source: 'HealthConnectSyncClient',
       endTime: utils.getEndOfDay(new Date(date)).toISOString(),
@@ -396,6 +400,7 @@ class HealthConnectSchedulePayloadFactory {
       },
       wheelchairPushes: wheelchairPushesResult?.COUNT_TOTAL ?? null,
       heightInMeters: heightResult?.HEIGHT_AVG.inMeters ?? null,
+      bodyFatPercentageAvg: this.getBodyFatPercentageAvg(bodyFatResult),
     };
   }
 
@@ -611,6 +616,11 @@ class HealthConnectSchedulePayloadFactory {
           )
         : null;
 
+    const bodyFatResult =
+      metricActiveStateMap['BodyFat'] === true
+        ? await this.getBodyFat(date, originMappingMap, metricMappingMap)
+        : null;
+
     const model: HealthConnectTrainingDataRecordData = {
       exerciseMetricId: record.metadata?.id,
       startTime: record.startTime,
@@ -666,6 +676,7 @@ class HealthConnectSchedulePayloadFactory {
         max: stepsCadenceResult?.RATE_MAX ?? null,
       },
       weightAvg: weightResult?.WEIGHT_AVG.inKilograms ?? null,
+      bodyFatPercentageAvg: this.getBodyFatPercentageAvg(bodyFatResult),
       notes: record.notes ?? null,
       segments: record.segments?.length
         ? record.segments.map(s => {
@@ -713,8 +724,26 @@ class HealthConnectSchedulePayloadFactory {
     );
   }
 
+  private async getBodyFat(
+    date: Date,
+    originMappingMap: HealthConnectOriginMappingMap | null,
+    metricMappingMap: HealthConnectMetricMappingMap,
+  ): Promise<ReadRecordsResult<'BodyFat'> | null> {
+    if (metricMappingMap['BodyFat']?.isActive) {
+      return await healthConnectService.readMetric(
+        'BodyFat',
+        {
+          startTime: utils.getStartOfDay(date),
+          endTime: utils.getEndOfDay(date),
+        },
+        this.getOriginsForMetric('BodyFat', originMappingMap, metricMappingMap),
+      );
+    }
+    return null;
+  }
+
   private getOriginsForMetric(
-    key: AggregateResultRecordType,
+    key: AggregateResultRecordType | 'BodyFat',
     originMappingMappingMap: HealthConnectOriginMappingMap | null,
     metricMappingMap: HealthConnectMetricMappingMap,
   ): string[] {
@@ -741,6 +770,20 @@ class HealthConnectSchedulePayloadFactory {
       }
     }
     return origins;
+  }
+
+  private getBodyFatPercentageAvg(
+    bodyFatResult: ReadRecordsResult<'BodyFat'> | null,
+  ): number | null {
+    if (!bodyFatResult?.records?.length) {
+      return null;
+    }
+
+    const total = bodyFatResult.records.reduce(
+      (sum, record) => sum + (record.percentage ?? 0),
+      0,
+    );
+    return total / bodyFatResult.records.length;
   }
 }
 

@@ -36,5 +36,7 @@ namespace Shared.Models.HealthConnect.ImportModels
         public decimal? WheelchairPushes { get; set; }
         [JsonProperty("heightInMeters")]
         public decimal? HeightInMeters { get; set; }
+        [JsonProperty("bodyFatPercentageAvg")]
+        public decimal? BodyFatPercentageAvg { get; set; }
     }
 }

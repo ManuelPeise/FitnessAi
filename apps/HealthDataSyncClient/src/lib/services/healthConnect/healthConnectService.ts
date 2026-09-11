@@ -161,6 +161,7 @@ class HealthConnectService {
   async readMetric<T extends RecordType>(
     metricType: T,
     range: HealthConnectReadRange,
+    origins?: string[],
   ): Promise<ReadRecordsResult<T>> {
     await this.ensureInitialized();
 
@@ -178,7 +179,13 @@ class HealthConnectService {
       pageToken = result.pageToken;
     } while (pageToken);
 
-    return { records };
+    return origins && origins.length > 0
+      ? {
+          records: records.filter(record =>
+            origins.includes(record.metadata?.dataOrigin ?? ''),
+          ),
+        }
+      : { records };
   }
 
   async readLastMetric<T extends RecordType>(

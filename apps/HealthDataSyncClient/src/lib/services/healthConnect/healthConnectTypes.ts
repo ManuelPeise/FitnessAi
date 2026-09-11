@@ -217,6 +217,7 @@ export type HealthConnectTrainingDataRecordData = {
   steps: number | null;
   timeZoneInfo: TimeZoneInfo | null;
   weightAvg: number | null;
+  bodyFatPercentageAvg: number | null;
   notes: string | null;
   segments: HealthConnectSegment[];
   laps: HealthConnectLap[];
@@ -242,6 +243,7 @@ export type HealthConnectAggregatedData = {
   } | null;
   wheelchairPushes: number | null;
   heightInMeters: number | null;
+  bodyFatPercentageAvg: number | null;
 };
 
 export type HealthConnectDailyDataModel = {

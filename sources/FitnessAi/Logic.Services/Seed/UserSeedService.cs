@@ -49,14 +49,20 @@ namespace Logic.Services.Seed
                             CanUseHealthDataAcceptedAt = null,
                             CanUseHealthDataRejectedAt = null,
                         }
-                    }
+                    },
                 };
 
                 await _applicationUnitOfWork.UserRepository.AddAsync(userEntity);
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
 
-                return result > 0;
+                if( result > 0)
+                {
+                    await CreateRelatedEntities(userEntity.Id);
+                    return true;
+                }
+
+                return false;  
             }
             catch (Exception)
             {
@@ -102,12 +108,29 @@ namespace Logic.Services.Seed
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
 
-                return result > 0;
+                if( result > 0)
+                {
+                    await CreateRelatedEntities(userEntity.Id);
+                    return true;
+                }
+
+                return false;
             }
             catch (Exception)
             {
                 return false;
             }
+        }
+
+        private async Task CreateRelatedEntities(long userId)
+        {
+            var userBodyDataEntity = new UserBodyDataEntity
+            {
+                UserId = userId
+            };
+            await _applicationUnitOfWork.UserBodyDataRepository.AddAsync(userBodyDataEntity);
+
+            await _applicationUnitOfWork.SaveChangesAsync();
         }
     }
 

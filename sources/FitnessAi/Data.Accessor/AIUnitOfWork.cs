@@ -2,6 +2,7 @@
 using Data.Database;
 using Data.Database.Entities;
 using Data.Database.Entities.Ai;
+using Data.Database.Entities.User;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,16 +13,30 @@ namespace Data.Accessor
         private readonly AIDbContext _context;
         private readonly HttpContext _httpContext;
       
-        private IRepositoryBase<HealthConnectRunningAiTrainingDataEntity> _healthConnectRunningAiTrainingDataRepository;
+        private IRepositoryBase<HealthConnectAiTrainingDataEntity> _healthConnectAiTrainingDataRepository;
+        private IRepositoryBase<HealthConnectAiTrainingLap> _healthConnectAiTrainingLapRepository;
+        private IRepositoryBase<HealthConnectAiTrainingSegmentEntity> _healthConnectAiTrainingSegmentRepository;
 
-        public IRepositoryBase<HealthConnectRunningAiTrainingDataEntity> HealthConnectRunningAiTrainingDataRepository
-            => _healthConnectRunningAiTrainingDataRepository ??= new RepositoryBase<HealthConnectRunningAiTrainingDataEntity>(_context);
+        private IRepositoryBase<UserBodyDataEntity> _userBodyDataRepository;
+        public IRepositoryBase<HealthConnectAiTrainingDataEntity> HealthConnectAiTrainingDataRepository
+            => _healthConnectAiTrainingDataRepository ??= new RepositoryBase<HealthConnectAiTrainingDataEntity>(_context);
+        
+        public IRepositoryBase<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapRepository
+            => _healthConnectAiTrainingLapRepository ??= new RepositoryBase<HealthConnectAiTrainingLap>(_context);
 
+        public IRepositoryBase<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentRepository
+            => _healthConnectAiTrainingSegmentRepository ??= new RepositoryBase<HealthConnectAiTrainingSegmentEntity>(_context);
+
+        public IRepositoryBase<UserBodyDataEntity> UserBodyDataRepository
+            => _userBodyDataRepository ??= new RepositoryBase<UserBodyDataEntity>(_context);
         public AIUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
-            _healthConnectRunningAiTrainingDataRepository = new RepositoryBase<HealthConnectRunningAiTrainingDataEntity>(context);
+            _healthConnectAiTrainingDataRepository = new RepositoryBase<HealthConnectAiTrainingDataEntity>(context);
+            _healthConnectAiTrainingLapRepository = new RepositoryBase<HealthConnectAiTrainingLap>(context);
+            _healthConnectAiTrainingSegmentRepository = new RepositoryBase<HealthConnectAiTrainingSegmentEntity>(context);
+            _userBodyDataRepository = new RepositoryBase<UserBodyDataEntity>(context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
