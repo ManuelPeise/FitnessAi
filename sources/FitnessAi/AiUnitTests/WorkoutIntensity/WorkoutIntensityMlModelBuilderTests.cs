@@ -2,7 +2,7 @@ using Logic.Ai.Training.WorkoutIntensity;
 using Logic.Ai.Training.WorkoutIntensity.Models;
 using Microsoft.ML;
 
-namespace AiUnitTests
+namespace AiUnitTests.WorkoutIntensity
 {
     public class WorkoutIntensityMlModelBuilderTests
     {

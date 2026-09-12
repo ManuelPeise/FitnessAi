@@ -3,7 +3,7 @@ using Data.Database.Entities.HealthConnect;
 using Logic.Ai.Training.WorkoutIntensity;
 using Shared.Enums.Ai;
 
-namespace AiUnitTests
+namespace AiUnitTests.WorkoutIntensity
 {
     public class WorkoutIntensityLabelGeneratorTests
     {
