@@ -1,5 +1,7 @@
+using Core.Api.AuthorizationAttributes;
 using Logic.Ai.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Enums.Authentication;
 
 namespace Core.Api.ApiControllers.Ai
 {
@@ -12,7 +14,7 @@ namespace Core.Api.ApiControllers.Ai
             _orchestrator = orchestrator;
         }
 
-        // [MaintenanceApiAuthentication(UserRoleEnum.MaintenanceRole)]
+        [MaintenanceApiAuthentication(UserRoleEnum.MaintenanceRole)]
         [HttpPost(Name = "PredictWorkoutIntensity")]
         public async Task PredictWorkoutIntensity()
         {

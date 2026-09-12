@@ -17,6 +17,14 @@ namespace Core.Api.Bundels.Scheduler
                     cronExpression: "0 1 0 * * ?",
                     now: utcNow,
                     minuteOffset: 2);
+
+                // weekly on Sunday at 23:59:00
+                q.ConfigureWebJob(
+                    url: "WorkoutIntensityPrediction/PredictWorkoutIntensity",
+                    triggerName: "WorkoutIntensityTrainingTrigger",
+                    cronExpression: "0 59 23 ? * SUN",
+                    now: utcNow,
+                    minuteOffset: 2);
             });
 
             services.AddQuartzHostedService(options =>
