@@ -25,6 +25,7 @@ import {
   HealthConnectMetricActiveStateMap,
   HealthConnectMetricMappingMap,
   HealthConnectOriginMappingMap,
+  HealthConnectReadRange as HealthConnectMetricTimeRange,
   HealthConnectTrainingDataRecordData,
 } from '../healthConnect/healthConnectTypes';
 import { utils } from '../../utils';
@@ -195,9 +196,13 @@ class HealthConnectSchedulePayloadFactory {
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
   ): Promise<HealthConnectAggregatedData> {
     const dateObj = new Date(date);
+    const dayRange: HealthConnectMetricTimeRange = {
+      startTime: utils.getStartOfDay(dateObj),
+      endTime: utils.getEndOfDay(dateObj),
+    };
     const fetchMetric = (key: AggregateResultRecordType) =>
       this.getValue(
-        dateObj,
+        dayRange,
         key,
         this.getOriginsForMetric(key, originMappingMap, metricMappingMap),
       );
@@ -279,7 +284,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'BodyFat',
-            dateObj,
+            dayRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -290,7 +295,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'OxygenSaturation',
-            dateObj,
+            dayRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -301,7 +306,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'RespiratoryRate',
-            dateObj,
+            dayRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -312,7 +317,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'Vo2Max',
-            dateObj,
+            dayRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -469,7 +474,6 @@ class HealthConnectSchedulePayloadFactory {
     for (const record of exercises.records) {
       const trainingEntry: HealthConnectTrainingDataRecordData | null =
         await this.getTrainingDataEntry(
-          new Date(date),
           record,
           originMappingMap,
           metricMappingMap,
@@ -486,7 +490,6 @@ class HealthConnectSchedulePayloadFactory {
   }
 
   private async getTrainingDataEntry(
-    date: Date,
     record: RecordResult<'ExerciseSession'>,
     originMappingMap: HealthConnectOriginMappingMap,
     metricMappingMap: HealthConnectMetricMappingMap,
@@ -497,9 +500,17 @@ class HealthConnectSchedulePayloadFactory {
       return null;
     }
 
+    // The exercise session's own time range, not the whole day - otherwise
+    // Avg/Min get diluted by resting heart rate outside the workout (Max
+    // still looks right by coincidence, since the day's peak is usually
+    // still set during the workout).
+    const sessionRange: HealthConnectMetricTimeRange = {
+      startTime: record.startTime,
+      endTime: record.endTime,
+    };
     const fetchMetric = (key: AggregateResultRecordType) =>
       this.getValue(
-        date,
+        sessionRange,
         key,
         this.getOriginsForMetric(key, originMappingMap, metricMappingMap),
       );
@@ -571,7 +582,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'BodyFat',
-            date,
+            sessionRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -582,7 +593,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'OxygenSaturation',
-            date,
+            sessionRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -593,7 +604,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'RespiratoryRate',
-            date,
+            sessionRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -604,7 +615,7 @@ class HealthConnectSchedulePayloadFactory {
         fetch: () =>
           this.readRawMetric(
             'Vo2Max',
-            date,
+            sessionRange,
             originMappingMap,
             metricMappingMap,
           ),
@@ -758,23 +769,20 @@ class HealthConnectSchedulePayloadFactory {
   }
 
   private async getValue<TMetricResult extends AggregateResultRecordType>(
-    date: Date,
+    range: HealthConnectMetricTimeRange,
     record: TMetricResult,
     origens: string[],
   ): Promise<AggregateResult<TMetricResult>> {
     return await healthConnectService.getAggregateResult<TMetricResult>(
       record,
-      {
-        startTime: utils.getStartOfDay(date),
-        endTime: utils.getEndOfDay(date),
-      },
+      range,
       origens,
     );
   }
 
   private async readRawMetric<T extends RawMetricRecordType>(
     recordType: T,
-    date: Date,
+    range: HealthConnectMetricTimeRange,
     originMappingMap: HealthConnectOriginMappingMap | null,
     metricMappingMap: HealthConnectMetricMappingMap,
   ): Promise<ReadRecordsResult<T> | null> {
@@ -784,10 +792,7 @@ class HealthConnectSchedulePayloadFactory {
 
     return await healthConnectService.readMetric(
       recordType,
-      {
-        startTime: utils.getStartOfDay(date),
-        endTime: utils.getEndOfDay(date),
-      },
+      range,
       this.getOriginsForMetric(recordType, originMappingMap, metricMappingMap),
     );
   }
