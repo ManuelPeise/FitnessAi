@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useAuthenticationContext } from '../../hooks/useAuthenticationContext';
 import { colorMap } from '../../lib/styles/colorMap';
 import TextField from '../../components/inputComponents/TextField';
@@ -34,45 +41,57 @@ const LoginScreen: React.FC<ILocaleProps> = props => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>{getResource('common.captionLogin')}</Text>
-        <TextField
-          label={getResource('common.labelEmail')}
-          value={email}
-          placeholder={getResource('common.labelEmail')}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          onChange={setEmail}
-          disabled={isLoading}
-        />
-        <TextField
-          label={getResource('common.labelPassword')}
-          value={password}
-          placeholder={getResource('common.labelPassword')}
-          secureTextEntry
-          onChange={setPassword}
-          disabled={isLoading}
-        />
-        {error && <Text style={styles.error}>{error}</Text>}
-        <ButtonComponent
-          title={getResource('common.labelSignIn')}
-          onPress={onLogin}
-          isLoading={isLoading}
-          minWidth={80}
-          disabled={isLoginDisabled}
-        />
-      </View>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -100}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.card}>
+          <Text style={styles.title}>{getResource('common.captionLogin')}</Text>
+          <TextField
+            label={getResource('common.labelEmail')}
+            value={email}
+            placeholder={getResource('common.labelEmail')}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            onChange={setEmail}
+            disabled={isLoading}
+          />
+          <TextField
+            label={getResource('common.labelPassword')}
+            value={password}
+            placeholder={getResource('common.labelPassword')}
+            secureTextEntry
+            onChange={setPassword}
+            disabled={isLoading}
+          />
+          {error && <Text style={styles.error}>{error}</Text>}
+          <ButtonComponent
+            title={getResource('common.labelSignIn')}
+            onPress={onLogin}
+            isLoading={isLoading}
+            minWidth={80}
+            disabled={isLoginDisabled}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     backgroundColor: colorMap.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: 24,
   },
   card: {

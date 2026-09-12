@@ -9,4 +9,13 @@ export const globalStyles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 14,
   },
+  // Used by screens under the header-less HealthConnect tab navigator, which
+  // need extra top spacing to avoid sitting flush against the status bar.
+  healthConnectAreaContainer: {
+    flex: 1,
+    backgroundColor: colorMap.background,
+    paddingTop: 36,
+    paddingBottom: 18,
+    paddingHorizontal: 14,
+  },
 });

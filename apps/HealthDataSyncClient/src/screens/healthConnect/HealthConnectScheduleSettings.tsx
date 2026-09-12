@@ -383,7 +383,7 @@ const HealthConnectScheduleSettings: React.FC<ILocaleProps> = props => {
   );
 
   return (
-    <View style={globalStyles.container}>
+    <View style={globalStyles.healthConnectAreaContainer}>
       <ScrollView
         style={styles.contentScrollView}
         contentContainerStyle={styles.contentContainer}

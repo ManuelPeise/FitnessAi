@@ -1,0 +1,32 @@
+{
+  "backendFile": "sources/FitnessAi/Shared.Models/HealthConnect/ImportModels/HealthConnectTrainingDataRecordData.cs",
+  "fields": [
+    "exerciseMetricId",
+    "origin",
+    "system",
+    "activeCaloriesBurnedInKcal",
+    "cyclingPedalingCadence",
+    "distanceInMeters",
+    "durationSeconds",
+    "elevationAvg",
+    "endTime",
+    "exerciseType",
+    "startTime",
+    "heartRate",
+    "hydrationAvg",
+    "power",
+    "speed",
+    "restingHeartRate",
+    "stepCadence",
+    "steps",
+    "timeZoneInfo",
+    "weightAvg",
+    "bodyFatPercentageAvg",
+    "oxygenSaturationPercentageAvg",
+    "respiratoryRateAvg",
+    "vo2MaxMlPerMinKgAvg",
+    "notes",
+    "laps",
+    "segments"
+  ]
+}

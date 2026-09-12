@@ -28,6 +28,15 @@ import {
   HealthConnectTrainingDataRecordData,
 } from '../healthConnect/healthConnectTypes';
 import { utils } from '../../utils';
+import { utilsHealthConnect } from '../../utils.healthConnect';
+
+// Record types with no Health Connect aggregate support — read as raw
+// instantaneous records and averaged manually instead of via getAggregateResult.
+type RawMetricRecordType =
+  | 'BodyFat'
+  | 'OxygenSaturation'
+  | 'RespiratoryRate'
+  | 'Vo2Max';
 
 class HealthConnectSchedulePayloadFactory {
   private readonly databaseService = databaseAccessor;
@@ -185,192 +194,188 @@ class HealthConnectSchedulePayloadFactory {
     metricMappingMap: HealthConnectMetricMappingMap,
     metricActiveStateMap: HealthConnectMetricActiveStateMap,
   ): Promise<HealthConnectAggregatedData> {
-    const origins = this.getOriginsForMetric(
-      'HeartRate',
-      originMappingMap,
-      metricMappingMap,
-    );
+    const dateObj = new Date(date);
+    const fetchMetric = (key: AggregateResultRecordType) =>
+      this.getValue(
+        dateObj,
+        key,
+        this.getOriginsForMetric(key, originMappingMap, metricMappingMap),
+      );
 
-    const heartRateResult = metricActiveStateMap['HeartRate']
-      ? await this.getValue(
-          new Date(date),
-          'HeartRate',
-          this.getOriginsForMetric(
-            'HeartRate',
+    const results = await utilsHealthConnect.fetchActiveMetrics([
+      {
+        key: 'HeartRate',
+        isActive: metricActiveStateMap.HeartRate === true,
+        fetch: () => fetchMetric('HeartRate'),
+      },
+      {
+        key: 'RestingHeartRate',
+        isActive: metricActiveStateMap.RestingHeartRate === true,
+        fetch: () => fetchMetric('RestingHeartRate'),
+      },
+      {
+        key: 'SleepSession',
+        isActive: metricActiveStateMap.SleepSession === true,
+        fetch: () => fetchMetric('SleepSession'),
+      },
+      {
+        key: 'FloorsClimbed',
+        isActive: metricActiveStateMap.FloorsClimbed === true,
+        fetch: () => fetchMetric('FloorsClimbed'),
+      },
+      {
+        key: 'BasalMetabolicRate',
+        isActive: metricActiveStateMap.BasalMetabolicRate === true,
+        fetch: () => fetchMetric('BasalMetabolicRate'),
+      },
+      {
+        key: 'ActiveCaloriesBurned',
+        isActive: metricActiveStateMap.ActiveCaloriesBurned === true,
+        fetch: () => fetchMetric('ActiveCaloriesBurned'),
+      },
+      {
+        key: 'TotalCaloriesBurned',
+        isActive: metricActiveStateMap.TotalCaloriesBurned === true,
+        fetch: () => fetchMetric('TotalCaloriesBurned'),
+      },
+      {
+        key: 'Weight',
+        isActive: metricActiveStateMap.Weight === true,
+        fetch: () => fetchMetric('Weight'),
+      },
+      {
+        key: 'Steps',
+        isActive: metricActiveStateMap.Steps === true,
+        fetch: () => fetchMetric('Steps'),
+      },
+      {
+        key: 'Hydration',
+        isActive: metricActiveStateMap.Hydration === true,
+        fetch: () => fetchMetric('Hydration'),
+      },
+      {
+        key: 'BloodPressure',
+        isActive: metricActiveStateMap.BloodPressure === true,
+        fetch: () => fetchMetric('BloodPressure'),
+      },
+      {
+        key: 'WheelchairPushes',
+        isActive: metricActiveStateMap.WheelchairPushes === true,
+        fetch: () => fetchMetric('WheelchairPushes'),
+      },
+      {
+        key: 'Height',
+        isActive: metricActiveStateMap.Height === true,
+        fetch: () => fetchMetric('Height'),
+      },
+      {
+        key: 'Nutrition',
+        isActive: metricActiveStateMap.Nutrition === true,
+        fetch: () => fetchMetric('Nutrition'),
+      },
+      {
+        key: 'BodyFat',
+        isActive: metricActiveStateMap.BodyFat === true,
+        fetch: () =>
+          this.readRawMetric(
+            'BodyFat',
+            dateObj,
             originMappingMap,
             metricMappingMap,
           ),
-        )
-      : null;
-
-    const restingHeartRateResult =
-      metricActiveStateMap['RestingHeartRate'] === true
-        ? await this.getValue(
-            new Date(date),
-            'RestingHeartRate',
-            this.getOriginsForMetric(
-              'RestingHeartRate',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const sleepResult =
-      metricActiveStateMap['SleepSession'] === true
-        ? await this.getValue(
-            new Date(date),
-            'SleepSession',
-            this.getOriginsForMetric(
-              'SleepSession',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const floorsClimbedResult =
-      metricActiveStateMap['FloorsClimbed'] === true
-        ? await this.getValue(
-            new Date(date),
-            'FloorsClimbed',
-            this.getOriginsForMetric(
-              'FloorsClimbed',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const basalMetabolicRateResult =
-      metricActiveStateMap['BasalMetabolicRate'] === true
-        ? await this.getValue(
-            new Date(date),
-            'BasalMetabolicRate',
-            this.getOriginsForMetric(
-              'BasalMetabolicRate',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const activeCaloriesResult =
-      metricActiveStateMap['ActiveCaloriesBurned'] === true
-        ? await this.getValue(
-            new Date(date),
-            'ActiveCaloriesBurned',
-            this.getOriginsForMetric(
-              'ActiveCaloriesBurned',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const totalCaloriesResult =
-      metricActiveStateMap['TotalCaloriesBurned'] === true
-        ? await this.getValue(
-            new Date(date),
-            'TotalCaloriesBurned',
-            this.getOriginsForMetric(
-              'TotalCaloriesBurned',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const weightResult =
-      metricActiveStateMap['Weight'] === true
-        ? await this.getValue(
-            new Date(date),
-            'Weight',
-            this.getOriginsForMetric(
-              'Weight',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const stepsResult =
-      metricActiveStateMap['Steps'] === true
-        ? await this.getValue(
-            new Date(date),
-            'Steps',
-            this.getOriginsForMetric(
-              'Steps',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const hydrationResult =
-      metricActiveStateMap['Hydration'] === true
-        ? await this.getValue(
-            new Date(date),
-            'Hydration',
-            this.getOriginsForMetric(
-              'Hydration',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const bloodPressureResult =
-      metricActiveStateMap['BloodPressure'] === true
-        ? await this.getValue(
-            new Date(date),
-            'BloodPressure',
-            this.getOriginsForMetric(
-              'BloodPressure',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const wheelchairPushesResult =
-      metricActiveStateMap['WheelchairPushes'] === true
-        ? await this.getValue(
-            new Date(date),
-            'WheelchairPushes',
-            this.getOriginsForMetric(
-              'WheelchairPushes',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-
-    const heightResult = metricActiveStateMap['Height']
-      ? await this.getValue(
-          new Date(date),
-          'Height',
-          this.getOriginsForMetric(
-            'Height',
+      },
+      {
+        key: 'OxygenSaturation',
+        isActive: metricActiveStateMap.OxygenSaturation === true,
+        fetch: () =>
+          this.readRawMetric(
+            'OxygenSaturation',
+            dateObj,
             originMappingMap,
             metricMappingMap,
           ),
-        )
-      : null;
-
-    const bodyFatResult =
-      metricActiveStateMap['BodyFat'] === true
-        ? await this.getBodyFat(
-            new Date(date),
+      },
+      {
+        key: 'RespiratoryRate',
+        isActive: metricActiveStateMap.RespiratoryRate === true,
+        fetch: () =>
+          this.readRawMetric(
+            'RespiratoryRate',
+            dateObj,
             originMappingMap,
             metricMappingMap,
-          )
-        : null;
+          ),
+      },
+      {
+        key: 'Vo2Max',
+        isActive: metricActiveStateMap.Vo2Max === true,
+        fetch: () =>
+          this.readRawMetric(
+            'Vo2Max',
+            dateObj,
+            originMappingMap,
+            metricMappingMap,
+          ),
+      },
+    ]);
+
+    const heartRateResult = results.HeartRate as
+      | AggregateResult<'HeartRate'>
+      | undefined;
+    const restingHeartRateResult = results.RestingHeartRate as
+      | AggregateResult<'RestingHeartRate'>
+      | undefined;
+    const sleepResult = results.SleepSession as
+      | AggregateResult<'SleepSession'>
+      | undefined;
+    const floorsClimbedResult = results.FloorsClimbed as
+      | AggregateResult<'FloorsClimbed'>
+      | undefined;
+    const basalMetabolicRateResult = results.BasalMetabolicRate as
+      | AggregateResult<'BasalMetabolicRate'>
+      | undefined;
+    const activeCaloriesResult = results.ActiveCaloriesBurned as
+      | AggregateResult<'ActiveCaloriesBurned'>
+      | undefined;
+    const totalCaloriesResult = results.TotalCaloriesBurned as
+      | AggregateResult<'TotalCaloriesBurned'>
+      | undefined;
+    const weightResult = results.Weight as
+      | AggregateResult<'Weight'>
+      | undefined;
+    const stepsResult = results.Steps as AggregateResult<'Steps'> | undefined;
+    const hydrationResult = results.Hydration as
+      | AggregateResult<'Hydration'>
+      | undefined;
+    const bloodPressureResult = results.BloodPressure as
+      | AggregateResult<'BloodPressure'>
+      | undefined;
+    const wheelchairPushesResult = results.WheelchairPushes as
+      | AggregateResult<'WheelchairPushes'>
+      | undefined;
+    const heightResult = results.Height as
+      | AggregateResult<'Height'>
+      | undefined;
+    const nutritionResult = results.Nutrition as
+      | AggregateResult<'Nutrition'>
+      | undefined;
+    const bodyFatResult = results.BodyFat as
+      | ReadRecordsResult<'BodyFat'>
+      | undefined;
+    const oxygenSaturationResult = results.OxygenSaturation as
+      | ReadRecordsResult<'OxygenSaturation'>
+      | undefined;
+    const respiratoryRateResult = results.RespiratoryRate as
+      | ReadRecordsResult<'RespiratoryRate'>
+      | undefined;
+    const vo2MaxResult = results.Vo2Max as
+      | ReadRecordsResult<'Vo2Max'>
+      | undefined;
 
     return {
       source: 'HealthConnectSyncClient',
-      endTime: utils.getEndOfDay(new Date(date)).toISOString(),
-      startTime: utils.getStartOfDay(new Date(date)).toISOString(),
+      endTime: utils.getEndOfDay(dateObj).toISOString(),
+      startTime: utils.getStartOfDay(dateObj).toISOString(),
       activeCaloriesBurnedInKcal:
         activeCaloriesResult?.ACTIVE_CALORIES_TOTAL.inKilocalories ?? null,
       totalCaloriesBurnedInKcal:
@@ -400,7 +405,29 @@ class HealthConnectSchedulePayloadFactory {
       },
       wheelchairPushes: wheelchairPushesResult?.COUNT_TOTAL ?? null,
       heightInMeters: heightResult?.HEIGHT_AVG.inMeters ?? null,
-      bodyFatPercentageAvg: this.getBodyFatPercentageAvg(bodyFatResult),
+      bodyFatPercentageAvg: this.averageRecordField(
+        bodyFatResult ?? null,
+        record => record.percentage,
+      ),
+      caloriesKcal: nutritionResult?.ENERGY_TOTAL.inKilocalories ?? null,
+      proteinGrams: nutritionResult?.PROTEIN_TOTAL.inGrams ?? null,
+      carbohydratesGrams:
+        nutritionResult?.TOTAL_CARBOHYDRATE_TOTAL.inGrams ?? null,
+      fatGrams: nutritionResult?.TOTAL_FAT_TOTAL.inGrams ?? null,
+      fiberGrams: nutritionResult?.DIETARY_FIBER_TOTAL.inGrams ?? null,
+      sugarGrams: nutritionResult?.SUGAR_TOTAL.inGrams ?? null,
+      oxygenSaturationPercentageAvg: this.averageRecordField(
+        oxygenSaturationResult ?? null,
+        record => record.percentage,
+      ),
+      respiratoryRateAvg: this.averageRecordField(
+        respiratoryRateResult ?? null,
+        record => record.rate,
+      ),
+      vo2MaxMlPerMinKgAvg: this.averageRecordField(
+        vo2MaxResult ?? null,
+        record => record.vo2MillilitersPerMinuteKilogram,
+      ),
     };
   }
 
@@ -470,156 +497,162 @@ class HealthConnectSchedulePayloadFactory {
       return null;
     }
 
-    const distanceResult =
-      metricActiveStateMap['Distance'] === true
-        ? await this.getValue(
-            date,
-            'Distance',
-            this.getOriginsForMetric(
-              'Distance',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
+    const fetchMetric = (key: AggregateResultRecordType) =>
+      this.getValue(
+        date,
+        key,
+        this.getOriginsForMetric(key, originMappingMap, metricMappingMap),
+      );
 
-    const stepsResult =
-      metricActiveStateMap['Steps'] === true
-        ? await this.getValue(
+    const results = await utilsHealthConnect.fetchActiveMetrics([
+      {
+        key: 'Distance',
+        isActive: metricActiveStateMap.Distance === true,
+        fetch: () => fetchMetric('Distance'),
+      },
+      {
+        key: 'Steps',
+        isActive: metricActiveStateMap.Steps === true,
+        fetch: () => fetchMetric('Steps'),
+      },
+      {
+        key: 'ActiveCaloriesBurned',
+        isActive: metricActiveStateMap.ActiveCaloriesBurned === true,
+        fetch: () => fetchMetric('ActiveCaloriesBurned'),
+      },
+      {
+        key: 'HeartRate',
+        isActive: metricActiveStateMap.HeartRate === true,
+        fetch: () => fetchMetric('HeartRate'),
+      },
+      {
+        key: 'Speed',
+        isActive: metricActiveStateMap.Speed === true,
+        fetch: () => fetchMetric('Speed'),
+      },
+      {
+        key: 'ElevationGained',
+        isActive: metricActiveStateMap.ElevationGained === true,
+        fetch: () => fetchMetric('ElevationGained'),
+      },
+      {
+        key: 'Power',
+        isActive: metricActiveStateMap.Power === true,
+        fetch: () => fetchMetric('Power'),
+      },
+      {
+        key: 'CyclingPedalingCadence',
+        isActive: metricActiveStateMap.CyclingPedalingCadence === true,
+        fetch: () => fetchMetric('CyclingPedalingCadence'),
+      },
+      {
+        key: 'Hydration',
+        isActive: metricActiveStateMap.Hydration === true,
+        fetch: () => fetchMetric('Hydration'),
+      },
+      {
+        key: 'RestingHeartRate',
+        isActive: metricActiveStateMap.RestingHeartRate === true,
+        fetch: () => fetchMetric('RestingHeartRate'),
+      },
+      {
+        key: 'StepsCadence',
+        isActive: metricActiveStateMap.StepsCadence === true,
+        fetch: () => fetchMetric('StepsCadence'),
+      },
+      {
+        key: 'Weight',
+        isActive: metricActiveStateMap.Weight === true,
+        fetch: () => fetchMetric('Weight'),
+      },
+      {
+        key: 'BodyFat',
+        isActive: metricActiveStateMap.BodyFat === true,
+        fetch: () =>
+          this.readRawMetric(
+            'BodyFat',
             date,
-            'Steps',
-            this.getOriginsForMetric(
-              'Steps',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const activeCaloriesBurnedResult =
-      metricActiveStateMap['ActiveCaloriesBurned'] === true
-        ? await this.getValue(
+            originMappingMap,
+            metricMappingMap,
+          ),
+      },
+      {
+        key: 'OxygenSaturation',
+        isActive: metricActiveStateMap.OxygenSaturation === true,
+        fetch: () =>
+          this.readRawMetric(
+            'OxygenSaturation',
             date,
-            'ActiveCaloriesBurned',
-            this.getOriginsForMetric(
-              'ActiveCaloriesBurned',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const heartRateResult =
-      metricActiveStateMap['HeartRate'] === true
-        ? await this.getValue(
+            originMappingMap,
+            metricMappingMap,
+          ),
+      },
+      {
+        key: 'RespiratoryRate',
+        isActive: metricActiveStateMap.RespiratoryRate === true,
+        fetch: () =>
+          this.readRawMetric(
+            'RespiratoryRate',
             date,
-            'HeartRate',
-            this.getOriginsForMetric(
-              'HeartRate',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const speedResult =
-      metricActiveStateMap['Speed'] === true
-        ? await this.getValue(
+            originMappingMap,
+            metricMappingMap,
+          ),
+      },
+      {
+        key: 'Vo2Max',
+        isActive: metricActiveStateMap.Vo2Max === true,
+        fetch: () =>
+          this.readRawMetric(
+            'Vo2Max',
             date,
-            'Speed',
-            this.getOriginsForMetric(
-              'Speed',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const elevationResult =
-      metricActiveStateMap['ElevationGained'] === true
-        ? await this.getValue(
-            date,
-            'ElevationGained',
-            this.getOriginsForMetric(
-              'ElevationGained',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const powerResult =
-      metricActiveStateMap['Power'] === true
-        ? await this.getValue(
-            date,
-            'Power',
-            this.getOriginsForMetric(
-              'Power',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const cyclingPedalingCadenceResult =
-      metricActiveStateMap['CyclingPedalingCadence'] === true
-        ? await this.getValue(
-            date,
-            'CyclingPedalingCadence',
-            this.getOriginsForMetric(
-              'CyclingPedalingCadence',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const hydrationResult =
-      metricActiveStateMap['Hydration'] === true
-        ? await this.getValue(
-            date,
-            'Hydration',
-            this.getOriginsForMetric(
-              'Hydration',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const restingHeartRateResult =
-      metricActiveStateMap['RestingHeartRate'] === true
-        ? await this.getValue(
-            date,
-            'RestingHeartRate',
-            this.getOriginsForMetric(
-              'RestingHeartRate',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const stepsCadenceResult =
-      metricActiveStateMap['StepsCadence'] === true
-        ? await this.getValue(
-            date,
-            'StepsCadence',
-            this.getOriginsForMetric(
-              'StepsCadence',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
-    const weightResult =
-      metricActiveStateMap['Weight'] === true
-        ? await this.getValue(
-            date,
-            'Weight',
-            this.getOriginsForMetric(
-              'Weight',
-              originMappingMap,
-              metricMappingMap,
-            ),
-          )
-        : null;
+            originMappingMap,
+            metricMappingMap,
+          ),
+      },
+    ]);
 
+    const distanceResult = results.Distance as
+      | AggregateResult<'Distance'>
+      | undefined;
+    const stepsResult = results.Steps as AggregateResult<'Steps'> | undefined;
+    const activeCaloriesBurnedResult = results.ActiveCaloriesBurned as
+      | AggregateResult<'ActiveCaloriesBurned'>
+      | undefined;
+    const heartRateResult = results.HeartRate as
+      | AggregateResult<'HeartRate'>
+      | undefined;
+    const speedResult = results.Speed as AggregateResult<'Speed'> | undefined;
+    const elevationResult = results.ElevationGained as
+      | AggregateResult<'ElevationGained'>
+      | undefined;
+    const powerResult = results.Power as AggregateResult<'Power'> | undefined;
+    const cyclingPedalingCadenceResult = results.CyclingPedalingCadence as
+      | AggregateResult<'CyclingPedalingCadence'>
+      | undefined;
+    const hydrationResult = results.Hydration as
+      | AggregateResult<'Hydration'>
+      | undefined;
+    const restingHeartRateResult = results.RestingHeartRate as
+      | AggregateResult<'RestingHeartRate'>
+      | undefined;
+    const stepsCadenceResult = results.StepsCadence as
+      | AggregateResult<'StepsCadence'>
+      | undefined;
+    const weightResult = results.Weight as
+      | AggregateResult<'Weight'>
+      | undefined;
     const bodyFatResult =
-      metricActiveStateMap['BodyFat'] === true
-        ? await this.getBodyFat(date, originMappingMap, metricMappingMap)
-        : null;
+      (results.BodyFat as ReadRecordsResult<'BodyFat'> | undefined) ?? null;
+    const oxygenSaturationResult =
+      (results.OxygenSaturation as
+        | ReadRecordsResult<'OxygenSaturation'>
+        | undefined) ?? null;
+    const respiratoryRateResult =
+      (results.RespiratoryRate as
+        | ReadRecordsResult<'RespiratoryRate'>
+        | undefined) ?? null;
+    const vo2MaxResult =
+      (results.Vo2Max as ReadRecordsResult<'Vo2Max'> | undefined) ?? null;
 
     const model: HealthConnectTrainingDataRecordData = {
       exerciseMetricId: record.metadata?.id,
@@ -676,7 +709,22 @@ class HealthConnectSchedulePayloadFactory {
         max: stepsCadenceResult?.RATE_MAX ?? null,
       },
       weightAvg: weightResult?.WEIGHT_AVG.inKilograms ?? null,
-      bodyFatPercentageAvg: this.getBodyFatPercentageAvg(bodyFatResult),
+      bodyFatPercentageAvg: this.averageRecordField(
+        bodyFatResult,
+        r => r.percentage,
+      ),
+      oxygenSaturationPercentageAvg: this.averageRecordField(
+        oxygenSaturationResult,
+        r => r.percentage,
+      ),
+      respiratoryRateAvg: this.averageRecordField(
+        respiratoryRateResult,
+        r => r.rate,
+      ),
+      vo2MaxMlPerMinKgAvg: this.averageRecordField(
+        vo2MaxResult,
+        r => r.vo2MillilitersPerMinuteKilogram,
+      ),
       notes: record.notes ?? null,
       segments: record.segments?.length
         ? record.segments.map(s => {
@@ -724,26 +772,43 @@ class HealthConnectSchedulePayloadFactory {
     );
   }
 
-  private async getBodyFat(
+  private async readRawMetric<T extends RawMetricRecordType>(
+    recordType: T,
     date: Date,
     originMappingMap: HealthConnectOriginMappingMap | null,
     metricMappingMap: HealthConnectMetricMappingMap,
-  ): Promise<ReadRecordsResult<'BodyFat'> | null> {
-    if (metricMappingMap['BodyFat']?.isActive) {
-      return await healthConnectService.readMetric(
-        'BodyFat',
-        {
-          startTime: utils.getStartOfDay(date),
-          endTime: utils.getEndOfDay(date),
-        },
-        this.getOriginsForMetric('BodyFat', originMappingMap, metricMappingMap),
-      );
+  ): Promise<ReadRecordsResult<T> | null> {
+    if (!metricMappingMap[recordType]?.isActive) {
+      return null;
     }
-    return null;
+
+    return await healthConnectService.readMetric(
+      recordType,
+      {
+        startTime: utils.getStartOfDay(date),
+        endTime: utils.getEndOfDay(date),
+      },
+      this.getOriginsForMetric(recordType, originMappingMap, metricMappingMap),
+    );
+  }
+
+  private averageRecordField<T extends RawMetricRecordType>(
+    result: ReadRecordsResult<T> | null,
+    getValue: (record: RecordResult<T>) => number | null | undefined,
+  ): number | null {
+    if (!result?.records?.length) {
+      return null;
+    }
+
+    const total = result.records.reduce(
+      (sum, record) => sum + (getValue(record) ?? 0),
+      0,
+    );
+    return total / result.records.length;
   }
 
   private getOriginsForMetric(
-    key: AggregateResultRecordType | 'BodyFat',
+    key: AggregateResultRecordType | RawMetricRecordType,
     originMappingMappingMap: HealthConnectOriginMappingMap | null,
     metricMappingMap: HealthConnectMetricMappingMap,
   ): string[] {
@@ -770,20 +835,6 @@ class HealthConnectSchedulePayloadFactory {
       }
     }
     return origins;
-  }
-
-  private getBodyFatPercentageAvg(
-    bodyFatResult: ReadRecordsResult<'BodyFat'> | null,
-  ): number | null {
-    if (!bodyFatResult?.records?.length) {
-      return null;
-    }
-
-    const total = bodyFatResult.records.reduce(
-      (sum, record) => sum + (record.percentage ?? 0),
-      0,
-    );
-    return total / bodyFatResult.records.length;
   }
 }
 

@@ -1,0 +1,31 @@
+{
+  "backendFile": "sources/FitnessAi/Shared.Models/HealthConnect/ImportModels/HealthConnectAggregatedData.cs",
+  "fields": [
+    "source",
+    "endTime",
+    "startTime",
+    "activeCaloriesBurnedInKcal",
+    "totalCaloriesBurnedInKcal",
+    "heartRate",
+    "hydrationAvg",
+    "restingHeartRate",
+    "steps",
+    "weightAvg",
+    "sleepDurationInSeconds",
+    "floorsClimbed",
+    "basalMetabolicRateInKcal",
+    "bloodPressure",
+    "wheelchairPushes",
+    "heightInMeters",
+    "bodyFatPercentageAvg",
+    "caloriesKcal",
+    "proteinGrams",
+    "carbohydratesGrams",
+    "fatGrams",
+    "fiberGrams",
+    "sugarGrams",
+    "oxygenSaturationPercentageAvg",
+    "respiratoryRateAvg",
+    "vo2MaxMlPerMinKgAvg"
+  ]
+}

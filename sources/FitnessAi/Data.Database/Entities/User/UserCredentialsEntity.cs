@@ -4,5 +4,6 @@
     {
         public string PasswordHash { get; set; } = null!;
         public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiresAt { get; set; }
     }
 }

@@ -1,8 +1,10 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useHealthConnectOriginMappings } from '../../hooks/useHealthConnectOriginMappings';
+import { useHealthConnectMetricMappings } from '../../hooks/useHealthConnectMetricMappings';
 import HealthConnectMappingItem from './components/HealthConnectMappingItem';
 import HealthConnectOriginMappingModal from './components/HealthConnectOriginMappingModal';
+import LoadingOverlay from '../../components/LoadingOverlay';
 import { colorMap } from '../../lib/styles/colorMap';
 import { globalStyles } from '../../lib/styles/globalStyles';
 import { ILocaleProps, withLocalNameSpaces } from '../../lib/localization';
@@ -11,21 +13,22 @@ const HealthConnectOriginMapping: React.FC<ILocaleProps> = ({
   getResource,
 }) => {
   const mapping = useHealthConnectOriginMappings();
-
-  const initializeOriginMappings = React.useCallback(async () => {
-    mapping.initializeMappings();
-  }, [mapping]);
+  const metricMapping = useHealthConnectMetricMappings();
+  const isLoading = mapping.isLoading || metricMapping.isLoading;
 
   React.useEffect(() => {
     const initialize = async () => {
-      await initializeOriginMappings();
+      // Metric mappings are discovered here (rather than on a dedicated
+      // screen) since editing them now happens inline in the origin modal.
+      await metricMapping.initializeMappings();
+      await mapping.initializeMappings();
     };
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <View style={globalStyles.container}>
+    <View style={globalStyles.healthConnectAreaContainer}>
       <View style={styles.root}>
         <Text style={styles.title}>
           {getResource('healthConnect.captionOriginMappings')}
@@ -39,9 +42,6 @@ const HealthConnectOriginMapping: React.FC<ILocaleProps> = ({
             />
           ))}
         </ScrollView>
-        {mapping.feedback && (
-          <Text style={styles.feedback}>{mapping.feedback.message}</Text>
-        )}
       </View>
       {mapping.modalProps?.mapping && (
         <HealthConnectOriginMappingModal
@@ -52,6 +52,7 @@ const HealthConnectOriginMapping: React.FC<ILocaleProps> = ({
           onClose={() => mapping.handleModalStateChanged(false, null)}
         />
       )}
+      <LoadingOverlay visible={isLoading} />
     </View>
   );
 };
@@ -70,7 +71,6 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: colorMap.backgroundAlt,
   },
-  feedback: { marginVertical: 8, textAlign: 'center', color: colorMap.info },
 });
 
 export default withLocalNameSpaces('HealthConnectOriginMapping', [

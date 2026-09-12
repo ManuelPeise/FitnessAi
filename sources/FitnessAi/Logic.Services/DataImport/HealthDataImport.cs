@@ -1,6 +1,7 @@
 using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Nutrition;
 using Data.Database.Entities.User;
 using Data.Database.Models.Scheduler;
 using Logic.Services.Interfaces;
@@ -8,7 +9,7 @@ using Logic.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
 using Shared.Enums.HealthConnect;
 using Shared.Models.HealthConnect.ImportModels;
-using System.Data;
+using System.Linq.Expressions;
 
 
 namespace Logic.Services.DataImport
@@ -38,8 +39,6 @@ namespace Logic.Services.DataImport
             _currentUserService = currentUserService;
         }
 
-
-
         public async Task ImportHealthConnectData(List<HealthConnectDailyDataModel> models)
         {
             try
@@ -60,6 +59,7 @@ namespace Logic.Services.DataImport
 
                 var bodyDataEntity = await UpdateBodyData(userId, maxDate, lastAggregatedData);
                 var healthDataHelper = new HealthDataImportHelper(bodyDataEntity);
+                var userEntity = await GetUserWithAiSettings(userId);
 
                 var healthDataAddedOrUpdated = await ProcessHealthData(
                     healthData,
@@ -75,9 +75,11 @@ namespace Logic.Services.DataImport
                     TrainingData = t
                 })).ToHashSet();
 
-                var trainingDataAddedOrUpdated = await ProcessTrainingData(trainingData, healthDataHelper, weightDictionary, bodyFatDictionary, userId, maxDate);
+                var trainingDataAddedOrUpdated = await ProcessTrainingData(trainingData, healthDataHelper, weightDictionary, bodyFatDictionary, userId, maxDate, userEntity);
 
-                if (healthDataAddedOrUpdated || trainingDataAddedOrUpdated)
+                var nutritionDataAddedOrUpdated = await ProcessNutritionData(healthData, userId);
+
+                if (healthDataAddedOrUpdated || trainingDataAddedOrUpdated || nutritionDataAddedOrUpdated)
                 {
                     await _healthUnitOfWork.SaveChangesAsync();
                 }
@@ -98,18 +100,19 @@ namespace Logic.Services.DataImport
         {
             try
             {
-                var databaseChanged = false;
-
                 if (!healthData.Any())
                 {
                     _logger.LogInformation("No health data to process.");
                     return false;
                 }
 
+                var dataKeys = healthData.Select(model => $"{model.Date:yyyy-MM-dd}_{userId}").ToList();
+                var existingEntities = await GetExistingHealthDataEntities(dataKeys);
+                var databaseChanged = false;
 
                 foreach (var model in healthData)
                 {
-                    var dataKey = $"{model.Date.ToString("yyyy-MM-dd")}_{userId}";
+                    var dataKey = $"{model.Date:yyyy-MM-dd}_{userId}";
 
                     if (string.IsNullOrEmpty(dataKey))
                     {
@@ -117,10 +120,7 @@ namespace Logic.Services.DataImport
                         continue;
                     }
 
-
-                    var existingEntity = await GetExistingHealthDataEntity(dataKey);
-
-                    if (existingEntity != null)
+                    if (existingEntities.TryGetValue(dataKey, out var existingEntity))
                     {
                         _logger.LogInformation($"Health data for user {userId} on {model.Date:yyyy-MM-dd} already exists, update data...");
 
@@ -146,13 +146,123 @@ namespace Logic.Services.DataImport
             }
         }
 
-        private async Task<HealthConnectHealthDataEntity?> GetExistingHealthDataEntity(string dataKey)
+        private async Task<Dictionary<string, HealthConnectHealthDataEntity>> GetExistingHealthDataEntities(List<string> dataKeys)
         {
-            var existingEntity = await _healthUnitOfWork.HealthConnectHealthDataRepository.GetSingleAsync(new DbQueryOptions<HealthConnectHealthDataEntity>
+            var existingEntities = await _healthUnitOfWork.HealthConnectHealthDataRepository.GetAsync(new DbQueryOptions<HealthConnectHealthDataEntity>
             {
-                WhereExpression = entity => entity.DataKey == dataKey
+                WhereExpression = entity => dataKeys.Contains(entity.DataKey),
+                Includes = new List<Expression<Func<HealthConnectHealthDataEntity, object>>>
+                {
+                    entity => entity.Values!,
+                    entity => entity.Values!.HeartRate!,
+                    entity => entity.Values!.RestingHeartRate!,
+                    entity => entity.Values!.BloodPressure!
+                }
             });
-            return existingEntity;
+
+            return existingEntities.ToDictionary(entity => entity.DataKey);
+        }
+
+        private async Task<bool> ProcessNutritionData(HashSet<HealthConnectHealthDataModel> healthData, long userId)
+        {
+            try
+            {
+                if (!healthData.Any())
+                {
+                    return false;
+                }
+
+                var dataKeys = healthData.Select(model => $"{model.Date:yyyy-MM-dd}_{userId}").ToList();
+                var existingEntities = await GetExistingNutritionDataEntities(dataKeys);
+                var databaseChanged = false;
+
+                foreach (var model in healthData)
+                {
+                    if (!HasNutritionData(model.AggregatedData))
+                    {
+                        continue;
+                    }
+
+                    var dataKey = $"{model.Date:yyyy-MM-dd}_{userId}";
+
+                    if (existingEntities.TryGetValue(dataKey, out var existingEntity))
+                    {
+                        UpdateNutritionValues(existingEntity.Values, model.AggregatedData);
+                        databaseChanged = true;
+                        continue;
+                    }
+
+                    await _healthUnitOfWork.NutritionDataRepository.AddAsync(CreateNutritionEntity(model, dataKey, userId));
+                    databaseChanged = true;
+                }
+
+                return databaseChanged;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "An error occurred while processing nutrition data.");
+
+                return false;
+            }
+        }
+
+        private async Task<Dictionary<string, NutritionDataEntity>> GetExistingNutritionDataEntities(List<string> dataKeys)
+        {
+            var existingEntities = await _healthUnitOfWork.NutritionDataRepository.GetAsync(new DbQueryOptions<NutritionDataEntity>
+            {
+                WhereExpression = entity => dataKeys.Contains(entity.DataKey),
+                Includes = new List<Expression<Func<NutritionDataEntity, object>>>
+                {
+                    entity => entity.Values!
+                }
+            });
+
+            return existingEntities.ToDictionary(entity => entity.DataKey);
+        }
+
+        private static bool HasNutritionData(HealthConnectAggregatedData aggregatedData)
+        {
+            return aggregatedData.CaloriesKcal != null
+                || aggregatedData.ProteinGrams != null
+                || aggregatedData.CarbohydratesGrams != null
+                || aggregatedData.FatGrams != null
+                || aggregatedData.FiberGrams != null
+                || aggregatedData.SugarGrams != null;
+        }
+
+        private static NutritionDataEntity CreateNutritionEntity(HealthConnectHealthDataModel model, string dataKey, long userId)
+        {
+            return new NutritionDataEntity
+            {
+                DataKey = dataKey,
+                StartTime = model.Date,
+                EndTime = model.Date.AddDays(1).AddTicks(-1),
+                UserId = userId,
+                Values = new NutritionValuesEntity
+                {
+                    CaloriesKcal = model.AggregatedData.CaloriesKcal,
+                    ProteinGrams = model.AggregatedData.ProteinGrams,
+                    CarbohydratesGrams = model.AggregatedData.CarbohydratesGrams,
+                    FatGrams = model.AggregatedData.FatGrams,
+                    FiberGrams = model.AggregatedData.FiberGrams,
+                    SugarGrams = model.AggregatedData.SugarGrams,
+                }
+            };
+        }
+
+        private static void UpdateNutritionValues(NutritionValuesEntity? values, HealthConnectAggregatedData aggregatedData)
+        {
+            if (values == null)
+            {
+                return;
+            }
+
+            values.CaloriesKcal = aggregatedData.CaloriesKcal;
+            values.ProteinGrams = aggregatedData.ProteinGrams;
+            values.CarbohydratesGrams = aggregatedData.CarbohydratesGrams;
+            values.FatGrams = aggregatedData.FatGrams;
+            values.FiberGrams = aggregatedData.FiberGrams;
+            values.SugarGrams = aggregatedData.SugarGrams;
         }
 
         private async Task<HealthConnectHealthDataEntity> CreateHealthEntity(
@@ -183,6 +293,9 @@ namespace Logic.Services.DataImport
                     WheelchairPushes = model.AggregatedData.WheelchairPushes,
                     HeightInMeters = healthDataHelper.GetHeight(),
                     BodyFatPercentageAvg = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, model.Date),
+                    OxygenSaturationPercentageAvg = model.AggregatedData.OxygenSaturationPercentageAvg,
+                    RespiratoryRateAvg = model.AggregatedData.RespiratoryRateAvg,
+                    Vo2MaxMlPerMinKgAvg = model.AggregatedData.Vo2MaxMlPerMinKgAvg,
                     HeartRate = new HealthConnectAvgEntity
                     {
                         Avg = model.AggregatedData.HeartRate?.Avg,
@@ -236,6 +349,9 @@ namespace Logic.Services.DataImport
             values.BasalMetabolicRateInKcal = model.AggregatedData.BasalMetabolicRateInKcal;
             values.WheelchairPushes = model.AggregatedData.WheelchairPushes;
             values.HeightInMeters = model.AggregatedData.HeightInMeters;
+            values.OxygenSaturationPercentageAvg = model.AggregatedData.OxygenSaturationPercentageAvg;
+            values.RespiratoryRateAvg = model.AggregatedData.RespiratoryRateAvg;
+            values.Vo2MaxMlPerMinKgAvg = model.AggregatedData.Vo2MaxMlPerMinKgAvg;
 
             if (maxDate.Date == DateTime.UtcNow.Date)
             {
@@ -268,17 +384,26 @@ namespace Logic.Services.DataImport
             Dictionary<DateTime, decimal?> weightDictionary,
             Dictionary<DateTime, decimal?> bodyFatDictionary,
             long userId,
-            DateTime maxDate)
+            DateTime maxDate,
+            UserEntity? userEntity)
         {
             try
             {
-                var databaseChanged = false;
-
                 if (!trainingData.Any())
                 {
                     _logger.LogInformation("No training data to process.");
-                    return databaseChanged;
+                    return false;
                 }
+
+                var dataKeys = trainingData
+                    .Where(data => !string.IsNullOrEmpty(data.TrainingData.ExerciseMetricId))
+                    .Select(data => data.TrainingData.ExerciseMetricId!)
+                    .ToList();
+
+                var existingEntities = await GetExistingTrainingDataEntities(dataKeys);
+                var timeZonesByOffset = await GetTimeZoneEntities(trainingData);
+                var allowedForAiTraining = userEntity?.Settings?.AiSettings?.CanUseHealthDataForAiTraining ?? false;
+                var databaseChanged = false;
 
                 foreach (var data in trainingData)
                 {
@@ -290,9 +415,7 @@ namespace Logic.Services.DataImport
 
                     var dataKey = data.TrainingData.ExerciseMetricId;
 
-                    var existingEntity = await GetExistingTrainingDataEntity(dataKey);
-
-                    if (existingEntity != null)
+                    if (existingEntities.TryGetValue(dataKey, out var existingEntity))
                     {
                         _logger.LogInformation($"Training data for user {userId} on {data.Date:yyyy-MM-dd} already exists, update data...");
 
@@ -309,13 +432,15 @@ namespace Logic.Services.DataImport
                         continue;
                     }
 
-                    var entity = await CreateNewTrainingDataEntity(
+                    var entity = CreateNewTrainingDataEntity(
                         data.TrainingData,
                         healthDataHelper,
                         weightDictionary,
                         bodyFatDictionary,
                         dataKey,
-                        userId);
+                        userId,
+                        allowedForAiTraining,
+                        timeZonesByOffset);
 
                     if (entity == null)
                     {
@@ -326,16 +451,7 @@ namespace Logic.Services.DataImport
                     databaseChanged = true;
                 }
 
-                var userEntity = await _applicationUnitOfWork.UserRepository.GetSingleAsync(new DbQueryOptions<UserEntity>
-                {
-                    WhereExpression = entity => entity.Id == userId,
-                    Includes = new List<System.Linq.Expressions.Expression<Func<UserEntity, object>>>
-                    {
-                        entity => entity.Settings.AiSettings
-                    }
-                });
-
-                if (databaseChanged && userEntity?.Settings?.AiSettings?.CanUseHealthDataForAiTraining == true)
+                if (databaseChanged && allowedForAiTraining)
                 {
                     await _scheduledJobService.AddJobAsync(
                         HealthConnectTrainingJobName,
@@ -354,46 +470,68 @@ namespace Logic.Services.DataImport
             }
         }
 
-        private async Task<HealthConnectTrainingDataEntity?> GetExistingTrainingDataEntity(string dataKey)
+        private async Task<Dictionary<string, HealthConnectTrainingDataEntity>> GetExistingTrainingDataEntities(List<string> dataKeys)
         {
-            var existingEntity = await _healthUnitOfWork.HealthConnectTrainingDataRepository.GetSingleAsync(new DbQueryOptions<HealthConnectTrainingDataEntity>
+            var existingEntities = await _healthUnitOfWork.HealthConnectTrainingDataRepository.GetAsync(new DbQueryOptions<HealthConnectTrainingDataEntity>
             {
-                WhereExpression = entity => entity.DataKey == dataKey
+                WhereExpression = entity => dataKeys.Contains(entity.DataKey),
+                Includes = new List<Expression<Func<HealthConnectTrainingDataEntity, object>>>
+                {
+                    entity => entity.HealthConnectTrainingDataValues,
+                    entity => entity.HealthConnectTrainingDataValues.HeartRate!,
+                    entity => entity.HealthConnectTrainingDataValues.RestingHeartRate!,
+                    entity => entity.HealthConnectTrainingDataValues.CyclingPedalingCadence!,
+                    entity => entity.HealthConnectTrainingDataValues.Power!,
+                    entity => entity.HealthConnectTrainingDataValues.Speed!,
+                    entity => entity.HealthConnectTrainingDataValues.StepCadence!,
+                    entity => entity.HealthConnectTrainingDataValues.Laps,
+                    entity => entity.HealthConnectTrainingDataValues.Segments,
+                }
             });
-            return existingEntity;
+
+            return existingEntities.ToDictionary(entity => entity.DataKey);
         }
 
-        private async Task<HealthConnectTimeZoneEntity?> GetTimeZoneEntity(int? value)
+        private async Task<Dictionary<int, HealthConnectTimeZoneEntity>> GetTimeZoneEntities(HashSet<HealthConnectTrainingData> trainingData)
         {
-            if (value == null)
+            var offsets = trainingData
+                .Select(data => data.TrainingData.TimeZoneInfo?.Offset)
+                .Where(offset => offset != null)
+                .Select(offset => offset!.Value)
+                .Distinct()
+                .ToList();
+
+            if (offsets.Count == 0)
             {
-                return null;
+                return new Dictionary<int, HealthConnectTimeZoneEntity>();
             }
 
-            var existingEntity = await _healthUnitOfWork.HealthConnectTimeZoneRepository.GetSingleAsync(new DbQueryOptions<HealthConnectTimeZoneEntity>
+            var existingEntities = await _healthUnitOfWork.HealthConnectTimeZoneRepository.GetAsync(new DbQueryOptions<HealthConnectTimeZoneEntity>
             {
-                WhereExpression = entity => entity.Offset == value
+                WhereExpression = entity => offsets.Contains(entity.Offset)
             });
 
-            return existingEntity;
+            return existingEntities
+                .GroupBy(entity => entity.Offset)
+                .ToDictionary(group => group.Key, group => group.First());
         }
 
-        private async Task<HealthConnectTrainingDataEntity?> CreateNewTrainingDataEntity(
+        private HealthConnectTrainingDataEntity? CreateNewTrainingDataEntity(
             HealthConnectTrainingDataRecordData trainingData,
             HealthDataImportHelper healthDataHelper,
             Dictionary<DateTime, decimal?> weightDictionary,
             Dictionary<DateTime, decimal?> bodyFatDictionary,
             string dataKey,
-            long userId)
+            long userId,
+            bool allowedForAiTraining,
+            Dictionary<int, HealthConnectTimeZoneEntity> timeZonesByOffset)
         {
             if (trainingData == null)
             {
                 return null;
             }
 
-            var timeZoneEntity = await GetTimeZoneEntity(trainingData.TimeZoneInfo?.Offset);
-
-            var allowedForAiTraining = await GetAllowedForAiTraining(userId);
+            var timeZoneEntity = ResolveTimeZoneEntity(trainingData.TimeZoneInfo?.Offset, timeZonesByOffset);
 
             return new HealthConnectTrainingDataEntity
             {
@@ -405,8 +543,7 @@ namespace Logic.Services.DataImport
                 UserId = userId,
                 AllowedForAiTraining = allowedForAiTraining,
                 ExerciseType = trainingData.ExerciseType,
-                HealthConnectTimeZoneEntityId = timeZoneEntity?.Id ?? 0,
-                HealthConnectTimeZoneEntity = timeZoneEntity ?? new HealthConnectTimeZoneEntity { Offset = trainingData.TimeZoneInfo?.Offset ?? 0 },
+                HealthConnectTimeZoneEntity = timeZoneEntity,
                 HealthConnectTrainingDataValues = new HealthConnectTrainingDataValuesEntity
                 {
                     ActiveCaloriesBurnedInKcal = trainingData.ActiveCaloriesBurnedInKcal,
@@ -416,6 +553,9 @@ namespace Logic.Services.DataImport
                     HydrationAvg = trainingData.HydrationAvg,
                     Steps = trainingData.Steps,
                     BodyFatPercentage = healthDataHelper.GetGetBodyFatPercentage(bodyFatDictionary, trainingData.StartTime),
+                    OxygenSaturationPercentageAvg = trainingData.OxygenSaturationPercentageAvg,
+                    RespiratoryRateAvg = trainingData.RespiratoryRateAvg,
+                    Vo2MaxMlPerMinKgAvg = trainingData.Vo2MaxMlPerMinKgAvg,
                     WeightAvg = healthDataHelper.GetWeight(weightDictionary, trainingData.StartTime),
                     Notes = !string.IsNullOrEmpty(trainingData?.Notes) ? trainingData.Notes : null,
                     RestingHeartRate = new HealthConnectAvgEntity
@@ -478,6 +618,21 @@ namespace Logic.Services.DataImport
             };
         }
 
+        private static HealthConnectTimeZoneEntity ResolveTimeZoneEntity(int? offset, Dictionary<int, HealthConnectTimeZoneEntity> timeZonesByOffset)
+        {
+            var resolvedOffset = offset ?? 0;
+
+            if (timeZonesByOffset.TryGetValue(resolvedOffset, out var existingEntity))
+            {
+                return existingEntity;
+            }
+
+            var newEntity = new HealthConnectTimeZoneEntity { Offset = resolvedOffset };
+            timeZonesByOffset[resolvedOffset] = newEntity;
+
+            return newEntity;
+        }
+
         private void UpdateTrainingData(
             HealthConnectTrainingDataEntity existingEntity,
             HealthConnectTrainingDataRecordData trainingData,
@@ -515,6 +670,9 @@ namespace Logic.Services.DataImport
             values.StepCadence = UpdateAvgEntity(values.StepCadence, trainingData.StepCadence, HealthConnectUnitTypeEnum.StepsPerMinute);
             values.Laps = UpdateLapEntities(values.Laps, trainingData.Laps);
             values.Segments = UpdateSegmentEntities(values.Segments, trainingData.Segments);
+            values.OxygenSaturationPercentageAvg = trainingData.OxygenSaturationPercentageAvg;
+            values.RespiratoryRateAvg = trainingData.RespiratoryRateAvg;
+            values.Vo2MaxMlPerMinKgAvg = trainingData.Vo2MaxMlPerMinKgAvg;
 
             if (maxDate.Date == DateTime.UtcNow.Date)
             {
@@ -604,18 +762,16 @@ namespace Logic.Services.DataImport
             return existingSegments;
         }
 
-        private async Task<bool> GetAllowedForAiTraining(long userId)
+        private async Task<UserEntity?> GetUserWithAiSettings(long userId)
         {
-            var userEntity = await _applicationUnitOfWork.UserRepository.GetSingleAsync(new DbQueryOptions<UserEntity>
+            return await _applicationUnitOfWork.UserRepository.GetSingleAsync(new DbQueryOptions<UserEntity>
             {
                 WhereExpression = entity => entity.Id == userId,
-                Includes = new List<System.Linq.Expressions.Expression<Func<UserEntity, object>>>
+                Includes = new List<Expression<Func<UserEntity, object>>>
                 {
                     entity => entity.Settings.AiSettings
                 }
             });
-
-            return userEntity?.Settings?.AiSettings?.CanUseHealthDataForAiTraining ?? false;
         }
 
         private async Task<UserBodyDataEntity?> UpdateBodyData(long userId, DateTime modelDate, HealthConnectAggregatedData? model = null)
@@ -648,4 +804,3 @@ namespace Logic.Services.DataImport
 
     }
 }
-

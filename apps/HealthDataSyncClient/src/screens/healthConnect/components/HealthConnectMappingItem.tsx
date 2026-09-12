@@ -2,7 +2,11 @@ import React from 'react';
 import { HealthConnectMappingTableEntry } from '../../../lib/database/databaseTypes';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import IconComponent from '../../../components/IconComponent';
-import { colorMap } from '../../../lib/styles/colorMap';
+import {
+  colorMap,
+  getMappingStatus,
+  mappingStatusColorMap,
+} from '../../../lib/styles/colorMap';
 
 type IProps = {
   mapping: HealthConnectMappingTableEntry;
@@ -10,10 +14,19 @@ type IProps = {
   onClick: () => void;
 };
 
+const statusIconName: Record<
+  ReturnType<typeof getMappingStatus>,
+  'check-circle' | 'error' | 'remove-circle'
+> = {
+  active: 'check-circle',
+  inactive: 'remove-circle',
+  unmapped: 'error',
+};
+
 const HealthConnectMappingItem: React.FC<IProps> = props => {
   const { mapping, onClick, disabled } = props;
 
-  const isInactiveOrUnmapped = !mapping.isActive || !mapping.target.length;
+  const status = getMappingStatus(mapping);
 
   return (
     <TouchableOpacity
@@ -23,9 +36,9 @@ const HealthConnectMappingItem: React.FC<IProps> = props => {
     >
       <View style={styles.item}>
         <IconComponent
-          name={isInactiveOrUnmapped ? 'error' : 'check-circle'}
+          name={statusIconName[status]}
           size="sm"
-          color={isInactiveOrUnmapped ? colorMap.error : colorMap.success}
+          color={mappingStatusColorMap[status]}
         />
 
         <Text style={styles.source}>{mapping.source}</Text>

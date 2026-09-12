@@ -38,40 +38,6 @@ namespace Data.Database.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "HealthConnectAiTrainingDataTable",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<long>(type: "bigint", nullable: false),
-                    DataKey = table.Column<string>(type: "longtext", nullable: false),
-                    ExerciseType = table.Column<int>(type: "int", nullable: false),
-                    CaloriesBurned = table.Column<int>(type: "int", nullable: true),
-                    Steps = table.Column<int>(type: "int", nullable: true),
-                    DurationSeconds = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    DurationSecondsPerKm = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    DistanceInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    EvaluationMetersAvg = table.Column<int>(type: "int", nullable: true),
-                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    BodyFatPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    BodyMassIndex = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    CyclingPedalingCadenceId = table.Column<long>(type: "bigint", nullable: false),
-                    HeartRateId = table.Column<long>(type: "bigint", nullable: false),
-                    PowerId = table.Column<long>(type: "bigint", nullable: false),
-                    SpeedId = table.Column<long>(type: "bigint", nullable: false),
-                    StepCadenceId = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HealthConnectAiTrainingDataTable", x => x.Id);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "HealthConnectTimeZoneTable",
                 columns: table => new
                 {
@@ -104,6 +70,29 @@ namespace Data.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HealthConnectUnitTable", x => x.Id);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "NutritionValuesTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    CaloriesKcal = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    ProteinGrams = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    CarbohydratesGrams = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    FatGrams = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    FiberGrams = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    SugarGrams = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NutritionValuesTable", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -141,6 +130,7 @@ namespace Data.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     PasswordHash = table.Column<string>(type: "longtext", nullable: false),
                     RefreshToken = table.Column<string>(type: "longtext", nullable: true),
+                    RefreshTokenExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -171,59 +161,6 @@ namespace Data.Database.Migrations
                         name: "FK_SettingsTable_AiSettingsTable_AiSettingsId",
                         column: x => x.AiSettingsId,
                         principalTable: "AiSettingsTable",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "HealthConnectAiTrainingLapTable",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    LengthInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DurationSeconds = table.Column<int>(type: "int", nullable: false),
-                    HealthConnectAiTrainingDataId = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HealthConnectAiTrainingLapTable", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_HealthConnectAiTrainingLapTable_HealthConnectAiTrainingDataT~",
-                        column: x => x.HealthConnectAiTrainingDataId,
-                        principalTable: "HealthConnectAiTrainingDataTable",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "HealthConnectAiTrainingSegmentTable",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Repetitions = table.Column<int>(type: "int", nullable: false),
-                    DurationSeconds = table.Column<int>(type: "int", nullable: false),
-                    SegmentType = table.Column<int>(type: "int", nullable: false),
-                    HealthConnectRunningAiTrainingDataId = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_HealthConnectAiTrainingSegmentTable", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_HealthConnectAiTrainingSegmentTable_HealthConnectAiTrainingD~",
-                        column: x => x.HealthConnectRunningAiTrainingDataId,
-                        principalTable: "HealthConnectAiTrainingDataTable",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -264,8 +201,8 @@ namespace Data.Database.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     FirstName = table.Column<string>(type: "longtext", nullable: false),
                     LastName = table.Column<string>(type: "longtext", nullable: false),
-                    Email = table.Column<string>(type: "longtext", nullable: false),
-                    AppId = table.Column<string>(type: "longtext", nullable: false),
+                    Email = table.Column<string>(type: "varchar(255)", nullable: false),
+                    AppId = table.Column<string>(type: "varchar(255)", nullable: false),
                     UserRole = table.Column<int>(type: "int", nullable: false),
                     CredentialsId = table.Column<long>(type: "bigint", nullable: false),
                     SettingsId = table.Column<long>(type: "bigint", nullable: false),
@@ -306,6 +243,9 @@ namespace Data.Database.Migrations
                     Steps = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     WeightAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     BodyFatPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OxygenSaturationPercentageAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RespiratoryRateAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Vo2MaxMlPerMinKgAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Notes = table.Column<string>(type: "longtext", nullable: true),
                     CyclingPedalingCadenceId = table.Column<long>(type: "bigint", nullable: false),
                     HeartRateId = table.Column<long>(type: "bigint", nullable: false),
@@ -377,6 +317,9 @@ namespace Data.Database.Migrations
                     WheelchairPushes = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     HeightInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     BodyFatPercentageAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OxygenSaturationPercentageAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RespiratoryRateAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Vo2MaxMlPerMinKgAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     HeartRateId = table.Column<long>(type: "bigint", nullable: false),
                     RestingHeartRateId = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -397,6 +340,144 @@ namespace Data.Database.Migrations
                         name: "FK_HealthConnectValuesTable_HealthConnectAvgTable_RestingHeartR~",
                         column: x => x.RestingHeartRateId,
                         principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AiModelTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    ModelId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    ModelType = table.Column<int>(type: "int", nullable: false),
+                    ExerciseType = table.Column<int>(type: "int", nullable: true),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AiModelTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AiModelTable_UserTable_UserId",
+                        column: x => x.UserId,
+                        principalTable: "UserTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "HealthConnectAiTrainingDataTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    DataKey = table.Column<string>(type: "varchar(255)", nullable: false),
+                    MetricId = table.Column<string>(type: "longtext", nullable: true),
+                    Origin = table.Column<string>(type: "longtext", nullable: true),
+                    ExerciseType = table.Column<int>(type: "int", nullable: false),
+                    CaloriesBurned = table.Column<int>(type: "int", nullable: true),
+                    Steps = table.Column<int>(type: "int", nullable: true),
+                    DurationSeconds = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    DurationSecondsPerKm = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    DistanceInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    EvaluationMetersAvg = table.Column<int>(type: "int", nullable: true),
+                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    BodyFatPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    BodyMassIndex = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OxygenSaturationPercentageAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RespiratoryRateAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Vo2MaxMlPerMinKgAvg = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    CyclingPedalingCadenceId = table.Column<long>(type: "bigint", nullable: true),
+                    HeartRateId = table.Column<long>(type: "bigint", nullable: true),
+                    PowerId = table.Column<long>(type: "bigint", nullable: true),
+                    SpeedId = table.Column<long>(type: "bigint", nullable: true),
+                    StepCadenceId = table.Column<long>(type: "bigint", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectAiTrainingDataTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_HealthConnectAvgTable_Cycli~",
+                        column: x => x.CyclingPedalingCadenceId,
+                        principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_HealthConnectAvgTable_Heart~",
+                        column: x => x.HeartRateId,
+                        principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_HealthConnectAvgTable_Power~",
+                        column: x => x.PowerId,
+                        principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_HealthConnectAvgTable_Speed~",
+                        column: x => x.SpeedId,
+                        principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_HealthConnectAvgTable_StepC~",
+                        column: x => x.StepCadenceId,
+                        principalTable: "HealthConnectAvgTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingDataTable_UserTable_UserId",
+                        column: x => x.UserId,
+                        principalTable: "UserTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "NutritionDataTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    DataKey = table.Column<string>(type: "varchar(255)", nullable: false),
+                    StartTime = table.Column<DateTimeOffset>(type: "datetime", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "datetime", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    NutritionValuesId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NutritionDataTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NutritionDataTable_NutritionValuesTable_NutritionValuesId",
+                        column: x => x.NutritionValuesId,
+                        principalTable: "NutritionValuesTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_NutritionDataTable_UserTable_UserId",
+                        column: x => x.UserId,
+                        principalTable: "UserTable",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 })
@@ -495,7 +576,7 @@ namespace Data.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    DataKey = table.Column<string>(type: "longtext", nullable: false),
+                    DataKey = table.Column<string>(type: "varchar(255)", nullable: false),
                     Origin = table.Column<string>(type: "longtext", nullable: false),
                     System = table.Column<string>(type: "longtext", nullable: false),
                     ExerciseType = table.Column<int>(type: "int", nullable: false),
@@ -573,7 +654,7 @@ namespace Data.Database.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    DataKey = table.Column<string>(type: "longtext", nullable: false),
+                    DataKey = table.Column<string>(type: "varchar(255)", nullable: false),
                     TimeStamp = table.Column<DateTimeOffset>(type: "datetime", nullable: false),
                     StartTime = table.Column<DateTimeOffset>(type: "datetime", nullable: false),
                     EndTime = table.Column<DateTimeOffset>(type: "datetime", nullable: false),
@@ -599,6 +680,84 @@ namespace Data.Database.Migrations
                         principalTable: "UserTable",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AiModelBinaryTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    ModelData = table.Column<byte[]>(type: "longblob", nullable: false),
+                    AiModelId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AiModelBinaryTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AiModelBinaryTable_AiModelTable_AiModelId",
+                        column: x => x.AiModelId,
+                        principalTable: "AiModelTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "HealthConnectAiTrainingLapTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    LengthInMeters = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DurationSeconds = table.Column<int>(type: "int", nullable: false),
+                    HealthConnectAiTrainingDataId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectAiTrainingLapTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingLapTable_HealthConnectAiTrainingDataT~",
+                        column: x => x.HealthConnectAiTrainingDataId,
+                        principalTable: "HealthConnectAiTrainingDataTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "HealthConnectAiTrainingSegmentTable",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Repetitions = table.Column<int>(type: "int", nullable: false),
+                    DurationSeconds = table.Column<int>(type: "int", nullable: false),
+                    SegmentType = table.Column<int>(type: "int", nullable: false),
+                    HealthConnectRunningAiTrainingDataId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HealthConnectAiTrainingSegmentTable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HealthConnectAiTrainingSegmentTable_HealthConnectAiTrainingD~",
+                        column: x => x.HealthConnectRunningAiTrainingDataId,
+                        principalTable: "HealthConnectAiTrainingDataTable",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -652,6 +811,48 @@ namespace Data.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AiModelBinaryTable_AiModelId",
+                table: "AiModelBinaryTable",
+                column: "AiModelId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AiModelTable_UserId_ModelType_ExerciseType_IsActive",
+                table: "AiModelTable",
+                columns: new[] { "UserId", "ModelType", "ExerciseType", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_CyclingPedalingCadenceId",
+                table: "HealthConnectAiTrainingDataTable",
+                column: "CyclingPedalingCadenceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_HeartRateId",
+                table: "HealthConnectAiTrainingDataTable",
+                column: "HeartRateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_PowerId",
+                table: "HealthConnectAiTrainingDataTable",
+                column: "PowerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_SpeedId",
+                table: "HealthConnectAiTrainingDataTable",
+                column: "SpeedId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_StepCadenceId",
+                table: "HealthConnectAiTrainingDataTable",
+                column: "StepCadenceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectAiTrainingDataTable_UserId_DataKey",
+                table: "HealthConnectAiTrainingDataTable",
+                columns: new[] { "UserId", "DataKey" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_HealthConnectAiTrainingLapTable_HealthConnectAiTrainingDataId",
                 table: "HealthConnectAiTrainingLapTable",
                 column: "HealthConnectAiTrainingDataId");
@@ -678,6 +879,12 @@ namespace Data.Database.Migrations
                 column: "UnitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectHealthDataTable_DataKey",
+                table: "HealthConnectHealthDataTable",
+                column: "DataKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_HealthConnectHealthDataTable_HealthConnectValuesId",
                 table: "HealthConnectHealthDataTable",
                 column: "HealthConnectValuesId",
@@ -697,6 +904,12 @@ namespace Data.Database.Migrations
                 name: "IX_HealthConnectSegmentEntity_TrainingDataValuesId",
                 table: "HealthConnectSegmentEntity",
                 column: "TrainingDataValuesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HealthConnectTrainingDataTable_DataKey",
+                table: "HealthConnectTrainingDataTable",
+                column: "DataKey",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_HealthConnectTrainingDataTable_HealthConnectTimeZoneEntityId",
@@ -754,6 +967,28 @@ namespace Data.Database.Migrations
                 column: "RestingHeartRateId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_NutritionDataTable_DataKey",
+                table: "NutritionDataTable",
+                column: "DataKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NutritionDataTable_NutritionValuesId",
+                table: "NutritionDataTable",
+                column: "NutritionValuesId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NutritionDataTable_UserId",
+                table: "NutritionDataTable",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScheduledJobsTable_Status",
+                table: "ScheduledJobsTable",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SettingsTable_AiSettingsId",
                 table: "SettingsTable",
                 column: "AiSettingsId",
@@ -766,9 +1001,21 @@ namespace Data.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserTable_AppId",
+                table: "UserTable",
+                column: "AppId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserTable_CredentialsId",
                 table: "UserTable",
                 column: "CredentialsId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserTable_Email",
+                table: "UserTable",
+                column: "Email",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -781,6 +1028,9 @@ namespace Data.Database.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AiModelBinaryTable");
+
             migrationBuilder.DropTable(
                 name: "HealthConnectAiTrainingLapTable");
 
@@ -803,10 +1053,16 @@ namespace Data.Database.Migrations
                 name: "HealthConnectTrainingDataTable");
 
             migrationBuilder.DropTable(
+                name: "NutritionDataTable");
+
+            migrationBuilder.DropTable(
                 name: "ScheduledJobsTable");
 
             migrationBuilder.DropTable(
                 name: "UserBodyDataTable");
+
+            migrationBuilder.DropTable(
+                name: "AiModelTable");
 
             migrationBuilder.DropTable(
                 name: "HealthConnectAiTrainingDataTable");
@@ -819,6 +1075,9 @@ namespace Data.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "HealthConnectTrainingDataValuesTable");
+
+            migrationBuilder.DropTable(
+                name: "NutritionValuesTable");
 
             migrationBuilder.DropTable(
                 name: "UserTable");

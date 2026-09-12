@@ -6,11 +6,14 @@
   "labelPassword": "Passwort",
   "labelSignIn": "Anmelden",
   "labelCancel": "Abbrechen",
+  "labelClose": "Schließen",
   "labelSave": "Speichern",
   "labelGoToSettings": "Zu den Einstellungen",
   "labelCurrentUserId": "Aktuelle Benutzer-ID",
   "labelOrigins": "Quellen",
   "labelMetrics": "Metriken",
+  "labelMetricsFilter": "Metrik-Filter",
+  "placeholderFilterMetrics": "Metriken filtern",
   "labelSchedule": "Zeitplan",
   "labelLoad": "Laden",
   "labelInitialize": "Initialisieren",
@@ -41,6 +44,8 @@
   "descriptionPersistAuthenticationFailed": "Authentifizierung konnte nicht gespeichert werden.",
   "descriptionPersistScheduleFailedPrefix": "Zeitplan konnte nicht gespeichert werden, Typ",
   "descriptionHealthConnectInitializeFailed": "Health Connect konnte nicht initialisiert werden.",
+  "descriptionHealthConnectPermissionRequestFailed": "Anfrage der Health Connect-Berechtigungen beim Start fehlgeschlagen.",
   "labelPushOnDemand": "Auf Abruf senden",
-  "labelPush": "Senden"
+  "labelPush": "Senden",
+  "labelLoading": "Wird geladen…"
 }

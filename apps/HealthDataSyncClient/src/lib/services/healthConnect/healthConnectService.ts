@@ -21,39 +21,27 @@ import {
 } from './healthConnectTypes';
 import { getResource } from '../../localization';
 
-// Must stay in sync with the read permissions declared in AndroidManifest.xml.
+// Only record types actually read by healthConnectSchedulePayloadFactory.ts
+// (daily aggregates, training-session metrics, exercise sessions). Must stay
+// in sync with the read permissions declared in AndroidManifest.xml.
 const REQUIRED_HEALTH_CONNECT_RECORD_TYPES: RecordType[] = [
   'ActiveCaloriesBurned',
-  'BasalBodyTemperature',
   'BasalMetabolicRate',
-  'BloodGlucose',
   'BloodPressure',
   'BodyFat',
-  'BodyTemperature',
-  'BodyWaterMass',
-  'BoneMass',
-  'CervicalMucus',
   'CyclingPedalingCadence',
   'Distance',
   'ElevationGained',
   'ExerciseSession',
   'FloorsClimbed',
   'HeartRate',
-  'HeartRateVariabilityRmssd',
   'Height',
   'Hydration',
-  'IntermenstrualBleeding',
-  'LeanBodyMass',
-  'MenstruationFlow',
-  'MenstruationPeriod',
   'Nutrition',
-  'OvulationTest',
   'OxygenSaturation',
   'Power',
   'RespiratoryRate',
   'RestingHeartRate',
-  'SexualActivity',
-  'SkinTemperature',
   'SleepSession',
   'Speed',
   'Steps',
@@ -139,6 +127,25 @@ class HealthConnectService {
     const requestedPermissions = await this.requestPermissions();
 
     return this.areAllRequiredPermissionsGranted(requestedPermissions);
+  }
+
+  /**
+   * Initializes Health Connect and requests permissions, but does not require
+   * every single one to be granted. Discovery methods like getAvailableOrigins
+   * already tolerate individual denied permissions, so gating them on
+   * ensurePermissions() (all-or-nothing) would wrongly block all discovery
+   * just because the user denied one of many permission types.
+   */
+  async requestPermissionsBestEffort(): Promise<void> {
+    const initialized = await this.initialize();
+
+    if (!initialized) {
+      throw new Error(
+        getResource('common.descriptionHealthConnectInitializeFailed'),
+      );
+    }
+
+    await this.requestPermissions();
   }
 
   async readExerciseSessions(

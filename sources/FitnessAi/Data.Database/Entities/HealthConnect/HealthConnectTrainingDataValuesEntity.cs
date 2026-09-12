@@ -12,7 +12,10 @@ namespace Data.Database.Entities.HealthConnect
         public decimal? Steps { get; set; }      
         public decimal? WeightAvg { get; set; }
         public decimal? BodyFatPercentage { get; set; }
-        public string? Notes { get; set; } 
+        public decimal? OxygenSaturationPercentageAvg { get; set; }
+        public decimal? RespiratoryRateAvg { get; set; }
+        public decimal? Vo2MaxMlPerMinKgAvg { get; set; }
+        public string? Notes { get; set; }
         public long CyclingPedalingCadenceId { get; set; }
         [ForeignKey(nameof(CyclingPedalingCadenceId))]
         public HealthConnectAvgEntity? CyclingPedalingCadence { get; set; }

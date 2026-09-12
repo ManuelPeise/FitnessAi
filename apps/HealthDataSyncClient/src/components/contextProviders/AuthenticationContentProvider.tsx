@@ -5,7 +5,10 @@ import {
   SecureStorageKeys,
   UserInfo,
 } from '../../lib/services/storage/secureStorage';
-import { apiClient } from '../../lib/services/api/axiosClient';
+import {
+  apiClient,
+  subscribeSessionExpired,
+} from '../../lib/services/api/axiosClient';
 import { databaseAccessor } from '../../lib/database/database';
 import { ApiAuthenticationTableEntry } from '../../lib/database/databaseTypes';
 import {
@@ -210,6 +213,12 @@ const AuthenticationProvider: React.FC<IAuthContextProviderProps> = props => {
       setIsLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    return subscribeSessionExpired(() => {
+      void handleLogout();
+    });
+  }, []);
 
   React.useEffect(() => {
     const checkToken = async () => {

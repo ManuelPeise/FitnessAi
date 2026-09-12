@@ -5,6 +5,7 @@ import {
 import { databaseAccessor } from '../../database/database';
 import { apiClient } from '../api/axiosClient';
 import { utils } from '../../utils';
+import { utilsScheduler } from '../../utils.Scheduler';
 import { healthConnectSchedulePayloadFactory } from './healthConnectSchedulePayloadFactory';
 import {
   secureStorage,
@@ -50,12 +51,10 @@ class HealthConnectScheduleService {
     const endTimeStamp = new Date();
     endTimeStamp.setHours(23, 59, 59, 999);
 
-    const startTimeStamp =
-      initialLoadDays != null
-        ? utils.getStartOfDay(
-            utils.getPreviousDate(endTimeStamp, initialLoadDays),
-          )
-        : utils.getStartOfDay(endTimeStamp);
+    const { startTimeStamp } = utilsScheduler.getDateRangeForExecution(
+      endTimeStamp,
+      initialLoadDays,
+    );
 
     if (type !== 'HealthConnectHealthDataExport') {
       return {
@@ -112,35 +111,67 @@ class HealthConnectScheduleService {
     return userInfo.userId;
   }
 
+  private static readonly exportChunkSizeDays = 30;
+
   private async processHealthConnectHealthDataExport(
     userId: number,
     type: ScheduleSettingsType,
     from: Date,
     to: Date,
   ): Promise<ScheduleExecutionResult> {
-    const exportModel = await healthConnectSchedulePayloadFactory.create(
-      userId,
-      {
-        from: from,
-        to: to,
-        type: type,
-      },
+    const chunks = utilsScheduler.chunkDateRange(
+      from,
+      to,
+      HealthConnectScheduleService.exportChunkSizeDays,
     );
 
+    let scheduleForUpdate: ScheduleSettingsTableEntry | null = null;
+    let totalPushedItems = 0;
+
     try {
-      if (exportModel.scheduler?.schedule == null) {
-        throw new Error(
-          getResource('healthConnect.descriptionNoScheduleForCurrentUser'),
+      for (const chunk of chunks) {
+        const exportModel = await healthConnectSchedulePayloadFactory.create(
+          userId,
+          { from: chunk.from, to: chunk.to, type },
         );
+
+        if (exportModel.scheduler?.schedule == null) {
+          throw new Error(
+            getResource('healthConnect.descriptionNoScheduleForCurrentUser'),
+          );
+        }
+
+        scheduleForUpdate = exportModel.scheduler.schedule;
+
+        if (!scheduleForUpdate.isActive) {
+          return { success: true, pushedItems: totalPushedItems };
+        }
+
+        if (exportModel.dailyDataModels.length === 0) {
+          continue;
+        }
+
+        const response = await apiClient.post(
+          scheduleSyncServiceUrl,
+          exportModel.dailyDataModels,
+        );
+
+        if (response.status !== 200) {
+          throw new Error(
+            `${getResource(
+              'healthConnect.descriptionScheduleSyncFailedPrefix',
+            )} ${response.status}.`,
+          );
+        }
+
+        totalPushedItems += exportModel.dailyDataModels.length;
       }
 
-      const schedule = exportModel.scheduler.schedule;
-
-      if (!schedule.isActive) {
-        return { success: true, pushedItems: 0 };
+      if (scheduleForUpdate) {
+        await this.updateSchedule(scheduleForUpdate, to, true);
       }
 
-      if (exportModel == null) {
+      if (totalPushedItems === 0) {
         return {
           success: true,
           pushedItems: 0,
@@ -150,39 +181,17 @@ class HealthConnectScheduleService {
         };
       }
 
-      const response = await apiClient.post(
-        scheduleSyncServiceUrl,
-        exportModel.dailyDataModels,
-      );
-
-      if (response.status !== 200) {
-        throw new Error(
-          `${getResource(
-            'healthConnect.descriptionScheduleSyncFailedPrefix',
-          )} ${response.status}.`,
-        );
-      }
-
-      await this.updateSchedule(schedule, to, true);
-      return {
-        success: true,
-        pushedItems: exportModel.dailyDataModels.length,
-      };
+      return { success: true, pushedItems: totalPushedItems };
     } catch (error) {
       const errorMessage = this.getScheduleSyncErrorMessage(error);
 
-      if (exportModel.scheduler?.schedule) {
-        await this.updateSchedule(
-          exportModel.scheduler?.schedule,
-          to,
-          false,
-          errorMessage,
-        );
+      if (scheduleForUpdate) {
+        await this.updateSchedule(scheduleForUpdate, to, false, errorMessage);
       }
 
       return {
         success: false,
-        pushedItems: 0,
+        pushedItems: totalPushedItems,
         message: errorMessage,
       };
     }

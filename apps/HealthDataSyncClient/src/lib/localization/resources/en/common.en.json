@@ -6,11 +6,14 @@
   "labelPassword": "Password",
   "labelSignIn": "Sign in",
   "labelCancel": "Cancel",
+  "labelClose": "Close",
   "labelSave": "Save",
   "labelGoToSettings": "Go to Settings",
   "labelCurrentUserId": "Current User ID",
   "labelOrigins": "Origins",
   "labelMetrics": "Metrics",
+  "labelMetricsFilter": "Metrics Filter",
+  "placeholderFilterMetrics": "Filter metrics",
   "labelSchedule": "Schedule",
   "labelLoad": "Load",
   "labelInitialize": "Initialize",
@@ -41,6 +44,8 @@
   "descriptionPersistAuthenticationFailed": "Failed to persist authentication.",
   "descriptionPersistScheduleFailedPrefix": "Failed to persist schedule of type",
   "descriptionHealthConnectInitializeFailed": "Health Connect failed to initialize.",
+  "descriptionHealthConnectPermissionRequestFailed": "Failed to request Health Connect permissions on startup.",
   "labelPushOnDemand": "Push on demand",
-  "labelPush": "Push"
+  "labelPush": "Push",
+  "labelLoading": "Loading…"
 }

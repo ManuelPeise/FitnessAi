@@ -3,7 +3,6 @@ import {
   WriteExerciseRoutePermission,
   BackgroundAccessPermission,
   ReadHealthDataHistoryPermission,
-  AggregateResultRecordType,
 } from 'react-native-health-connect';
 import {
   HealthConnectOriginMappingTableEntry,
@@ -218,6 +217,9 @@ export type HealthConnectTrainingDataRecordData = {
   timeZoneInfo: TimeZoneInfo | null;
   weightAvg: number | null;
   bodyFatPercentageAvg: number | null;
+  oxygenSaturationPercentageAvg: number | null;
+  respiratoryRateAvg: number | null;
+  vo2MaxMlPerMinKgAvg: number | null;
   notes: string | null;
   segments: HealthConnectSegment[];
   laps: HealthConnectLap[];
@@ -244,6 +246,15 @@ export type HealthConnectAggregatedData = {
   wheelchairPushes: number | null;
   heightInMeters: number | null;
   bodyFatPercentageAvg: number | null;
+  caloriesKcal: number | null;
+  proteinGrams: number | null;
+  carbohydratesGrams: number | null;
+  fatGrams: number | null;
+  fiberGrams: number | null;
+  sugarGrams: number | null;
+  oxygenSaturationPercentageAvg: number | null;
+  respiratoryRateAvg: number | null;
+  vo2MaxMlPerMinKgAvg: number | null;
 };
 
 export type HealthConnectDailyDataModel = {

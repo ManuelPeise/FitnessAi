@@ -48,5 +48,18 @@ namespace Core.Api.ApiControllers.Authentication
         {
             return await _authenticationService.AuthenticateUserOnMobile(model);
         }
+
+        [HttpPost(Name = "RefreshToken")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestModel model)
+        {
+            var tokenResponse = await _authenticationService.RefreshToken(model.RefreshToken);
+
+            if (tokenResponse == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(tokenResponse);
+        }
     }
 }

@@ -16,6 +16,9 @@ namespace Data.Database.Entities.HealthConnect
         public decimal? WheelchairPushes { get; set; }
         public decimal? HeightInMeters { get; set; }
         public decimal? BodyFatPercentageAvg { get; set; }
+        public decimal? OxygenSaturationPercentageAvg { get; set; }
+        public decimal? RespiratoryRateAvg { get; set; }
+        public decimal? Vo2MaxMlPerMinKgAvg { get; set; }
 
         public long HeartRateId { get; set; }
         [ForeignKey(nameof(HeartRateId))]

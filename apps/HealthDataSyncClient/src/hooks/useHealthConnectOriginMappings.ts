@@ -93,11 +93,7 @@ export const useHealthConnectOriginMappings = () => {
           getResource('healthConnect.descriptionMissingUserContext'),
         );
       }
-      if (!(await healthConnectService.ensurePermissions())) {
-        throw new Error(
-          getResource('healthConnect.descriptionEnsurePermissionsFailed'),
-        );
-      }
+      await healthConnectService.requestPermissionsBestEffort();
       const existingMappings = await getMappings(currentUserId);
       const entries = (await healthConnectService.getAvailableOrigins())
         .filter(

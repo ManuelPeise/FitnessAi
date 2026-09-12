@@ -1,8 +1,17 @@
 import React from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import ButtonComponent from '../../../components/inputComponents/ButtonComponent';
-import SwitchComponent from '../../../components/inputComponents/SwitchComponent';
 import TextField from '../../../components/inputComponents/TextField';
+import SwitchComponent from '../../../components/inputComponents/SwitchComponent';
+import IconComponent from '../../../components/IconComponent';
+import HealthConnectMetricSettingsModal from './HealthConnectMetricSettingsModal';
 import { ILocaleProps } from '../../../lib/localization';
 import {
   HealthConnectMappingTableEntry,
@@ -32,10 +41,14 @@ const HealthConnectOriginMappingModal: React.FC<Props> = ({
     HealthConnectMetricMappingTableEntry[]
   >([]);
   const [metricSearch, setMetricSearch] = React.useState('');
+  const [editingMetricId, setEditingMetricId] = React.useState<number | null>(
+    null,
+  );
 
   React.useEffect(() => {
     setSelectedMapping(mapping);
     setMetricSearch('');
+    setEditingMetricId(null);
   }, [mapping]);
 
   React.useEffect(() => {
@@ -72,24 +85,55 @@ const HealthConnectOriginMappingModal: React.FC<Props> = ({
     [selectedMapping, updateMapping],
   );
 
+  const updateMetricTarget = React.useCallback(
+    (metric: HealthConnectMetricMappingTableEntry, target: string) => {
+      setMetrics(current =>
+        current.map(m => (m.id === metric.id ? { ...m, target } : m)),
+      );
+      if (currentUserId != null) {
+        void databaseAccessor.metricMappingTable.updateMappingEntry(
+          currentUserId,
+          metric.id,
+          { ...metric, target },
+        );
+      }
+    },
+    [currentUserId],
+  );
+
+  const toggleMetricActive = React.useCallback(
+    (metric: HealthConnectMetricMappingTableEntry) => {
+      const updated = { ...metric, isActive: !metric.isActive };
+      setMetrics(current =>
+        current.map(m => (m.id === metric.id ? updated : m)),
+      );
+      if (currentUserId != null) {
+        void databaseAccessor.metricMappingTable.updateMappingEntry(
+          currentUserId,
+          metric.id,
+          updated,
+        );
+      }
+    },
+    [currentUserId],
+  );
+
   const filteredMetrics = React.useMemo(() => {
-    if (metricSearch === '') {
-      return metrics.filter(metric => metric.isActive);
+    const search = metricSearch.trim().toLowerCase();
+
+    if (search.length === 0) {
+      return metrics;
     }
 
-    return metrics.filter(metric => {
-      if (!metric.isActive) {
-        return false;
-      }
-      const search = metricSearch.trim().toLowerCase();
-
-      return (
-        search.length === 0 ||
+    return metrics.filter(
+      metric =>
         metric.source.toLowerCase().includes(search) ||
-        metric.target.toLowerCase().includes(search)
-      );
-    });
+        metric.target.toLowerCase().includes(search),
+    );
   }, [metrics, metricSearch]);
+
+  const editingMetric =
+    metrics.find(metric => metric.id === editingMetricId) ?? null;
 
   const isModified =
     selectedMapping.isActive !== mapping.isActive ||
@@ -131,25 +175,41 @@ const HealthConnectOriginMappingModal: React.FC<Props> = ({
             placeholder={getResource('healthConnect.labelTarget')}
           />
           <TextField
-            label={getResource('common.labelMetrics')}
+            label={getResource('common.labelMetricsFilter')}
             value={metricSearch}
             onChange={setMetricSearch}
-            placeholder={getResource('common.labelMetrics')}
+            placeholder={getResource('common.placeholderFilterMetrics')}
           />
           <ScrollView style={styles.metricList}>
             {filteredMetrics.map(metric => {
-              const checked = (selectedMapping.metricIds ?? []).includes(
+              const isIncluded = (selectedMapping.metricIds ?? []).includes(
                 metric.id,
               );
+              const iconName = !metric.isActive
+                ? 'error'
+                : isIncluded
+                ? 'check-circle'
+                : 'warning';
+              const iconColor = !metric.isActive
+                ? colorMap.error
+                : isIncluded
+                ? colorMap.success
+                : colorMap.warning;
+
               return (
-                <View key={metric.id} style={styles.metricRow}>
-                  <Text style={styles.metricText}>{metric.source}</Text>
-                  <SwitchComponent
-                    checked={checked}
-                    disabled={!selectedMapping.isActive}
-                    onValueChange={() => toggleMetric(metric.id)}
+                <TouchableOpacity
+                  key={metric.id}
+                  style={styles.metricRow}
+                  onPress={() => setEditingMetricId(metric.id)}
+                >
+                  <IconComponent
+                    name={iconName}
+                    size="sm"
+                    color={iconColor}
+                    padding={0}
                   />
-                </View>
+                  <Text style={styles.metricText}>{metric.source}</Text>
+                </TouchableOpacity>
               );
             })}
           </ScrollView>
@@ -169,6 +229,31 @@ const HealthConnectOriginMappingModal: React.FC<Props> = ({
           </View>
         </View>
       </View>
+      <HealthConnectMetricSettingsModal
+        visible={editingMetric != null}
+        metric={editingMetric}
+        isIncludedInOrigin={
+          editingMetric != null &&
+          (selectedMapping.metricIds ?? []).includes(editingMetric.id)
+        }
+        getResource={getResource}
+        onClose={() => setEditingMetricId(null)}
+        onTargetChange={target => {
+          if (editingMetric) {
+            updateMetricTarget(editingMetric, target);
+          }
+        }}
+        onToggleActive={() => {
+          if (editingMetric) {
+            toggleMetricActive(editingMetric);
+          }
+        }}
+        onToggleIncluded={() => {
+          if (editingMetric) {
+            toggleMetric(editingMetric.id);
+          }
+        }}
+      />
     </Modal>
   );
 };
@@ -205,7 +290,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   metricList: {
-    maxHeight: 220,
+    maxHeight: 320,
     marginTop: 4,
     borderWidth: 1,
     borderColor: colorMap.border,
@@ -214,14 +299,14 @@ const styles = StyleSheet.create({
   metricRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: colorMap.border,
   },
   metricText: {
-    flex: 1,
+    fontSize: 15,
     color: colorMap.textPrimary,
   },
   buttons: {

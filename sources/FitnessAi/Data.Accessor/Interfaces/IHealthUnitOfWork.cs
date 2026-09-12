@@ -1,4 +1,5 @@
 ﻿using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Nutrition;
 
 namespace Data.Accessor.Interfaces
 {
@@ -12,6 +13,8 @@ namespace Data.Accessor.Interfaces
         IRepositoryBase<HealthConnectTimeZoneEntity> HealthConnectTimeZoneRepository { get; }
         IRepositoryBase<HealthConnectTrainingDataEntity> HealthConnectTrainingDataRepository { get; }
         IRepositoryBase<HealthConnectTrainingDataValuesEntity> HealthConnectTrainingDataValuesRepository { get; }
+        IRepositoryBase<NutritionDataEntity> NutritionDataRepository { get; }
+        IRepositoryBase<NutritionValuesEntity> NutritionValuesRepository { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

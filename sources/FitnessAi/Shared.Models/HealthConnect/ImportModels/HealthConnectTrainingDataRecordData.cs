@@ -47,6 +47,12 @@ namespace Shared.Models.HealthConnect.ImportModels
         public decimal? WeightAvg { get; set; }
         [JsonProperty("bodyFatPercentageAvg")]
         public decimal? BodyFatPercentage { get; set; }
+        [JsonProperty("oxygenSaturationPercentageAvg")]
+        public decimal? OxygenSaturationPercentageAvg { get; set; }
+        [JsonProperty("respiratoryRateAvg")]
+        public decimal? RespiratoryRateAvg { get; set; }
+        [JsonProperty("vo2MaxMlPerMinKgAvg")]
+        public decimal? Vo2MaxMlPerMinKgAvg { get; set; }
         [JsonProperty("notes")]
         public string? Notes { get; set; }
         [JsonProperty("laps")]

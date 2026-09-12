@@ -6,7 +6,6 @@ using Data.Database.Entities.User;
 using Logic.Ai.Interfaces;
 using Logic.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1.Pkcs;
 using System.Linq.Expressions;
 
 namespace Logic.Ai.Training
@@ -154,23 +153,28 @@ namespace Logic.Ai.Training
                 
                 UserId = trainingDataEntity.UserId,
                 DataKey = trainingDataEntity.DataKey,
+                MetricId = trainingDataEntity.DataKey,
+                Origin = trainingDataEntity.Origin,
                 ExerciseType = trainingDataEntity.ExerciseType,
                 Steps = (int?)trainingDataEntity?.HealthConnectTrainingDataValues?.Steps ?? null,
-                StepCadenceId = trainingDataEntity?.HealthConnectTrainingDataValues?.StepCadence?.Id ?? 0,
+                StepCadenceId = trainingDataEntity?.HealthConnectTrainingDataValues?.StepCadence?.Id,
                 CaloriesBurned = (int?)trainingDataEntity?.HealthConnectTrainingDataValues?.ActiveCaloriesBurnedInKcal ?? null,
                 DurationSeconds = trainingDataEntity?.HealthConnectTrainingDataValues?.DurationSeconds ?? null,
                 DistanceInMeters = trainingDataEntity?.HealthConnectTrainingDataValues?.DistanceInMeters ?? null,
                 DurationSecondsPerKm = CalculatePace(trainingDataEntity?.HealthConnectTrainingDataValues?.DistanceInMeters,
                     trainingDataEntity?.HealthConnectTrainingDataValues?.DurationSeconds),
-                HeartRateId = trainingDataEntity?.HealthConnectTrainingDataValues?.HeartRate?.Id ?? 0,
-                CyclingPedalingCadenceId = trainingDataEntity?.HealthConnectTrainingDataValues?.CyclingPedalingCadence?.Id ?? 0,
+                HeartRateId = trainingDataEntity?.HealthConnectTrainingDataValues?.HeartRate?.Id,
+                CyclingPedalingCadenceId = trainingDataEntity?.HealthConnectTrainingDataValues?.CyclingPedalingCadence?.Id,
                 EvaluationMetersAvg = (int?)trainingDataEntity?.HealthConnectTrainingDataValues?.ElevationAvg ?? null,
-                PowerId = trainingDataEntity?.HealthConnectTrainingDataValues?.Power?.Id ?? 0,
-                SpeedId = trainingDataEntity?.HealthConnectTrainingDataValues?.Speed?.Id ?? 0,
+                PowerId = trainingDataEntity?.HealthConnectTrainingDataValues?.Power?.Id,
+                SpeedId = trainingDataEntity?.HealthConnectTrainingDataValues?.Speed?.Id,
                 Segments = GetSegments(trainingDataEntity?.HealthConnectTrainingDataValues?.Segments),
                 Weight = trainingDataEntity?.HealthConnectTrainingDataValues?.WeightAvg ?? null,
                 BodyFatPercentage = trainingDataEntity?.HealthConnectTrainingDataValues?.BodyFatPercentage ?? null,
                 BodyMassIndex = CalculateBmi(trainingDataEntity?.HealthConnectTrainingDataValues?.WeightAvg ?? 0, bodyDataEntity?.Height ?? 0),
+                OxygenSaturationPercentageAvg = trainingDataEntity?.HealthConnectTrainingDataValues?.OxygenSaturationPercentageAvg ?? null,
+                RespiratoryRateAvg = trainingDataEntity?.HealthConnectTrainingDataValues?.RespiratoryRateAvg ?? null,
+                Vo2MaxMlPerMinKgAvg = trainingDataEntity?.HealthConnectTrainingDataValues?.Vo2MaxMlPerMinKgAvg ?? null,
                 Laps = GetLaps(trainingDataEntity?.HealthConnectTrainingDataValues?.Laps),
 
             };
@@ -185,20 +189,25 @@ namespace Logic.Ai.Training
             var values = trainingDataEntity.HealthConnectTrainingDataValues;
 
             existingEntity.ExerciseType = trainingDataEntity.ExerciseType;
+            existingEntity.MetricId = trainingDataEntity.DataKey;
+            existingEntity.Origin = trainingDataEntity.Origin;
             existingEntity.Steps = (int?)values?.Steps ?? null;
-            existingEntity.StepCadenceId = values?.StepCadence?.Id ?? 0;
+            existingEntity.StepCadenceId = values?.StepCadence?.Id;
             existingEntity.CaloriesBurned = (int?)values?.ActiveCaloriesBurnedInKcal ?? null;
             existingEntity.DurationSeconds = values?.DurationSeconds ?? null;
             existingEntity.DistanceInMeters = values?.DistanceInMeters ?? null;
             existingEntity.DurationSecondsPerKm = CalculatePace(values?.DistanceInMeters, values?.DurationSeconds);
-            existingEntity.HeartRateId = values?.HeartRate?.Id ?? 0;
-            existingEntity.CyclingPedalingCadenceId = values?.CyclingPedalingCadence?.Id ?? 0;
-            existingEntity.PowerId = values?.Power?.Id ?? 0;
-            existingEntity.SpeedId = values?.Speed?.Id ?? 0;
+            existingEntity.HeartRateId = values?.HeartRate?.Id;
+            existingEntity.CyclingPedalingCadenceId = values?.CyclingPedalingCadence?.Id;
+            existingEntity.PowerId = values?.Power?.Id;
+            existingEntity.SpeedId = values?.Speed?.Id;
             existingEntity.EvaluationMetersAvg = (int?)values?.ElevationAvg ?? null;
             existingEntity.Weight = existingEntity.Weight;
             existingEntity.BodyFatPercentage = existingEntity.BodyFatPercentage;
             existingEntity.BodyMassIndex = CalculateBmi(existingEntity.Weight ?? 0, bodyDataEntity?.Height ?? 0);
+            existingEntity.OxygenSaturationPercentageAvg = values?.OxygenSaturationPercentageAvg ?? null;
+            existingEntity.RespiratoryRateAvg = values?.RespiratoryRateAvg ?? null;
+            existingEntity.Vo2MaxMlPerMinKgAvg = values?.Vo2MaxMlPerMinKgAvg ?? null;
             existingEntity.Segments = GetSegments(values?.Segments);
             existingEntity.Laps = GetLaps(values?.Laps);
 

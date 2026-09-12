@@ -2,6 +2,7 @@
 using Data.Database;
 using Data.Database.Entities;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Nutrition;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +21,8 @@ namespace Data.Accessor
         private IRepositoryBase<HealthConnectTimeZoneEntity> _healthConnectTimeZoneRepository;
         private IRepositoryBase<HealthConnectTrainingDataEntity> _healthConnectTrainingDataRepository;
         private IRepositoryBase<HealthConnectTrainingDataValuesEntity> _healthConnectTrainingDataValuesRepository;
+        private IRepositoryBase<NutritionDataEntity> _nutritionDataRepository;
+        private IRepositoryBase<NutritionValuesEntity> _nutritionValuesRepository;
 
         public IRepositoryBase<HealthConnectUnitEntity> HealthConnectUnitRepository =>
             _healthConnectUnitRepository ??= new RepositoryBase<HealthConnectUnitEntity>(_context);
@@ -37,6 +40,10 @@ namespace Data.Accessor
             _healthConnectTrainingDataRepository ??= new RepositoryBase<HealthConnectTrainingDataEntity>(_context);
         public IRepositoryBase<HealthConnectTrainingDataValuesEntity> HealthConnectTrainingDataValuesRepository =>
             _healthConnectTrainingDataValuesRepository ??= new RepositoryBase<HealthConnectTrainingDataValuesEntity>(_context);
+        public IRepositoryBase<NutritionDataEntity> NutritionDataRepository =>
+            _nutritionDataRepository ??= new RepositoryBase<NutritionDataEntity>(_context);
+        public IRepositoryBase<NutritionValuesEntity> NutritionValuesRepository =>
+            _nutritionValuesRepository ??= new RepositoryBase<NutritionValuesEntity>(_context);
 
         public HealthUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
@@ -50,6 +57,8 @@ namespace Data.Accessor
             _healthConnectTimeZoneRepository = new RepositoryBase<HealthConnectTimeZoneEntity>(context);
             _healthConnectTrainingDataRepository = new RepositoryBase<HealthConnectTrainingDataEntity>(context);
             _healthConnectTrainingDataValuesRepository = new RepositoryBase<HealthConnectTrainingDataValuesEntity>(context);
+            _nutritionDataRepository = new RepositoryBase<NutritionDataEntity>(context);
+            _nutritionValuesRepository = new RepositoryBase<NutritionValuesEntity>(context);
         }
 
 

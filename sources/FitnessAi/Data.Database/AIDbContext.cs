@@ -1,5 +1,6 @@
 ﻿using Data.Database.Entities.Ai;
 using Data.Database.Entities.HealthConnect;
+using Data.Database.Entities.Nutrition;
 using Data.Database.Entities.Scheduler;
 using Data.Database.Entities.Settings;
 using Data.Database.Entities.User;
@@ -39,6 +40,14 @@ namespace Data.Database
         public DbSet<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapTable => Set<HealthConnectAiTrainingLap>();
         public DbSet<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentTable => Set<HealthConnectAiTrainingSegmentEntity>();
 
+        // ai model tables
+        public DbSet<AiModelEntity> AiModelTable => Set<AiModelEntity>();
+        public DbSet<AiModelBinaryEntity> AiModelBinaryTable => Set<AiModelBinaryEntity>();
+
+        // nutrition tables
+        public DbSet<NutritionDataEntity> NutritionDataTable => Set<NutritionDataEntity>();
+        public DbSet<NutritionValuesEntity> NutritionValuesTable => Set<NutritionValuesEntity>();
+
         override protected void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -67,10 +76,33 @@ namespace Data.Database
              .HasForeignKey(h => h.UserId)
              .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<UserEntity>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<UserEntity>()
+                .HasIndex(u => u.AppId)
+                .IsUnique();
+
             modelBuilder.Entity<UserBodyDataEntity>()
                 .HasOne(b => b.User)
                 .WithOne()
                 .HasForeignKey<UserBodyDataEntity>(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AiModelEntity>()
+                .HasOne(m => m.User)
+                .WithMany()
+                .HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AiModelEntity>()
+                .HasIndex(m => new { m.UserId, m.ModelType, m.ExerciseType, m.IsActive });
+
+            modelBuilder.Entity<AiModelBinaryEntity>()
+                .HasOne(b => b.AiModel)
+                .WithOne(m => m.Binary)
+                .HasForeignKey<AiModelBinaryEntity>(b => b.AiModelId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<SettingsEntity>()
@@ -79,7 +111,74 @@ namespace Data.Database
                 .HasForeignKey<SettingsEntity>(s => s.AiSettingsId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<ScheduledJobEntity>()
+                .HasIndex(j => j.Status);
+
             ConfigureHealthConnect(modelBuilder);
+            ConfigureAiTrainingData(modelBuilder);
+            ConfigureNutrition(modelBuilder);
+        }
+
+        private static void ConfigureNutrition(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<NutritionDataEntity>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<NutritionDataEntity>()
+                .HasIndex(n => n.DataKey)
+                .IsUnique();
+
+            modelBuilder.Entity<NutritionDataEntity>()
+                .HasOne(n => n.Values)
+                .WithOne(v => v.Record)
+                .HasForeignKey<NutritionDataEntity>(n => n.NutritionValuesId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
+        private static void ConfigureAiTrainingData(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasIndex(t => new { t.UserId, t.DataKey })
+                .IsUnique();
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.CyclingPedalingCadence)
+                .WithMany()
+                .HasForeignKey(t => t.CyclingPedalingCadenceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.HeartRate)
+                .WithMany()
+                .HasForeignKey(t => t.HeartRateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.Power)
+                .WithMany()
+                .HasForeignKey(t => t.PowerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.Speed)
+                .WithMany()
+                .HasForeignKey(t => t.SpeedId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
+                .HasOne(t => t.StepCadence)
+                .WithMany()
+                .HasForeignKey(t => t.StepCadenceId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private static void ConfigureHealthConnect(ModelBuilder modelBuilder)
@@ -124,7 +223,15 @@ namespace Data.Database
                 .HasForeignKey<HealthConnectHealthDataEntity>(h => h.HealthConnectValuesId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<HealthConnectHealthDataEntity>()
+                .HasIndex(h => h.DataKey)
+                .IsUnique();
+
             // HealthConnectTrainingDataEntity
+            modelBuilder.Entity<HealthConnectTrainingDataEntity>()
+                .HasIndex(t => t.DataKey)
+                .IsUnique();
+
             modelBuilder.Entity<HealthConnectTrainingDataEntity>()
                 .HasOne(t => t.HealthConnectTimeZoneEntity)
                 .WithMany()

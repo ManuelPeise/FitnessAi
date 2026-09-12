@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(AIDbContext))]
-    [Migration("20260911231346_InitializeDatabase")]
+    [Migration("20260912124630_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -21,6 +21,84 @@ namespace Data.Database.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiModelBinaryEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AiModelId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("ModelData")
+                        .IsRequired()
+                        .HasColumnType("longblob");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiModelId")
+                        .IsUnique();
+
+                    b.ToTable("AiModelBinaryTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiModelEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("ExerciseType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("ModelId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("ModelType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ModelType", "ExerciseType", "IsActive");
+
+                    b.ToTable("AiModelTable");
+                });
 
             modelBuilder.Entity("Data.Database.Entities.Ai.HealthConnectAiTrainingDataEntity", b =>
                 {
@@ -44,12 +122,12 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<long>("CyclingPedalingCadenceId")
+                    b.Property<long?>("CyclingPedalingCadenceId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("DataKey")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<decimal?>("DistanceInMeters")
                         .HasColumnType("decimal(18,2)");
@@ -66,16 +144,28 @@ namespace Data.Database.Migrations
                     b.Property<int>("ExerciseType")
                         .HasColumnType("int");
 
-                    b.Property<long>("HeartRateId")
+                    b.Property<long?>("HeartRateId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("PowerId")
+                    b.Property<string>("MetricId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Origin")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("OxygenSaturationPercentageAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long?>("PowerId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("SpeedId")
+                    b.Property<decimal?>("RespiratoryRateAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long?>("SpeedId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("StepCadenceId")
+                    b.Property<long?>("StepCadenceId")
                         .HasColumnType("bigint");
 
                     b.Property<int?>("Steps")
@@ -90,10 +180,26 @@ namespace Data.Database.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal?>("Vo2MaxMlPerMinKgAvg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal?>("Weight")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CyclingPedalingCadenceId");
+
+                    b.HasIndex("HeartRateId");
+
+                    b.HasIndex("PowerId");
+
+                    b.HasIndex("SpeedId");
+
+                    b.HasIndex("StepCadenceId");
+
+                    b.HasIndex("UserId", "DataKey")
+                        .IsUnique();
 
                     b.ToTable("HealthConnectAiTrainingDataTable");
                 });
@@ -265,7 +371,7 @@ namespace Data.Database.Migrations
 
                     b.Property<string>("DataKey")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("datetime");
@@ -289,6 +395,9 @@ namespace Data.Database.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DataKey")
+                        .IsUnique();
 
                     b.HasIndex("HealthConnectValuesId")
                         .IsUnique();
@@ -422,7 +531,7 @@ namespace Data.Database.Migrations
 
                     b.Property<string>("DataKey")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime(6)");
@@ -457,6 +566,9 @@ namespace Data.Database.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DataKey")
+                        .IsUnique();
 
                     b.HasIndex("HealthConnectTimeZoneEntityId");
 
@@ -507,8 +619,14 @@ namespace Data.Database.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
 
+                    b.Property<decimal?>("OxygenSaturationPercentageAvg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<long>("PowerId")
                         .HasColumnType("bigint");
+
+                    b.Property<decimal?>("RespiratoryRateAvg")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<long>("RestingHeartRateId")
                         .HasColumnType("bigint");
@@ -527,6 +645,9 @@ namespace Data.Database.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
+
+                    b.Property<decimal?>("Vo2MaxMlPerMinKgAvg")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("WeightAvg")
                         .HasColumnType("decimal(18,2)");
@@ -989,6 +1110,12 @@ namespace Data.Database.Migrations
                     b.Property<decimal?>("HydrationAvg")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("OxygenSaturationPercentageAvg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("RespiratoryRateAvg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<long>("RestingHeartRateId")
                         .HasColumnType("bigint");
 
@@ -1007,6 +1134,9 @@ namespace Data.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
+                    b.Property<decimal?>("Vo2MaxMlPerMinKgAvg")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal?>("Weight")
                         .HasColumnType("decimal(18,2)");
 
@@ -1020,6 +1150,96 @@ namespace Data.Database.Migrations
                     b.HasIndex("RestingHeartRateId");
 
                     b.ToTable("HealthConnectValuesTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Nutrition.NutritionDataEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DataKey")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("EndTime")
+                        .HasColumnType("datetime");
+
+                    b.Property<long>("NutritionValuesId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("StartTime")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DataKey")
+                        .IsUnique();
+
+                    b.HasIndex("NutritionValuesId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("NutritionDataTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Nutrition.NutritionValuesEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("CaloriesKcal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("CarbohydratesGrams")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("FatGrams")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("FiberGrams")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ProteinGrams")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("SugarGrams")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NutritionValuesTable");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.Scheduler.ScheduledJobEntity", b =>
@@ -1072,6 +1292,8 @@ namespace Data.Database.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("ScheduledJobsTable");
                 });
@@ -1213,6 +1435,9 @@ namespace Data.Database.Migrations
                     b.Property<string>("RefreshToken")
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("RefreshTokenExpiresAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1232,7 +1457,7 @@ namespace Data.Database.Migrations
 
                     b.Property<string>("AppId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -1246,7 +1471,7 @@ namespace Data.Database.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -1270,13 +1495,87 @@ namespace Data.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppId")
+                        .IsUnique();
+
                     b.HasIndex("CredentialsId")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("SettingsId")
                         .IsUnique();
 
                     b.ToTable("UserTable");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiModelBinaryEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.Ai.AiModelEntity", "AiModel")
+                        .WithOne("Binary")
+                        .HasForeignKey("Data.Database.Entities.Ai.AiModelBinaryEntity", "AiModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AiModel");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiModelEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Ai.HealthConnectAiTrainingDataEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", "CyclingPedalingCadence")
+                        .WithMany()
+                        .HasForeignKey("CyclingPedalingCadenceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", "HeartRate")
+                        .WithMany()
+                        .HasForeignKey("HeartRateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", "Power")
+                        .WithMany()
+                        .HasForeignKey("PowerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", "Speed")
+                        .WithMany()
+                        .HasForeignKey("SpeedId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Data.Database.Entities.HealthConnect.HealthConnectAvgEntity", "StepCadence")
+                        .WithMany()
+                        .HasForeignKey("StepCadenceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CyclingPedalingCadence");
+
+                    b.Navigation("HeartRate");
+
+                    b.Navigation("Power");
+
+                    b.Navigation("Speed");
+
+                    b.Navigation("StepCadence");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.Ai.HealthConnectAiTrainingLap", b =>
@@ -1470,6 +1769,25 @@ namespace Data.Database.Migrations
                     b.Navigation("RestingHeartRate");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Nutrition.NutritionDataEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.Nutrition.NutritionValuesEntity", "Values")
+                        .WithOne("Record")
+                        .HasForeignKey("Data.Database.Entities.Nutrition.NutritionDataEntity", "NutritionValuesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Values");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.Settings.SettingsEntity", b =>
                 {
                     b.HasOne("Data.Database.Entities.Settings.AISettingsEntity", "AiSettings")
@@ -1511,6 +1829,11 @@ namespace Data.Database.Migrations
                     b.Navigation("UserCredentials");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Ai.AiModelEntity", b =>
+                {
+                    b.Navigation("Binary");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.Ai.HealthConnectAiTrainingDataEntity", b =>
                 {
                     b.Navigation("Laps");
@@ -1529,6 +1852,12 @@ namespace Data.Database.Migrations
                 {
                     b.Navigation("BloodPressure");
 
+                    b.Navigation("Record")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Nutrition.NutritionValuesEntity", b =>
+                {
                     b.Navigation("Record")
                         .IsRequired();
                 });

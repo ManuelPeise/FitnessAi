@@ -9,7 +9,10 @@
     "lint": "eslint src App.tsx index.js",
     "lint:quiet": "eslint src App.tsx index.js --quiet",
     "prettify": "prettier --write .",
+    "prettier:check": "prettier --check .",
     "start": "react-native start",
+    "check:models-sync": "node scripts/check-models-sync.js",
+    "android:validation": "npm run check:models-sync && npm run lint && npm run prettier:check",
     "test": "jest"
   },
   "dependencies": {

@@ -92,11 +92,7 @@ export const useHealthConnectMetricMappings = () => {
           getResource('healthConnect.descriptionMissingUserContext'),
         );
       }
-      if (!(await healthConnectService.ensurePermissions())) {
-        throw new Error(
-          getResource('healthConnect.descriptionEnsurePermissionsFailed'),
-        );
-      }
+      await healthConnectService.requestPermissionsBestEffort();
       const existingMappings = await getMappings(currentUserId);
       const entries = (await healthConnectService.getGrantedPermissions())
         .map(permission => permission.recordType)

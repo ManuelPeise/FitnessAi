@@ -19,3 +19,21 @@ export const colorMap = {
   transparent: 'transparent',
   white: '#FFFFFF',
 };
+
+export type MappingStatus = 'active' | 'inactive' | 'unmapped';
+
+export const mappingStatusColorMap: Record<MappingStatus, string> = {
+  active: colorMap.success,
+  inactive: colorMap.textMuted,
+  unmapped: colorMap.error,
+};
+
+export const getMappingStatus = (mapping: {
+  isActive: boolean;
+  target: string;
+}): MappingStatus => {
+  if (!mapping.target.length) {
+    return 'unmapped';
+  }
+  return mapping.isActive ? 'active' : 'inactive';
+};

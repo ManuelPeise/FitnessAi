@@ -1,7 +1,15 @@
 import React from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import ButtonComponent from '../../../components/inputComponents/ButtonComponent';
 import TextField from '../../../components/inputComponents/TextField';
+import IconComponent from '../../../components/IconComponent';
 import { ILocaleProps } from '../../../lib/localization';
 import { colorMap } from '../../../lib/styles/colorMap';
 
@@ -34,7 +42,10 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.modalCard}>
           <Text style={styles.sectionTitle}>
             {getResource('common.labelPushOnDemand')}
@@ -43,13 +54,27 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
           <TextField
             label={getResource('healthConnect.labelInitialLoadDays')}
             value={initialLoadDays}
-            placeholder={getResource('healthConnect.labelInitialLoadDays')}
+            placeholder={getResource('healthConnect.placeholderEnterPastDays')}
             keyboardType="number-pad"
             textAlign="right"
             maxLength={3}
             onChange={onInitialLoadDaysChanged}
             disabled={isExecuting}
           />
+
+          <View style={styles.warningRow}>
+            <IconComponent
+              name="warning"
+              size="sm"
+              color={colorMap.warning}
+              padding={0}
+            />
+            <Text style={styles.warningText}>
+              {getResource(
+                'healthConnect.descriptionInitialLoadRuntimeWarning',
+              )}
+            </Text>
+          </View>
 
           <View style={styles.actionButtonsRow}>
             <ButtonComponent
@@ -66,7 +91,7 @@ const HealthConnectInitialLoadModal: React.FC<IProps> = props => {
             />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -110,6 +135,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colorMap.textSecondary,
     flex: 1,
+  },
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colorMap.warning,
+    backgroundColor: colorMap.backgroundAlt,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 12,
+    color: colorMap.textSecondary,
   },
   actionButtonsRow: {
     flexDirection: 'row',

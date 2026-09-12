@@ -2,7 +2,6 @@
 using Data.Database;
 using Data.Database.Entities;
 using Data.Database.Entities.Ai;
-using Data.Database.Entities.User;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,18 +16,22 @@ namespace Data.Accessor
         private IRepositoryBase<HealthConnectAiTrainingLap> _healthConnectAiTrainingLapRepository;
         private IRepositoryBase<HealthConnectAiTrainingSegmentEntity> _healthConnectAiTrainingSegmentRepository;
 
-        private IRepositoryBase<UserBodyDataEntity> _userBodyDataRepository;
+        private IRepositoryBase<AiModelEntity> _aiModelRepository;
+        private IRepositoryBase<AiModelBinaryEntity> _aiModelBinaryRepository;
         public IRepositoryBase<HealthConnectAiTrainingDataEntity> HealthConnectAiTrainingDataRepository
             => _healthConnectAiTrainingDataRepository ??= new RepositoryBase<HealthConnectAiTrainingDataEntity>(_context);
-        
+
         public IRepositoryBase<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapRepository
             => _healthConnectAiTrainingLapRepository ??= new RepositoryBase<HealthConnectAiTrainingLap>(_context);
 
         public IRepositoryBase<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentRepository
             => _healthConnectAiTrainingSegmentRepository ??= new RepositoryBase<HealthConnectAiTrainingSegmentEntity>(_context);
 
-        public IRepositoryBase<UserBodyDataEntity> UserBodyDataRepository
-            => _userBodyDataRepository ??= new RepositoryBase<UserBodyDataEntity>(_context);
+        public IRepositoryBase<AiModelEntity> AiModelRepository
+            => _aiModelRepository ??= new RepositoryBase<AiModelEntity>(_context);
+
+        public IRepositoryBase<AiModelBinaryEntity> AiModelBinaryRepository
+            => _aiModelBinaryRepository ??= new RepositoryBase<AiModelBinaryEntity>(_context);
         public AIUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
@@ -36,7 +39,8 @@ namespace Data.Accessor
             _healthConnectAiTrainingDataRepository = new RepositoryBase<HealthConnectAiTrainingDataEntity>(context);
             _healthConnectAiTrainingLapRepository = new RepositoryBase<HealthConnectAiTrainingLap>(context);
             _healthConnectAiTrainingSegmentRepository = new RepositoryBase<HealthConnectAiTrainingSegmentEntity>(context);
-            _userBodyDataRepository = new RepositoryBase<UserBodyDataEntity>(context);
+            _aiModelRepository = new RepositoryBase<AiModelEntity>(context);
+            _aiModelBinaryRepository = new RepositoryBase<AiModelBinaryEntity>(context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

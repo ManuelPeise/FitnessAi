@@ -7,8 +7,26 @@ import {
 } from '../storage/secureStorage';
 
 type RefreshTokenResponse = {
-  accessToken: string;
-  refreshToken?: string;
+  token: string;
+  refreshToken: string;
+  tokenExpiresAt: string;
+  appId: string;
+};
+
+type SessionExpiredListener = () => void;
+const sessionExpiredListeners = new Set<SessionExpiredListener>();
+
+export const subscribeSessionExpired = (
+  listener: SessionExpiredListener,
+): (() => void) => {
+  sessionExpiredListeners.add(listener);
+  return () => {
+    sessionExpiredListeners.delete(listener);
+  };
+};
+
+const notifySessionExpired = () => {
+  sessionExpiredListeners.forEach(listener => listener());
 };
 
 const normalizeBaseUrl = (baseUrl: string): string =>
@@ -104,17 +122,22 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
     try {
       if (!authentication.refreshToken) {
+        notifySessionExpired();
         return null;
       }
 
       const response = await refreshClient.post<RefreshTokenResponse>(
-        '/auth/refresh',
+        'UserAuthentication/RefreshToken',
         {
           refreshToken: authentication.refreshToken,
         },
       );
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
+      const {
+        token: accessToken,
+        refreshToken: newRefreshToken,
+        tokenExpiresAt,
+      } = response.data;
 
       if (!accessToken || !newRefreshToken) {
         return null;
@@ -123,7 +146,8 @@ const refreshAccessToken = async (): Promise<string | null> => {
       const currentAuthentication = {
         ...authentication,
         accessToken,
-        refreshToken: newRefreshToken ?? null,
+        refreshToken: newRefreshToken,
+        tokenExpiration: tokenExpiresAt ?? authentication.tokenExpiration,
       };
 
       await databaseAccessor.authentication.saveAuthentication(
@@ -142,6 +166,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
       await databaseAccessor.authentication.saveAuthentication(
         currentAuthenticationEntry,
       );
+      notifySessionExpired();
       return null;
     } finally {
       refreshPromise = null;

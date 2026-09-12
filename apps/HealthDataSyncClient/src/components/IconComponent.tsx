@@ -10,7 +10,8 @@ type IconType =
   | 'warning'
   | 'source'
   | 'dataset'
-  | 'schedule';
+  | 'schedule'
+  | 'remove-circle';
 
 interface IconComponentProps {
   name: IconType;

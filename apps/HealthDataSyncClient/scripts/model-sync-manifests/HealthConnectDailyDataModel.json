@@ -1,0 +1,4 @@
+{
+  "backendFile": "sources/FitnessAi/Shared.Models/HealthConnect/ImportModels/HealthConnectDailyDataModel.cs",
+  "fields": ["date", "aggregatedData", "trainingData"]
+}

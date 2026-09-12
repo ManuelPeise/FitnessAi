@@ -4,6 +4,7 @@ import { AuthenticationProvider } from './src/components/contextProviders/Authen
 import AppNavigator from './src/navigation/AppNavigator';
 import { StatusBar } from 'react-native';
 import { backgroundTaskService } from './src/lib/services/scheduler/backgroundTaskService';
+import { healthConnectService } from './src/lib/services/healthConnect/healthConnectService';
 import { databaseAccessor } from './src/lib/database/database';
 import { getResource } from './src/lib/localization';
 
@@ -16,6 +17,18 @@ const App: React.FC = () => {
       } catch (error) {
         console.error(
           getResource('common.descriptionBackgroundTaskServiceInitFailed'),
+          error,
+        );
+      }
+
+      try {
+        // Request Health Connect permissions up front so the app can start
+        // syncing without waiting for the user to open a mapping screen.
+        // Safely no-ops on platforms/devices without Health Connect.
+        await healthConnectService.ensurePermissions();
+      } catch (error) {
+        console.error(
+          getResource('common.descriptionHealthConnectPermissionRequestFailed'),
           error,
         );
       }
