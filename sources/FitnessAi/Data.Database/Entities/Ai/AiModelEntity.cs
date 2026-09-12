@@ -13,9 +13,9 @@ namespace Data.Database.Entities.Ai
         public int Version { get; set; }
         public bool IsActive { get; set; }
 
-        public long UserId { get; set; }
+        public long? UserId { get; set; }
         [ForeignKey(nameof(UserId))]
-        public UserEntity User { get; set; } = null!;
+        public UserEntity? User { get; set; }
 
         public AiModelBinaryEntity? Binary { get; set; }
     }

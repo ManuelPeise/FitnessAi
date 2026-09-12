@@ -1,4 +1,5 @@
 ﻿using Data.Database.Entities.User;
+using Shared.Enums.Ai;
 using Shared.Enums.HealthConnect;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -13,6 +14,7 @@ namespace Data.Database.Entities.HealthConnect
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public bool AllowedForAiTraining { get; set; }
+        public WorkoutIntensityEnum? WorkoutIntensity { get; set; }
 
         public long HealthConnectTimeZoneEntityId { get; set; }
         [ForeignKey(nameof(HealthConnectTimeZoneEntityId))]

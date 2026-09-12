@@ -54,6 +54,7 @@ Each layer registers its own dependencies via a `DI` folder/project; the app is 
 2. `Logic.Services.DataImport` batch-fetches existing rows by key (one query per batch, not per record) and persists into the `HealthConnect`/`Nutrition` entity tables via `Data.Accessor`/`Data.Database`.
 3. `Logic.Ai.Training.AiTrainingDataBuilder` transforms `HealthConnect` data into `Ai` entities (training data, laps, segments) for downstream AI/training use, either on demand (`AiTrainingDataGenerationController`) or via a scheduled job (`Logic.Services.Scheduler` + Quartz, tracked in `ScheduledJobEntity` — this scheduling loop is entirely server-side and keeps running regardless of whether the mobile app is open).
 4. `Logic.Ai`'s model-training pipeline (`ModelTrainingDataLoader` → `ModelTrainingDataConverter` → an ML.NET training step, not yet implemented → `AiModelLifecycleService`) turns that AI training data into a versioned, activatable trained model per user/exercise type.
+5. A second, chained scheduled job then predicts each workout's intensity (Easy/Medium/Hard) with a trained ML.NET classifier and writes it back onto both the `Ai` and raw `HealthConnect` training data tables — see `sources/FitnessAi/docs/AIReadme.en.md` (or `AIReadme.de.md` for German) for the full pipeline write-up.
 
 ## Mobile client
 

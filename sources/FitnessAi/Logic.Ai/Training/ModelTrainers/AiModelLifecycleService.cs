@@ -18,7 +18,7 @@ namespace Logic.Ai.Training.ModelTrainers
         }
 
         public async Task<AiModelEntity?> GetActiveModelAsync(
-            long userId,
+            long? userId,
             AiModelTypeEnum modelType,
             ExerciseTypeEnum? exerciseType,
             CancellationToken cancellationToken = default)
@@ -32,7 +32,7 @@ namespace Logic.Ai.Training.ModelTrainers
         }
 
         public async Task<AiModelEntity> ActivateNewModelAsync(
-            long userId,
+            long? userId,
             AiModelTypeEnum modelType,
             ExerciseTypeEnum? exerciseType,
             byte[] modelData,

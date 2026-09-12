@@ -3,7 +3,9 @@ using Data.Accessor.Models;
 using Data.Database.Entities.Ai;
 using Data.Database.Entities.HealthConnect;
 using Data.Database.Entities.User;
+using Data.Database.Models.Scheduler;
 using Logic.Ai.Interfaces;
+using Logic.Services.Interfaces;
 using Logic.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
@@ -12,24 +14,31 @@ namespace Logic.Ai.Training
 {
     public class AiTrainingDataBuilder : IAiTrainingDataBuilder
     {
+        private const string WorkoutIntensityJobName = "Ai Workout Intensity Prediction Job";
+        private const string WorkoutIntensityJobDescription = "Label, train, and predict workout intensity from AI training data.";
+        private const string WorkoutIntensityJobUrl = "WorkoutIntensityPrediction/PredictWorkoutIntensity";
+
         private readonly ILogger<AiTrainingDataBuilder> _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
         private readonly IHealthUnitOfWork _healthUnitOfWork;
         private readonly IAiUnitOfWork _aiUnitOfWork;
+        private readonly IScheduledJobService _scheduledJobService;
 
         public AiTrainingDataBuilder(
             ILogger<AiTrainingDataBuilder> logger,
             ICurrentUserService currentUserService,
             IApplicationUnitOfWork applicationUnitOfWork,
             IHealthUnitOfWork healthUnitOfWork,
-            IAiUnitOfWork aiUnitOfWork)
+            IAiUnitOfWork aiUnitOfWork,
+            IScheduledJobService scheduledJobService)
         {
             _logger = logger;
             _currentUserService = currentUserService;
             _applicationUnitOfWork = applicationUnitOfWork;
             _healthUnitOfWork = healthUnitOfWork;
             _aiUnitOfWork = aiUnitOfWork;
+            _scheduledJobService = scheduledJobService;
         }
 
         public async Task BuildAiExerciseTrainingData()
@@ -103,12 +112,24 @@ namespace Logic.Ai.Training
                 {
                     await _aiUnitOfWork.SaveChangesAsync();
                     _logger.LogInformation("AI exercise training data has been built and saved successfully.");
+                    await QueueWorkoutIntensityPredictionJobAsync();
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error building exercise training data");
             }
+        }
+
+        private async Task QueueWorkoutIntensityPredictionJobAsync()
+        {
+            await _scheduledJobService.AddJobAsync(
+                WorkoutIntensityJobName,
+                WorkoutIntensityJobDescription,
+                new WebServiceModel
+                {
+                    Url = new Uri(WorkoutIntensityJobUrl, UriKind.Relative),
+                });
         }
 
         private async Task<bool> BuildOrUpdateTrainingDataEntity(HealthConnectTrainingDataEntity trainingDataEntity, UserBodyDataEntity? bodyDataEntity)

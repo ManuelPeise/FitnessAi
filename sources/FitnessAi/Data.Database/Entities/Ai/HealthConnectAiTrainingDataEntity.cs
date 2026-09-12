@@ -1,5 +1,6 @@
 ﻿using Data.Database.Entities.HealthConnect;
 using Data.Database.Entities.User;
+using Shared.Enums.Ai;
 using Shared.Enums.HealthConnect;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -15,6 +16,8 @@ namespace Data.Database.Entities.Ai
         public string? MetricId { get; set; }
         public string? Origin { get; set; }
         public ExerciseTypeEnum ExerciseType { get; set; }
+        public WorkoutIntensityEnum WorkoutIntensity { get; set; } = WorkoutIntensityEnum.Unknown;
+        public DateTime? WorkoutIntensityPredictedAt { get; set; }
         public int? CaloriesBurned { get; set; }
         public int? Steps { get; set; } = 0;
         public decimal? DurationSeconds { get; set; }
