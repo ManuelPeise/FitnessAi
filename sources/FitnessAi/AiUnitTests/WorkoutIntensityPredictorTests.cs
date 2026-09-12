@@ -2,7 +2,7 @@ using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.Ai;
 using Logic.Ai.Interfaces;
-using Logic.Ai.Training.WorkoutIntensity;
+using Logic.Ai.Prediction.WorkoutIntensity;
 using Shared.Enums.Ai;
 using Shared.Enums.HealthConnect;
 

@@ -1,4 +1,5 @@
 ﻿using Logic.Ai.Interfaces;
+using Logic.Ai.Prediction.WorkoutIntensity;
 using Logic.Ai.Training;
 using Logic.Ai.Training.ModelTrainers;
 using Logic.Ai.Training.WorkoutIntensity;

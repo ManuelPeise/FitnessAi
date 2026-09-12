@@ -6,7 +6,7 @@ using Logic.Ai.Training.WorkoutIntensity.Models;
 using Microsoft.ML;
 using Shared.Enums.Ai;
 
-namespace Logic.Ai.Training.WorkoutIntensity
+namespace Logic.Ai.Prediction.WorkoutIntensity
 {
     // Loads the currently active WorkoutIntensity model and uses it to score individual rows.
     // This class is registered AddScoped (see AiServiceRegistration), so one instance - and
