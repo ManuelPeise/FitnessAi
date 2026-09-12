@@ -36,13 +36,7 @@ namespace Data.Database
         public DbSet<ScheduledJobEntity> ScheduledJobsTable => Set<ScheduledJobEntity>();
         
         // ai training data tables
-        public DbSet<HealthConnectAiTrainingDataEntity> HealthConnectAiTrainingDataTable => Set<HealthConnectAiTrainingDataEntity>();
-        public DbSet<HealthConnectAiTrainingLap> HealthConnectAiTrainingLapTable => Set<HealthConnectAiTrainingLap>();
-        public DbSet<HealthConnectAiTrainingSegmentEntity> HealthConnectAiTrainingSegmentTable => Set<HealthConnectAiTrainingSegmentEntity>();
-
-        // ai model tables
-        public DbSet<AiModelEntity> AiModelTable => Set<AiModelEntity>();
-        public DbSet<AiModelBinaryEntity> AiModelBinaryTable => Set<AiModelBinaryEntity>();
+        public DbSet<AiTrainingDataFileEntity> AiTrainingDataFileTable => Set<AiTrainingDataFileEntity>();
 
         // nutrition tables
         public DbSet<NutritionDataEntity> NutritionDataTable => Set<NutritionDataEntity>();
@@ -90,21 +84,6 @@ namespace Data.Database
                 .HasForeignKey<UserBodyDataEntity>(b => b.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<AiModelEntity>()
-                .HasOne(m => m.User)
-                .WithMany()
-                .HasForeignKey(m => m.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<AiModelEntity>()
-                .HasIndex(m => new { m.UserId, m.ModelType, m.ExerciseType, m.IsActive });
-
-            modelBuilder.Entity<AiModelBinaryEntity>()
-                .HasOne(b => b.AiModel)
-                .WithOne(m => m.Binary)
-                .HasForeignKey<AiModelBinaryEntity>(b => b.AiModelId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<SettingsEntity>()
                 .HasOne(s => s.AiSettings)
                 .WithOne()
@@ -115,7 +94,6 @@ namespace Data.Database
                 .HasIndex(j => j.Status);
 
             ConfigureHealthConnect(modelBuilder);
-            ConfigureAiTrainingData(modelBuilder);
             ConfigureNutrition(modelBuilder);
         }
 
@@ -135,49 +113,6 @@ namespace Data.Database
                 .HasOne(n => n.Values)
                 .WithOne(v => v.Record)
                 .HasForeignKey<NutritionDataEntity>(n => n.NutritionValuesId)
-                .OnDelete(DeleteBehavior.Restrict);
-        }
-
-        private static void ConfigureAiTrainingData(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.User)
-                .WithMany()
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasIndex(t => new { t.UserId, t.DataKey })
-                .IsUnique();
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.CyclingPedalingCadence)
-                .WithMany()
-                .HasForeignKey(t => t.CyclingPedalingCadenceId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.HeartRate)
-                .WithMany()
-                .HasForeignKey(t => t.HeartRateId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.Power)
-                .WithMany()
-                .HasForeignKey(t => t.PowerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.Speed)
-                .WithMany()
-                .HasForeignKey(t => t.SpeedId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<HealthConnectAiTrainingDataEntity>()
-                .HasOne(t => t.StepCadence)
-                .WithMany()
-                .HasForeignKey(t => t.StepCadenceId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
 

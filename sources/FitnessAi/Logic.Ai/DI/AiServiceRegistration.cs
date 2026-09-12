@@ -1,8 +1,8 @@
-﻿using Logic.Ai.Interfaces;
-using Logic.Ai.Prediction.WorkoutIntensity;
-using Logic.Ai.Training;
-using Logic.Ai.Training.ModelTrainers;
-using Logic.Ai.Training.WorkoutIntensity;
+using Logic.Ai.Csv;
+using Logic.Ai.Csv.ModelMapper;
+using Logic.Ai.Csv.Models;
+using Logic.Ai.Csv.Services;
+using Logic.Ai.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Logic.Ai.DI
@@ -11,16 +11,13 @@ namespace Logic.Ai.DI
     {
         public static void AddAiServices(this IServiceCollection services)
         {
-            services.AddScoped<IAiTrainingDataBuilder, AiTrainingDataBuilder>();
-            services.AddScoped<IModelTrainingDataLoader, ModelTrainingDataLoader>();
-            services.AddScoped<IModelTrainingDataConverter, ModelTrainingDataConverter>();
-            services.AddScoped<IAiModelLifecycleService, AiModelLifecycleService>();
-            services.AddScoped<IAiModelTrainer, AiModelTrainer>();
-            services.AddScoped<IWorkoutIntensityLabelGenerator, WorkoutIntensityLabelGenerator>();
-            services.AddScoped<IWorkoutIntensityMlModelBuilder, WorkoutIntensityMlModelBuilder>();
-            services.AddScoped<IWorkoutIntensityModelTrainer, WorkoutIntensityModelTrainer>();
-            services.AddScoped<IWorkoutIntensityPredictor, WorkoutIntensityPredictor>();
-            services.AddScoped<IWorkoutIntensityTrainingOrchestrator, WorkoutIntensityTrainingOrchestrator>();
+            services.AddScoped<IColumnDefinitionFactory, ColumnDefinitionFactory>();
+            services.AddScoped(typeof(ICsvModelLoader<>), typeof(CsvModelLoader<>));
+            services.AddScoped(typeof(ICsvModelCreator<>), typeof(CsvModelCreator<>));
+            services.AddScoped<IAiTrainingDataFileService, AiTrainingDataFileService>();
+            services.AddScoped<ICsvRowMapper<WorkOutIntensityCsvModel>, WorkoutIntensityCsvRowMapper>();
+            services.AddScoped<IWorkoutIntensityTrainingDataMapper, WorkoutIntensityCsvRowMapper>();
+            services.AddScoped<IAiWorkOutIntensityTrainingFileService, AiWorkOutIntensityTrainingFileService>();
         }
     }
 }

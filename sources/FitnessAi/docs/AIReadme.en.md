@@ -1,122 +1,99 @@
-# Workout Intensity Prediction
+# Workout Intensity Training Data (CSV Export/Import)
 
 > German version: [`AIReadme.de.md`](./AIReadme.de.md)
 
 ## What it does
 
-For every imported workout, the backend predicts how intense it was — **Easy**, **Medium**, or **Hard**
-(`WorkoutIntensityEnum`, `Shared.Enums/Ai/WorkoutIntensityEnum.cs`) — using a real ML.NET multiclass
-classifier. The prediction is stored on both:
+There is currently **no in-process ML model** for workout intensity. Instead, the backend exports
+unlabeled training data as a CSV, an external process/human fills in a `Label` (`Easy`/`Medium`/`Hard`,
+`WorkoutIntensityEnum`) per row, and the labeled CSV is uploaded back and merged into a single stored
+training file (`AiTrainingDataFileTable`). This replaces an earlier in-process ML.NET training/prediction
+pipeline that has been removed entirely (see [History](#history)).
 
-- `HealthConnectAiTrainingDataTable.WorkoutIntensity` (non-nullable, defaults to `Unknown` until scored)
-- `HealthConnectTrainingDataTable.WorkoutIntensity` (nullable, mirrors the same value back onto the raw import record)
+## Endpoints (`Core.Api/ApiControllers/Ai/AiTrainingWorkOutIntensityCsvController.cs`)
 
-`WorkoutIntensityPredictedAt` (on `HealthConnectAiTrainingDataTable`) is a separate `DateTime?` "has this
-row been scored yet" marker. It exists because `WorkoutIntensity` alone can't tell "not processed yet"
-apart from "the model genuinely predicted Unknown" — both would otherwise look identical.
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `api/AiTrainingWorkOutIntensityCsv/LoadInitialWorkOutIntensityTrainingCsv?itemsCount=N` | Returns a CSV of up to `N` not-yet-labeled training rows, merged with whatever's already stored |
+| `GET` | `api/AiTrainingWorkOutIntensityCsv/GetExistingWorkOutIntensityCsv` | Returns whatever CSV is currently stored, unmodified; `404` if nothing has been generated/uploaded yet |
+| `POST` | `api/AiTrainingWorkOutIntensityCsv/UpdateWorkOutIntensityTrainingCsvData` | Accepts a labeled CSV (multipart file upload) and merges the labeled rows into the stored file |
 
-## Why not just a fixed rule?
+All three are backed by `IAiWorkOutIntensityTrainingFileService` / `AiWorkOutIntensityTrainingFileService`
+(`Logic.Ai/Csv/Services/`).
 
-A simple fixed heart-rate threshold *is* used, but only to generate historical **training labels**, not to
-answer new predictions. The trained classifier learns a more general pattern from several input features
-(elevation, pace, heart rate, who's training, what exercise) so it can generalize beyond just "was the
-heart rate high," and can be retrained as more data accumulates.
+## CSV format
 
-## Two-stage pipeline
-
-The work happens in two chained, independently triggerable stages — not one big step — so that "turn raw
-imports into AI training rows" and "turn AI training rows into intensity predictions" stay decoupled and
-each can be re-run, monitored, or retried on its own.
+9 columns, `;`-separated, UTF-8, header row required, no quoted fields
+(`Logic.Ai/Csv/AiTrainingColumnDefinitions.cs`):
 
 ```
-HealthConnect import (AllowedForAiTraining)
-        │
-        ▼
-Stage 1 — AiTrainingDataGeneration/GenerateAiTrainingData
-  AiTrainingDataBuilder.BuildAiExerciseTrainingData()
-  → creates/updates HealthConnectAiTrainingDataTable rows
-    (WorkoutIntensity = Unknown, WorkoutIntensityPredictedAt = null)
-  → on success, queues Stage 2 as a new ScheduledJobEntity
-        │
-        ▼
-Stage 2 — WorkoutIntensityPrediction/PredictWorkoutIntensity
-  WorkoutIntensityTrainingOrchestrator.RunAsync()
-    1. WorkoutIntensityLabelGenerator.BackfillLabelsAsync()
-    2. WorkoutIntensityModelTrainer.TrainAndActivateModelAsync()
-    3. predict for every row where WorkoutIntensityPredictedAt == null
-       → writes WorkoutIntensity + WorkoutIntensityPredictedAt on both tables
+DataKey;Elevation;Pace;AverageHeartRate;MinHeartRate;MaxHeartRate;Power;PredictedAt;Label
 ```
 
-Both stages are queued the same way the rest of the app already schedules background work: a row is
-inserted into `ScheduledJobEntity` via `IScheduledJobService.AddJobAsync`, and the existing generic Quartz
-job (`WebJob` / `ProcessScheduledTasks`) POSTs to the stored URL later (or immediately in `DEBUG`). Stage 2
-depends **only** on `HealthConnectAiTrainingDataTable` — it never touches the raw import pipeline itself.
+- `DataKey` — correlates a row back to a `HealthConnectTrainingDataTable` row
+- `Elevation`, `Pace` (`MM:SS` per km), `AverageHeartRate`/`MinHeartRate`/`MaxHeartRate`, `Power` — training
+  features, built from `HealthConnectTrainingDataValuesEntity` (`Logic.Ai/Csv/ModelMapper/WorkoutIntensityCsvRowMapper.cs`)
+- `Label` — filled in externally; empty until labeled
+- `PredictedAt` — timestamp stamped by the backend (not the labeler) the moment a labeled row is accepted
+  during upload; used only as an internal "this row has already been labeled" marker
 
-### Manual/dev-mode triggers
+## Load → label → upload flow
 
-Both stages are also plain API endpoints you can call directly (e.g. from Swagger) while developing,
-without waiting for the schedule chain:
+```
+GET LoadInitialWorkOutIntensityTrainingCsv?itemsCount=N
+        │
+        ▼
+  existing stored CSV (if any)  ──┐
+                                  ├─▶ merge by DataKey, labeled row always wins ──▶ CSV returned
+  up to N HealthConnectTrainingDataTable
+  rows with WorkoutIntensity == null
+                                  │
+                          (external labeling)
+                                  │
+                                  ▼
+POST UpdateWorkOutIntensityTrainingCsvData (labeled CSV)
+        │
+        ▼
+  rows with a non-empty Label, whose DataKey still exists
+  in HealthConnectTrainingDataTable, get PredictedAt stamped
+        │
+        ▼
+  merged into the existing stored CSV (updated rows always win) ──▶ AiTrainingDataFileTable.Csv updated
+```
 
-- `POST AiTrainingDataGeneration/GenerateAiTrainingData` — Stage 1 only
-- `POST WorkoutIntensityPrediction/PredictWorkoutIntensity` — Stage 2 only
+Both merge steps are keyed by `DataKey`, so the stored file (and every CSV returned by either `GET`
+endpoint) can never contain duplicate `DataKey`s.
 
-## Stage 2 in detail
+**Important**: this flow only ever reads `HealthConnectTrainingDataTable` (to build fresh rows and to
+validate that an uploaded row's `DataKey` still exists) — it never writes to it. The label lives only in
+the CSV/`AiTrainingDataFileTable`; nothing currently copies it back onto
+`HealthConnectTrainingDataTable.WorkoutIntensity`. If a future feature needs the label on the raw training
+row again, that write needs to be added at the appropriate business location — it is out of scope here by
+design (see the commit history around `ApplyPrediction` removal).
 
-### 1. Label generation (`WorkoutIntensityLabelGenerator`)
+## Generic CSV infrastructure (`Logic.Ai/Csv/`)
 
-Ground-truth labels for *training* come from a heuristic, not the model itself:
+The WorkoutIntensity pipeline is one consumer of a small generic CSV read/write layer, keyed by the
+existing `AiModelTypeEnum` (reused as the CSV "AiType" selector — not a new enum):
 
-For every `(UserId, ExerciseType)` group, average that user's historical `HeartRate.Max` across their
-`HealthConnectAiTrainingDataTable` rows for that exercise:
+- `IColumnDefinitionFactory` / `ColumnDefinitionFactory` — maps an `AiModelTypeEnum` to its `ColumnDefinition`
+  (`IReadOnlyDictionary<string,int>`, column name → index); the single source of truth for header order/validation
+- `CsvHeaderValidator` — strict header validation (exact column count/names/order, no auto-correction)
+- `ICsvModelLoader<TModel>` / `CsvModelLoader<TModel>` — bytes → `HashSet<TModel>`
+- `ICsvModelCreator<TModel>` / `CsvModelCreator<TModel>` — `IReadOnlyCollection<TModel>` → bytes
+- `ICsvRowMapper<TModel>` — the extension point each concrete model implements (`MapFromRow`/`MapToRow`);
+  `WorkoutIntensityCsvRowMapper` is the only implementation today
+- `IAiTrainingDataFileService` / `AiTrainingDataFileService` — generic persistence for `AiTrainingDataFileTable`
+  (one row per `AiModelTypeEnum`, holding the current `Csv` bytes + an `IsUpdated` flag)
 
-| Average max heart rate | Label |
-|---|---|
-| < 141 bpm | `Easy` |
-| 141–159 bpm (inclusive) | `Medium` |
-| > 159 bpm | `Hard` |
-| fewer than 5 usable samples | `Unknown` (excluded from training — no reliable ground truth) |
+Registered as open generics in `Logic.Ai/DI/AiServiceRegistration.cs`, so a future CSV-backed `AiType` only
+needs its own `ICsvRowMapper<TModel>` implementation plus a `ColumnDefinition` entry — no changes to the
+loader/creator/validator.
 
-This label is **only** used to build the training set. It is never reapplied at prediction time — the
-trained classifier answers new predictions on its own.
+## History
 
-### 2. Training (`WorkoutIntensityModelTrainer` + `WorkoutIntensityMlModelBuilder`)
-
-- Loads every `HealthConnectAiTrainingDataTable` row with a real label (`WorkoutIntensity != Unknown`).
-- Requires at least 20 labeled rows overall; otherwise training is skipped for this run (a legitimate
-  no-op while data accumulates — the previous active model, if any, stays in place).
-- Converts each row into a `WorkoutIntensityMlInput`: `Elevation`, `Pace`, `AverageHeartRate` (note: the
-  *average*, not the `Max` used for labeling), `UserId`, `ExerciseType`, `Label`.
-- Builds an ML.NET pipeline: one-hot encodes `UserId`/`ExerciseType`, concatenates all features, normalizes
-  them, and trains a multiclass `SdcaMaximumEntropy` classifier.
-- Serializes the trained model to bytes (`MLContext.Model.Save`) and activates it via the existing
-  `AiModelLifecycleService` (`AiModelTypeEnum.WorkoutIntensity`), which versions/deactivates the previous
-  model the same way the rest of the AI model lifecycle already works.
-
-### 3. The model is global, not per-user
-
-`UserId` is one of the model's **input features**, not a separate model per user. There is exactly one
-active `WorkoutIntensity` model at a time, trained across all users' data (`AiModelEntity.UserId = null`
-for this model type). This lets the model learn cross-user patterns while still being able to pick up on
-a specific user's tendencies through the `UserId` feature.
-
-### 4. Prediction (`WorkoutIntensityPredictor`)
-
-- Loads the currently active `WorkoutIntensity` model (if any) and its binary from `AiModelBinaryTable`.
-- Caches the `PredictionEngine` for the lifetime of the request/job (it's expensive to build, cheap to
-  reuse; a job processes many rows per run, so building it once per row would be wasteful).
-- Builds the same feature shape used at training (minus `Label`) and predicts.
-- Falls back to `Unknown` if no active model exists yet (bootstrap state) or the model's output string
-  can't be parsed back into `WorkoutIntensityEnum`.
-
-## Files
-
-| Concern | File |
-|---|---|
-| Enum | `Shared.Enums/Ai/WorkoutIntensityEnum.cs` |
-| Label heuristic | `Logic.Ai/Training/WorkoutIntensity/WorkoutIntensityLabelGenerator.cs` |
-| ML.NET pipeline | `Logic.Ai/Training/WorkoutIntensity/WorkoutIntensityMlModelBuilder.cs` |
-| Training orchestration | `Logic.Ai/Training/WorkoutIntensity/WorkoutIntensityModelTrainer.cs` |
-| Prediction | `Logic.Ai/Training/WorkoutIntensity/WorkoutIntensityPredictor.cs` |
-| Stage 2 orchestration | `Logic.Ai/Training/WorkoutIntensity/WorkoutIntensityTrainingOrchestrator.cs` |
-| Stage 1 → Stage 2 chaining | `Logic.Ai/Training/AiTrainingDataBuilder.cs` |
-| Endpoints | `Core.Api/ApiControllers/Ai/AiTrainingDataGenerationController.cs`, `Core.Api/ApiControllers/Ai/WorkoutIntensityPredictionController.cs` |
+An earlier iteration trained and served a real ML.NET multiclass classifier in-process (label heuristic →
+training → activatable model → prediction job), storing derived data in `HealthConnectAiTrainingDataTable`
+and model binaries in `AiModelTable`/`AiModelBinaryTable`. That entire pipeline (and its tables) has been
+removed — `HealthConnectTrainingDataTable` (the raw imported data) is used directly instead, and any actual
+model training/prediction now happens outside this backend.
