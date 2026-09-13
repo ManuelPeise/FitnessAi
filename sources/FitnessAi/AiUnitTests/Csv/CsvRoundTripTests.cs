@@ -1,4 +1,5 @@
 using AiUnitTests.Csv.Fakes;
+using Logic.Ai.ColumnDefinitions;
 using Logic.Ai.Csv;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared.Enums.Ai;

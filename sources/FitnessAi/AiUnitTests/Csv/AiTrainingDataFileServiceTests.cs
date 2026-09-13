@@ -1,6 +1,6 @@
 using AiUnitTests.Fakes;
 using Data.Database.Entities.Ai;
-using Logic.Ai.Csv;
+using Logic.Ai.Services;
 using Shared.Enums.Ai;
 
 namespace AiUnitTests.Csv

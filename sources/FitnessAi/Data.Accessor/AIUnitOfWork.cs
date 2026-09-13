@@ -13,15 +13,20 @@ namespace Data.Accessor
         private readonly HttpContext _httpContext;
 
         private IRepositoryBase<AiTrainingDataFileEntity> _aiTrainingDataFileRepository;
+        private IRepositoryBase<AiTrainedModelEntity> _aiTrainedModelRepository;
 
         public IRepositoryBase<AiTrainingDataFileEntity> AiTrainingDataFileRepository
             => _aiTrainingDataFileRepository ??= new RepositoryBase<AiTrainingDataFileEntity>(_context);
+
+        public IRepositoryBase<AiTrainedModelEntity> AiTrainedModelRepository
+            => _aiTrainedModelRepository ??= new RepositoryBase<AiTrainedModelEntity>(_context);
 
         public AIUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContext = httpContextAccessor.HttpContext;
             _aiTrainingDataFileRepository = new RepositoryBase<AiTrainingDataFileEntity>(context);
+            _aiTrainedModelRepository = new RepositoryBase<AiTrainedModelEntity>(context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

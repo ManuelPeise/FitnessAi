@@ -1,9 +1,9 @@
 using Data.Database.Entities.HealthConnect;
-using Logic.Ai.Csv.Models;
 using Logic.Ai.Interfaces;
+using Logic.Ai.Models;
 using System.Globalization;
 
-namespace Logic.Ai.Csv.ModelMapper
+namespace Logic.Ai.ModelMapper
 {
     public class WorkoutIntensityCsvRowMapper : ICsvRowMapper<WorkOutIntensityCsvModel>, IWorkoutIntensityTrainingDataMapper
     {
@@ -19,6 +19,7 @@ namespace Logic.Ai.Csv.ModelMapper
             return new WorkOutIntensityCsvModel
             {
                 DataKey = entity.DataKey,
+                UserId = entity.UserId.ToString(),
                 Elevation = FormatDecimal(values.ElevationAvg),
                 Pace = GetPaceString(values),
                 AverageHeartRate = FormatDecimal(values.HeartRate?.Avg),
@@ -35,6 +36,7 @@ namespace Logic.Ai.Csv.ModelMapper
             return new WorkOutIntensityCsvModel
             {
                 DataKey = GetStringValueOrNull(rowValues["DataKey"]),
+                UserId = GetStringValueOrNull(rowValues["userId"]),
                 Elevation = GetStringValueOrNull(rowValues["Elevation"]),
                 Pace = GetStringValueOrNull(rowValues["Pace"]),
                 AverageHeartRate = GetStringValueOrNull(rowValues["AverageHeartRate"]),
@@ -51,6 +53,7 @@ namespace Logic.Ai.Csv.ModelMapper
             return new Dictionary<string, string>
             {
                 ["DataKey"] = model.DataKey ?? string.Empty,
+                ["userId"] = model.UserId ?? string.Empty,
                 ["Elevation"] = model.Elevation ?? string.Empty,
                 ["Pace"] = model.Pace ?? string.Empty,
                 ["AverageHeartRate"] = model.AverageHeartRate ?? string.Empty,

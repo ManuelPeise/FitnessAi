@@ -1,5 +1,5 @@
 using Data.Database.Entities.HealthConnect;
-using Logic.Ai.Csv.Models;
+using Logic.Ai.Models;
 
 namespace Logic.Ai.Interfaces
 {

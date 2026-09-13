@@ -1,14 +1,14 @@
 using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.HealthConnect;
-using Logic.Ai.Csv.Models;
 using Logic.Ai.Interfaces;
+using Logic.Ai.Models;
 using Microsoft.Extensions.Logging;
 using Shared.Enums.Ai;
 using System.Globalization;
 using System.Linq.Expressions;
 
-namespace Logic.Ai.Csv.Services
+namespace Logic.Ai.Services
 {
     public class AiWorkOutIntensityTrainingFileService : IAiWorkOutIntensityTrainingFileService
     {

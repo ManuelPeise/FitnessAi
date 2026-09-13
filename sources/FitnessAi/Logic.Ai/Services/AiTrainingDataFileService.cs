@@ -4,7 +4,7 @@ using Data.Database.Entities.Ai;
 using Logic.Ai.Interfaces;
 using Shared.Enums.Ai;
 
-namespace Logic.Ai.Csv
+namespace Logic.Ai.Services
 {
     // Persistence for AiTrainingDataFileTable - stores/retrieves the raw CSV bytes per AiType.
     // Deliberately does not validate/parse the CSV via ICsvModelLoader<TModel>: no concrete

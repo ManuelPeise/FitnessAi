@@ -18,8 +18,4 @@
     <ProjectReference Include="..\Logic.Shared\Logic.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Prediction\WorkoutIntensity\" />
-  </ItemGroup>
-
 </Project>

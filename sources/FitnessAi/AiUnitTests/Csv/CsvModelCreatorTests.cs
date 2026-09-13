@@ -1,4 +1,5 @@
 using AiUnitTests.Csv.Fakes;
+using Logic.Ai.ColumnDefinitions;
 using Logic.Ai.Csv;
 using Shared.Enums.Ai;
 using System.Text;

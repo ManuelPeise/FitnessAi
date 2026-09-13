@@ -6,9 +6,11 @@ namespace AiUnitTests.Fakes
     internal class FakeAiUnitOfWork : IAiUnitOfWork
     {
         public FakeRepository<AiTrainingDataFileEntity> TrainingDataFile { get; } = new();
+        public FakeRepository<AiTrainedModelEntity> TrainedModel { get; } = new();
         public int SaveChangesCallCount { get; private set; }
 
         public IRepositoryBase<AiTrainingDataFileEntity> AiTrainingDataFileRepository => TrainingDataFile;
+        public IRepositoryBase<AiTrainedModelEntity> AiTrainedModelRepository => TrainedModel;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

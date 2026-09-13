@@ -37,6 +37,7 @@ namespace Data.Database
         
         // ai training data tables
         public DbSet<AiTrainingDataFileEntity> AiTrainingDataFileTable => Set<AiTrainingDataFileEntity>();
+        public DbSet<AiTrainedModelEntity> AiTrainedModelTable => Set<AiTrainedModelEntity>();
 
         // nutrition tables
         public DbSet<NutritionDataEntity> NutritionDataTable => Set<NutritionDataEntity>();

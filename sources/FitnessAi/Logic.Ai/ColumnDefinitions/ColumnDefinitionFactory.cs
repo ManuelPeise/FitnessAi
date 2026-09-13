@@ -1,7 +1,7 @@
 using Logic.Ai.Interfaces;
 using Shared.Enums.Ai;
 
-namespace Logic.Ai.Csv
+namespace Logic.Ai.ColumnDefinitions
 {
     public class ColumnDefinitionFactory : IColumnDefinitionFactory
     {
@@ -10,7 +10,7 @@ namespace Logic.Ai.Csv
         // AiModelTypeEnum -> ColumnDefinition mappings here as new CSV-backed AiTypes are added.
         private static readonly Dictionary<AiModelTypeEnum, IReadOnlyDictionary<string, int>> ColumnDefinitions = new Dictionary<AiModelTypeEnum, IReadOnlyDictionary<string, int>>
         {
-            { AiModelTypeEnum.WorkoutIntensity, AiTrainingColumnDefinitions.IntensityAiColumnDefinition },
+            { AiModelTypeEnum.WorkoutIntensity, AiTrainingColumnDefinitions.TrainingIntensityAiColumnDefinition },
         };
 
         private readonly IReadOnlyDictionary<AiModelTypeEnum, IReadOnlyDictionary<string, int>> _definitions;

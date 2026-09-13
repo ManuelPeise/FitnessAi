@@ -1,8 +1,11 @@
+using Logic.Ai.ColumnDefinitions;
 using Logic.Ai.Csv;
-using Logic.Ai.Csv.ModelMapper;
-using Logic.Ai.Csv.Models;
-using Logic.Ai.Csv.Services;
 using Logic.Ai.Interfaces;
+using Logic.Ai.ModelMapper;
+using Logic.Ai.Models;
+using Logic.Ai.Prediction;
+using Logic.Ai.Services;
+using Logic.Ai.Training;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Logic.Ai.DI
@@ -18,6 +21,11 @@ namespace Logic.Ai.DI
             services.AddScoped<ICsvRowMapper<WorkOutIntensityCsvModel>, WorkoutIntensityCsvRowMapper>();
             services.AddScoped<IWorkoutIntensityTrainingDataMapper, WorkoutIntensityCsvRowMapper>();
             services.AddScoped<IAiWorkOutIntensityTrainingFileService, AiWorkOutIntensityTrainingFileService>();
+            services.AddScoped<IAiModelTrainer, TrainingIntensityAiModelTrainer>();
+            services.AddScoped<IAiModelTrainerFactory, AiModelTrainerFactory>();
+            services.AddScoped<IAiModelVersionStorageService, AiModelVersionStorageService>();
+            services.AddScoped<IAiModelTrainingService, AiModelTrainingService>();
+            services.AddScoped<IWorkoutIntensityPredictor, TrainingIntensityPredictor>();
         }
     }
 }
