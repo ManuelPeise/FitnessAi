@@ -1,6 +1,10 @@
 <Solution>
   <Folder Name="/01 Core/">
     <Project Path="Core.Api/Core.Api.csproj" Id="90510423-8910-451c-8f7b-5e9a362d0705" />
+    <Project Path="Core.React/Core.React.esproj">
+      <Build />
+      <Deploy />
+    </Project>
     <Project Path="Core.Web/Core.Web.csproj" Id="fee47c71-5079-4d58-b315-949e15b12d00" />
   </Folder>
   <Folder Name="/02 Logic/">
