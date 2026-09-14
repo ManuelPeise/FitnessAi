@@ -15,6 +15,7 @@ namespace Logic.Services.DI
             services.AddScoped<IUserSeedService, UserSeedService>();
             services.AddScoped<IHealthDataImport, HealthDataImport>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IUserRegistrationService, UserRegistrationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IScheduledJobService, ScheduledJobService>();

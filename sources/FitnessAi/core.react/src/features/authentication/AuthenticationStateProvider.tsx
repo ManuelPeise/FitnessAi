@@ -80,7 +80,9 @@ export const AuthenticationStateProvider = ({
   );
 
   const logout = React.useCallback((): void => {
-    setUser(null);
+    authenticationApi.logout().finally(() => {
+      setUser(null);
+    });
   }, []);
 
   const value = React.useMemo<AuthenticationState>(
