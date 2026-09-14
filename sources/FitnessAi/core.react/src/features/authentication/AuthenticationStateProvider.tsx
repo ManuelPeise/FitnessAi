@@ -79,12 +79,8 @@ export const AuthenticationStateProvider = ({
     [],
   );
 
-  const logout = React.useCallback(async (): Promise<void> => {
-    try {
-      await authenticationApi.logout();
-    } finally {
-      setUser(null);
-    }
+  const logout = React.useCallback((): void => {
+    setUser(null);
   }, []);
 
   const value = React.useMemo<AuthenticationState>(

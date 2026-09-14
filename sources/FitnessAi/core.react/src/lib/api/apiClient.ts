@@ -22,6 +22,9 @@ let unauthorizedHandler: (() => void) | null = null;
 const client = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 const refreshClient = axios.create({

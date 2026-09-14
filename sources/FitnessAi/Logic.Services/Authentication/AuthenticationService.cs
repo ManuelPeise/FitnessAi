@@ -25,7 +25,7 @@ namespace Logic.Services.Authentication
             _jwtOptions = jwtOptions.Value;
         }
 
-        public async Task<string?> AuthenticateUser(UserAuthenticationModel model)
+        public async Task<TokenResponse?> AuthenticateUser(UserAuthenticationModel model)
         {
             try
             {
@@ -45,12 +45,17 @@ namespace Logic.Services.Authentication
                 }
 
                 var jwtToken = _jwtTokenService.CreateAccessToken(userEntity, DateTime.UtcNow);
+                var refreshToken = _jwtTokenService.CreateRefreshToken();
 
-                IssueRefreshToken(userEntity);
+                IssueRefreshToken(userEntity, refreshToken);
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
 
-                return result > 0 ? jwtToken : null;
+                return result > 0 ? new TokenResponse
+                {
+                    Token = jwtToken,
+                    RefreshToken = refreshToken
+                } : null;
             }
             catch (Exception)
             {
@@ -78,7 +83,9 @@ namespace Logic.Services.Authentication
                 }
 
                 var jwtToken = _jwtTokenService.CreateAccessToken(userEntity, DateTime.UtcNow);
-                var refreshToken = IssueRefreshToken(userEntity);
+                var refreshToken = _jwtTokenService.CreateRefreshToken();
+
+                IssueRefreshToken(userEntity, refreshToken);
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
 
@@ -112,7 +119,9 @@ namespace Logic.Services.Authentication
                 }
 
                 var jwtToken = _jwtTokenService.CreateAccessToken(userEntity, DateTime.UtcNow);
-                var newRefreshToken = IssueRefreshToken(userEntity);
+                var newRefreshToken = _jwtTokenService.CreateRefreshToken();
+
+                IssueRefreshToken(userEntity, newRefreshToken);
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
 
@@ -136,14 +145,10 @@ namespace Logic.Services.Authentication
             });
         }
 
-        private string IssueRefreshToken(UserEntity userEntity)
+        private void IssueRefreshToken(UserEntity userEntity, string refreshToken)
         {
-            var refreshToken = _jwtTokenService.CreateRefreshToken();
-
             userEntity.UserCredentials.RefreshToken = refreshToken;
             userEntity.UserCredentials.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays);
-
-            return refreshToken;
         }
 
         private TokenResponse BuildTokenResponse(UserEntity userEntity, string jwtToken, string refreshToken)

@@ -9,7 +9,7 @@ export const HomePage = () => {
     <main className="home-page">
       <header className="app-header">
         <strong>{getResource("common.appName")}</strong>
-        <button type="button" onClick={() => void logout()}>
+        <button type="button" onClick={logout}>
           {getResource("common.auth.signOut")}
         </button>
       </header>

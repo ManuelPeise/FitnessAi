@@ -19,16 +19,16 @@ namespace Core.Api.ApiControllers.Authentication
         [HttpPost(Name = "AuthenticateUser")]
         public async Task<IActionResult> AuthenticateUser([FromBody] UserAuthenticationModel model)
         {
-            var token = await _authenticationService.AuthenticateUser(model);
+            var tokenResponse = await _authenticationService.AuthenticateUser(model);
 
-            if (token == null)
+            if (tokenResponse == null)
             {
                 return Unauthorized();
             }
 
             Response.Cookies.Append(
                 "access_token",
-                token,
+                tokenResponse.Token,
                 new CookieOptions
                 {
                     HttpOnly = true,
@@ -37,11 +37,22 @@ namespace Core.Api.ApiControllers.Authentication
                     Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
                 });
 
+            Response.Cookies.Append(
+               "refresh_token",
+               tokenResponse.RefreshToken,
+               new CookieOptions
+               {
+                   HttpOnly = true,
+                   Secure = true,
+                   SameSite = SameSiteMode.Strict,
+                   Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
+               });
+
             return Ok(new AuthenticationResponseModel 
             { 
-                Success = !string.IsNullOrEmpty(token) 
+                Success = !string.IsNullOrEmpty(tokenResponse.Token)  && !string.IsNullOrEmpty(tokenResponse.RefreshToken)
             });
-        }
+        }   
 
         [HttpPost(Name = "AuthenticateUserOnMobile")]
         public async Task<TokenResponse?> AuthenticateUserOnMobile([FromBody] UserAuthenticationModel model)
@@ -59,7 +70,29 @@ namespace Core.Api.ApiControllers.Authentication
                 return Unauthorized();
             }
 
-            return Ok(tokenResponse);
+            Response.Cookies.Append(
+                "access_token",
+                tokenResponse.Token,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
+                });
+
+            Response.Cookies.Append(
+                "refresh_token",
+                tokenResponse.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
+                });
+
+            return Ok();
         }
     }
 }

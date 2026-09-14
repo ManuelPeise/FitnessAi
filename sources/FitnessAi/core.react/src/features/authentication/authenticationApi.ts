@@ -5,11 +5,11 @@ import type {
   RegisterCredentials,
 } from "./authentication.types";
 
-const loginPath = import.meta.env.VITE_API_LOGIN_PATH ?? "/auth/login";
-const logoutPath = import.meta.env.VITE_API_LOGOUT_PATH ?? "/auth/logout";
+const loginPath =
+  import.meta.env.VITE_API_LOGIN_PATH ?? "UserAuthentication/AuthenticateUser";
 const registerPath = import.meta.env.VITE_API_REGISTER_PATH ?? "/auth/register";
 const currentUserPath =
-  import.meta.env.VITE_API_CURRENT_USER_PATH ?? "/auth/me";
+  import.meta.env.VITE_API_CURRENT_USER_PATH ?? "/CurrentUser/GetCurrentUser";
 
 export const authenticationApi = {
   getCurrentUser: (): Promise<AuthenticatedUser> =>
@@ -20,6 +20,4 @@ export const authenticationApi = {
 
   register: (credentials: RegisterCredentials): Promise<void> =>
     apiClient.post<void, RegisterCredentials>(registerPath, credentials),
-
-  logout: (): Promise<void> => apiClient.post<void>(logoutPath),
 };
