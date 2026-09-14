@@ -1,6 +1,1 @@
-export {
-  apiClient,
-  clearAuthTokens,
-  setAuthTokens,
-  type AuthTokens,
-} from "./apiClient";
+export { apiClient, setUnauthorizedHandler } from "./apiClient";

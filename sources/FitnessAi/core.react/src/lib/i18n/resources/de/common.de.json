@@ -1,3 +1,24 @@
 {
-  "appName": "FitnessAI"
+  "appName": "FitnessAI",
+  "auth.alreadyHaveAccountPrompt": "Bereits ein Konto?",
+  "auth.checkingSession": "Sitzung wird geprüft",
+  "auth.confirmPassword": "Passwort bestätigen",
+  "auth.createAccount": "Konto erstellen",
+  "auth.creatingAccount": "Konto wird erstellt...",
+  "auth.email": "E-Mail",
+  "auth.firstName": "Vorname",
+  "auth.goToRegister": "Jetzt registrieren",
+  "auth.goToSignIn": "Anmelden",
+  "auth.invalidCredentials": "E-Mail-Adresse oder Passwort ist falsch.",
+  "auth.lastName": "Nachname",
+  "auth.noAccountPrompt": "Noch kein Konto?",
+  "auth.password": "Passwort",
+  "auth.passwordMismatch": "Die Passwörter stimmen nicht überein.",
+  "auth.registerPrompt": "Richte deinen Trainingsbereich ein.",
+  "auth.registrationFailed": "Dein Konto konnte nicht erstellt werden. Bitte versuche es erneut.",
+  "auth.signedInAs": "Angemeldet als",
+  "auth.signIn": "Anmelden",
+  "auth.signingIn": "Anmeldung läuft...",
+  "auth.signInPrompt": "Weiter zu deinem Trainingsbereich.",
+  "auth.signOut": "Abmelden"
 }

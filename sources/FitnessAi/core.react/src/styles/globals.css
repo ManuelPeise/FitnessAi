@@ -1,7 +1,8 @@
 :root {
-  font-family: system-ui, sans-serif;
-  color: #1f2937;
-  background: #f8fafc;
+  font-family: "Segoe UI", sans-serif;
+  color: #f4f7f5;
+  background: #101412;
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,4 +21,44 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+.home-page {
+  min-height: 100vh;
+  background: #101412;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  border-bottom: 1px solid #2b342f;
+  padding: 0 1.25rem;
+}
+
+.app-header strong {
+  color: #b7ef52;
+}
+
+.app-header button {
+  border-color: #465149;
+  color: #f4f7f5;
+  background: transparent;
+}
+
+.home-content {
+  width: min(100% - 2.5rem, 1080px);
+  margin: 0 auto;
+  padding: 5rem 0;
+}
+
+.home-content p {
+  margin: 0;
+  color: #aab5af;
+}
+
+.home-content h1 {
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
 }

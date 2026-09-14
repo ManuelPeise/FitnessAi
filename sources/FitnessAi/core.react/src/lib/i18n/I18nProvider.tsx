@@ -3,26 +3,27 @@ import { I18nContext, type Language } from "./I18nContext";
 import commonDe from "./resources/de/common.de.json";
 import commonEn from "./resources/en/common.json";
 
-interface ResourceTree {
-  [key: string]: string | ResourceTree;
-}
+type ResourceNamespace = Record<string, string>;
 
-const resources: Record<Language, Record<string, ResourceTree>> = {
+const resources: Record<Language, Record<string, ResourceNamespace>> = {
   en: { common: commonEn },
   de: { common: commonDe },
 };
 
 function getValue(
-  resources: Record<string, ResourceTree>,
+  resources: Record<string, ResourceNamespace>,
   key: string,
 ): string | undefined {
-  const value = key
-    .split(".")
-    .reduce<
-      string | ResourceTree | undefined
-    >((current, segment) => (typeof current === "object" && current !== null ? current[segment] : undefined), resources);
+  const separatorIndex = key.indexOf(".");
 
-  return typeof value === "string" ? value : undefined;
+  if (separatorIndex === -1) {
+    return undefined;
+  }
+
+  const namespace = key.slice(0, separatorIndex);
+  const flatKey = key.slice(separatorIndex + 1);
+
+  return resources[namespace]?.[flatKey];
 }
 
 type I18nProviderProps = {

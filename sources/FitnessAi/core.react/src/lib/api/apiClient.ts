@@ -4,21 +4,20 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-export type AuthTokens = {
-  accessToken: string;
-  refreshToken?: string;
-};
-
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   hasRetriedAfterRefresh?: boolean;
 };
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const refreshPath = import.meta.env.VITE_API_REFRESH_PATH ?? "/auth/refresh";
+const authPaths = [
+  refreshPath,
+  import.meta.env.VITE_API_LOGIN_PATH ?? "/auth/login",
+  import.meta.env.VITE_API_LOGOUT_PATH ?? "/auth/logout",
+];
 
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
-let refreshRequest: Promise<string> | null = null;
+let refreshRequest: Promise<void> | null = null;
+let unauthorizedHandler: (() => void) | null = null;
 
 const client = axios.create({
   baseURL: apiBaseUrl,
@@ -30,37 +29,13 @@ const refreshClient = axios.create({
   withCredentials: true,
 });
 
-export const setAuthTokens = (tokens: AuthTokens): void => {
-  accessToken = tokens.accessToken;
-  refreshToken = tokens.refreshToken ?? null;
+export const setUnauthorizedHandler = (handler: (() => void) | null): void => {
+  unauthorizedHandler = handler;
 };
 
-export const clearAuthTokens = (): void => {
-  accessToken = null;
-  refreshToken = null;
+const refreshSession = async (): Promise<void> => {
+  await refreshClient.post(refreshPath);
 };
-
-const refreshAccessToken = async (): Promise<string> => {
-  const response = await refreshClient.post<AuthTokens>(
-    refreshPath,
-    refreshToken === null ? undefined : { refreshToken },
-  );
-
-  setAuthTokens({
-    accessToken: response.data.accessToken,
-    refreshToken: response.data.refreshToken ?? refreshToken ?? undefined,
-  });
-
-  return response.data.accessToken;
-};
-
-client.interceptors.request.use((config) => {
-  if (accessToken !== null) {
-    config.headers.set("Authorization", `Bearer ${accessToken}`);
-  }
-
-  return config;
-});
 
 client.interceptors.response.use(
   (response) => response,
@@ -71,7 +46,7 @@ client.interceptors.response.use(
       error.response?.status !== 401 ||
       originalRequest === undefined ||
       originalRequest.hasRetriedAfterRefresh ||
-      originalRequest.url === refreshPath
+      authPaths.includes(originalRequest.url ?? "")
     ) {
       return Promise.reject(error);
     }
@@ -79,19 +54,15 @@ client.interceptors.response.use(
     originalRequest.hasRetriedAfterRefresh = true;
 
     try {
-      refreshRequest ??= refreshAccessToken().finally(() => {
+      refreshRequest ??= refreshSession().finally(() => {
         refreshRequest = null;
       });
 
-      const refreshedAccessToken = await refreshRequest;
-      originalRequest.headers.set(
-        "Authorization",
-        `Bearer ${refreshedAccessToken}`,
-      );
+      await refreshRequest;
 
       return client.request(originalRequest);
     } catch (refreshError) {
-      clearAuthTokens();
+      unauthorizedHandler?.();
       return Promise.reject(refreshError);
     }
   },
