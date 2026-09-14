@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import AppLayout from "../layout/AppLayout";
 import { HomePage } from "../../pages/HomePage";
 import { LoginPage } from "../../pages/LoginPage";
 import { RegisterPage } from "../../pages/RegisterPage";
@@ -12,8 +13,10 @@ export const AppRouter = () => (
         <Route path="/register" element={<RegisterPage />} />
       </Route>
       <Route element={<PrivateRoute />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Route>
     </Routes>
   </BrowserRouter>

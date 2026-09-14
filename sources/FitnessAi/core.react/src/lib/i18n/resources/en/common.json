@@ -20,5 +20,14 @@
   "auth.signIn": "Sign in",
   "auth.signingIn": "Signing in...",
   "auth.signInPrompt": "Continue to your training workspace.",
-  "auth.signOut": "Sign out"
+  "auth.signOut": "Sign out",
+  "layout.closeMenu": "Close menu",
+  "layout.openMenu": "Open menu",
+  "labelProfile": "Profile",
+  "labelDetails": "Details",
+  "labelSettings": "Settings",
+  "labelAdministration": "Administration",
+  "labelUser": "User",
+  "labelAI": "AI",
+  "labelAITraining": "AI Training"
 }

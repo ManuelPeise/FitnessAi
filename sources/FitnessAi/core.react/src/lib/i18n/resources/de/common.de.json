@@ -20,5 +20,14 @@
   "auth.signIn": "Anmelden",
   "auth.signingIn": "Anmeldung läuft...",
   "auth.signInPrompt": "Weiter zu deinem Trainingsbereich.",
-  "auth.signOut": "Abmelden"
+  "auth.signOut": "Abmelden",
+  "layout.closeMenu": "Menü schließen",
+  "layout.openMenu": "Menü öffnen",
+  "labelProfile": "Profil",
+  "labelDetails": "Details",
+  "labelSettings": "Einstellungen",
+  "labelAdministration": "Verwaltung",
+  "labelUser": "Benutzer",
+  "labelAI": "KI",
+  "labelAITraining": "KI Training"
 }
