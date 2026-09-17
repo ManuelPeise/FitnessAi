@@ -55,11 +55,11 @@ namespace AiUnitTests.Training
             return csvModelCreator.Create(AiModelTypeEnum.WorkoutIntensity, rows);
         }
 
-        // Cycles through Easy/Medium/Hard with heart-rate/power scaled by label, so the dataset
+        // Cycles through Easy/Medium/High with heart-rate/power scaled by label, so the dataset
         // has more than one class and isn't degenerate for cross-validation.
         private static List<WorkOutIntensityCsvModel> BuildRows(int rowCount)
         {
-            var labels = new[] { "Easy", "Medium", "Hard" };
+            var labels = new[] { "Easy", "Medium", "High" };
             var rows = new List<WorkOutIntensityCsvModel>();
 
             for (var i = 0; i < rowCount; i++)

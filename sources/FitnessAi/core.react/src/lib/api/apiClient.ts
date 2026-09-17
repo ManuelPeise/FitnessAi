@@ -98,4 +98,21 @@ export const apiClient = {
     const response = await client.post<Response>(url, body, config);
     return response.data;
   },
+
+  async put<Response, Body = undefined>(
+    url: string,
+    body?: Body,
+    config?: AxiosRequestConfig,
+  ): Promise<Response> {
+    const response = await client.put<Response>(url, body, config);
+    return response.data;
+  },
+
+  async delete<Response = void>(
+    url: string,
+    config?: AxiosRequestConfig,
+  ): Promise<Response> {
+    const response = await client.delete<Response>(url, config);
+    return response.data;
+  },
 };

@@ -10,5 +10,7 @@ namespace Data.Accessor.Models
         public Expression<Func<TModel, bool>>? WhereExpression { get; set; }
         public Expression<Func<TModel, object>>? OrderByExpression { get; set; }
         public List<Expression<Func<TModel, object>>> Includes { get; set; } = new();
+        public int? Skip { get; set; }
+        public int? Take { get; set; }
     }
 }

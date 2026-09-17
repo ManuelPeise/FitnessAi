@@ -1,5 +1,6 @@
 ﻿using Logic.Services.Authentication;
 using Logic.Services.DataImport;
+using Logic.Services.HealthConnect;
 using Logic.Services.Interfaces;
 using Logic.Services.Scheduler;
 using Logic.Services.Seed;
@@ -14,6 +15,7 @@ namespace Logic.Services.DI
         {
             services.AddScoped<IUserSeedService, UserSeedService>();
             services.AddScoped<IHealthDataImport, HealthDataImport>();
+            services.AddScoped<ITrainingDataService, TrainingDataService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IUserRegistrationService, UserRegistrationService>();
             services.AddScoped<IUserService, UserService>();

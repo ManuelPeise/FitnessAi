@@ -76,11 +76,11 @@ namespace AiUnitTests.Prediction
             return result!.ModelData;
         }
 
-        // Cycles through Easy/Medium/Hard with heart-rate/power scaled by label, matching
+        // Cycles through Easy/Medium/High with heart-rate/power scaled by label, matching
         // TrainingIntensityAiModelTrainerTests' synthetic dataset shape.
         private static List<WorkOutIntensityCsvModel> BuildTrainingRows()
         {
-            var labels = new[] { "Easy", "Medium", "Hard" };
+            var labels = new[] { "Easy", "Medium", "High" };
             var rows = new List<WorkOutIntensityCsvModel>();
 
             for (var i = 0; i < 30; i++)

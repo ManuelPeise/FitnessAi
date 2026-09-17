@@ -4,6 +4,7 @@ import { HomePage } from "../../pages/HomePage";
 import { LoginPage } from "../../pages/LoginPage";
 import { RegisterPage } from "../../pages/RegisterPage";
 import AiTrainingPage from "../../pages/AiTrainingPage";
+import TrainingDataPage from "../../pages/TrainingDataPage";
 import { PrivateRoute, PublicRoute } from "./RouteGuards";
 
 export const AppRouter = () => (
@@ -17,6 +18,7 @@ export const AppRouter = () => (
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/ai/training" element={<AiTrainingPage />} />
+          <Route path="/training/sessions" element={<TrainingDataPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>

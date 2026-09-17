@@ -25,7 +25,7 @@ const AppLayout: React.FC = () => {
         role={user?.role ?? UserRoleEnum.User}
         getResource={getResource}
       />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: 3 }}>
         <Toolbar />
         <Outlet />
       </Box>

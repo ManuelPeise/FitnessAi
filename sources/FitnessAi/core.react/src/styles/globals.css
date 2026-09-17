@@ -1,7 +1,7 @@
 :root {
   font-family: "Segoe UI", sans-serif;
-  color: #f4f7f5;
-  background: #101412;
+  color: #e9ede9;
+  background: #1b201e;
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,10 +13,28 @@
   box-sizing: border-box;
 }
 
+/* Hides only the page/document scrollbar on the right edge of the browser window - the page
+   remains scrollable via wheel/keyboard/trackpad, and no in-app scroll container (e.g. the
+   training data table) is affected since this targets html/body only. */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 #root {
@@ -25,7 +43,7 @@ body {
 
 .home-page {
   min-height: 100vh;
-  background: #101412;
+  background: #1b201e;
 }
 
 .app-header {
@@ -33,7 +51,7 @@ body {
   align-items: center;
   justify-content: space-between;
   min-height: 72px;
-  border-bottom: 1px solid #2b342f;
+  border-bottom: 1px solid #39423e;
   padding: 0 1.25rem;
 }
 
@@ -43,7 +61,7 @@ body {
 
 .app-header button {
   border-color: #465149;
-  color: #f4f7f5;
+  color: #e9ede9;
   background: transparent;
 }
 
@@ -55,7 +73,7 @@ body {
 
 .home-content p {
   margin: 0;
-  color: #aab5af;
+  color: #a3b0a8;
 }
 
 .home-content h1 {

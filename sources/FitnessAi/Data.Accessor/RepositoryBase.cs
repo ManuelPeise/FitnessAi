@@ -46,7 +46,29 @@ namespace Data.Accessor
                     : query.OrderBy(options.OrderByExpression);
             }
 
+            if (options?.Skip is not null)
+            {
+                query = query.Skip(options.Skip.Value);
+            }
+
+            if (options?.Take is not null)
+            {
+                query = query.Take(options.Take.Value);
+            }
+
             return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<int> CountAsync(Expression<Func<TModel, bool>>? whereExpression = null, CancellationToken cancellationToken = default)
+        {
+            IQueryable<TModel> query = _dbSet;
+
+            if (whereExpression is not null)
+            {
+                query = query.Where(whereExpression);
+            }
+
+            return await query.CountAsync(cancellationToken);
         }
 
         public async Task<TModel?> GetByIdAsync(long id, bool asNoTracking = false, List<Expression<Func<TModel, object>>>? includeExpressions = null, CancellationToken cancellationToken = default)

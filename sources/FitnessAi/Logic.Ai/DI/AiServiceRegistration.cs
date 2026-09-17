@@ -26,6 +26,7 @@ namespace Logic.Ai.DI
             services.AddScoped<IAiModelVersionStorageService, AiModelVersionStorageService>();
             services.AddScoped<IAiModelTrainingService, AiModelTrainingService>();
             services.AddScoped<IWorkoutIntensityPredictor, TrainingIntensityPredictor>();
+            services.AddScoped<ITrainingIntensityPredictionService, TrainingIntensityPredictionService>();
         }
     }
 }
