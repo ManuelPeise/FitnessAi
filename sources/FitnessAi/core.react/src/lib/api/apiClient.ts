@@ -3,6 +3,7 @@ import axios, {
   type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { beginHttpRequest, endHttpRequest } from "./httpActivity";
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   hasRetriedAfterRefresh?: boolean;
@@ -40,9 +41,18 @@ const refreshSession = async (): Promise<void> => {
   await refreshClient.post(refreshPath);
 };
 
+client.interceptors.request.use((config) => {
+  beginHttpRequest();
+  return config;
+});
+
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    endHttpRequest();
+    return response;
+  },
   async (error: AxiosError) => {
+    endHttpRequest();
     const originalRequest = error.config as RetriableRequestConfig | undefined;
 
     if (

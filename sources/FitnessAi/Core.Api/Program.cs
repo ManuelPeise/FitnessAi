@@ -1,5 +1,4 @@
 using Core.Api.Bundels;
-using Org.BouncyCastle.Security;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,5 +12,6 @@ app.UseAppCors();
 AppConfiguration.ConfigureAppServices(app);
 
 await DbMigrator.Migrate(app.Services);
+await DefaultAdminUserSeeder.SeedAsync(app.Services);
 
 app.Run();

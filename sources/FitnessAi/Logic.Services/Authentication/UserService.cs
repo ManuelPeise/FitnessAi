@@ -40,6 +40,7 @@ namespace Logic.Services.Authentication
                 {
                     Id = userEntity.Id,
                     Email = userEntity.Email,
+                    Role = userEntity.UserRole,
                     CreatedAt = userEntity.CreatedAt.ToString("o"),
                     UpdatedAt = userEntity.UpdatedAt?.ToString("o")
                 };

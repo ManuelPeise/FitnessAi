@@ -6,9 +6,11 @@ import AppBar from "./AppBar";
 import Sidebar from "./Sidebar";
 import { UserRoleEnum } from "../../lib/enums/userRoleEnum";
 import { useI18n } from "../../lib/i18n/useI18n";
+import { useAuthenticationState } from "../../features/authentication/useAuthenticationState";
 
 const AppLayout: React.FC = () => {
   const { getResource } = useI18n();
+  const { user } = useAuthenticationState();
   const [isSideMenuOpen, setIsSideMenuOpen] = React.useState(false);
 
   const toggleSideMenu = (): void => setIsSideMenuOpen((previous) => !previous);
@@ -20,7 +22,7 @@ const AppLayout: React.FC = () => {
       <Sidebar
         isOpen={isSideMenuOpen}
         onClose={closeSideMenu}
-        role={UserRoleEnum.User}
+        role={user?.role ?? UserRoleEnum.User}
         getResource={getResource}
       />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>

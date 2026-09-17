@@ -55,10 +55,10 @@ export const LoginPage = () => {
           {getResource("common.appName")}
         </Typography>
         <Typography id="login-title" variant="h4" component="h1" sx={{ mt: 4 }}>
-          {getResource("common.auth.signIn")}
+          {getResource("common.signIn")}
         </Typography>
         <Typography component="p" color="text.secondary" sx={{ mb: 4 }}>
-          {getResource("common.auth.signInPrompt")}
+          {getResource("common.signInPrompt")}
         </Typography>
 
         <Stack
@@ -70,7 +70,7 @@ export const LoginPage = () => {
             id="email"
             name="email"
             type="email"
-            label={getResource("common.auth.email")}
+            label={getResource("common.email")}
             autoComplete="email"
             {...email}
             required
@@ -80,7 +80,7 @@ export const LoginPage = () => {
             id="password"
             name="password"
             type="password"
-            label={getResource("common.auth.password")}
+            label={getResource("common.password")}
             autoComplete="current-password"
             {...password}
             required
@@ -88,20 +88,20 @@ export const LoginPage = () => {
 
           {hasSubmitError && (
             <Alert severity="error" role="alert">
-              {getResource("common.auth.invalidCredentials")}
+              {getResource("common.invalidCredentials")}
             </Alert>
           )}
 
           <AppButton type="submit" disabled={isSubmitting} size="large">
             {isSubmitting
-              ? getResource("common.auth.signingIn")
-              : getResource("common.auth.signIn")}
+              ? getResource("common.signingIn")
+              : getResource("common.signIn")}
           </AppButton>
 
           <Typography component="p" color="text.secondary" variant="body2">
-            {getResource("common.auth.noAccountPrompt")}{" "}
+            {getResource("common.noAccountPrompt")}{" "}
             <RouterLink to="/register">
-              {getResource("common.auth.goToRegister")}
+              {getResource("common.goToRegister")}
             </RouterLink>
           </Typography>
         </Stack>

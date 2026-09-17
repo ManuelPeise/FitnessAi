@@ -33,9 +33,18 @@ type I18nProviderProps = {
 export function I18nProvider({ children }: I18nProviderProps) {
   const [language, setLanguage] = useState<Language>("en");
 
-  function getResource(key: string): string {
-    return (
-      getValue(resources[language], key) ?? getValue(resources.en, key) ?? key
+  function getResource(key: string, params?: Record<string, string>): string {
+    const template =
+      getValue(resources[language], key) ?? getValue(resources.en, key) ?? key;
+
+    if (!params) {
+      return template;
+    }
+
+    return Object.entries(params).reduce(
+      (result, [paramKey, paramValue]) =>
+        result.replaceAll(`{${paramKey}}`, paramValue),
+      template,
     );
   }
 

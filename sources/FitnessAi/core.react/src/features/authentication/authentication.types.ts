@@ -1,6 +1,9 @@
+import type { UserRoleEnum } from "../../lib/enums/userRoleEnum";
+
 export type AuthenticatedUser = {
   id: string;
   email: string;
+  role: UserRoleEnum;
   displayName?: string;
 };
 

@@ -1,8 +1,11 @@
+using Core.Api.AuthorizationAttributes;
 using Logic.Ai.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Enums.Authentication;
 
 namespace Core.Api.ApiControllers.Ai
 {
+    [ApiAuthentication(UserRoleEnum.AdminRole)]
     public class AiTrainingWorkOutIntensityCsvController : ApiControllerBase
     {
         private const string CsvFileName = "WorkoutIntensityAiTrainingData.csv";
@@ -14,6 +17,7 @@ namespace Core.Api.ApiControllers.Ai
             _workOutIntensityCsvService = workOutIntensityCsvService;
         }
 
+        [ApiAuthentication(UserRoleEnum.AdminRole)]
         [HttpGet(Name = "LoadInitialWorkOutIntensityTrainingCsv")]
         public async Task<IActionResult> LoadInitialWorkOutIntensityTrainingCsv(
             [FromQuery] int itemsCount, CancellationToken cancellationToken = default)
@@ -23,6 +27,7 @@ namespace Core.Api.ApiControllers.Ai
             return File(csv, "text/csv", CsvFileName);
         }
 
+        [ApiAuthentication(UserRoleEnum.AdminRole)]
         [HttpGet(Name = "GetExistingWorkOutIntensityCsv")]
         public async Task<IActionResult> GetExistingWorkOutIntensityCsv(CancellationToken cancellationToken = default)
         {
@@ -36,6 +41,7 @@ namespace Core.Api.ApiControllers.Ai
             return File(csv, "text/csv", CsvFileName);
         }
 
+        [ApiAuthentication(UserRoleEnum.AdminRole)]
         [HttpPost(Name = "UpdateWorkOutIntensityTrainingCsvData")]
         public async Task UpdateWorkOutIntensityTrainingCsvData(IFormFile file, CancellationToken cancellationToken = default)
         {

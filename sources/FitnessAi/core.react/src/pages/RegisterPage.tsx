@@ -81,10 +81,10 @@ export const RegisterPage = () => {
           component="h1"
           sx={{ mt: 4 }}
         >
-          {getResource("common.auth.createAccount")}
+          {getResource("common.createAccount")}
         </Typography>
         <Typography component="p" color="text.secondary" sx={{ mb: 4 }}>
-          {getResource("common.auth.registerPrompt")}
+          {getResource("common.registerPrompt")}
         </Typography>
 
         <Stack component="form" onSubmit={handleSubmit} sx={{ gap: 2 }}>
@@ -92,7 +92,7 @@ export const RegisterPage = () => {
             id="firstName"
             name="firstName"
             type="text"
-            label={getResource("common.auth.firstName")}
+            label={getResource("common.firstName")}
             autoComplete="given-name"
             {...firstName}
             required
@@ -102,7 +102,7 @@ export const RegisterPage = () => {
             id="lastName"
             name="lastName"
             type="text"
-            label={getResource("common.auth.lastName")}
+            label={getResource("common.lastName")}
             autoComplete="family-name"
             {...lastName}
             required
@@ -112,7 +112,7 @@ export const RegisterPage = () => {
             id="email"
             name="email"
             type="email"
-            label={getResource("common.auth.email")}
+            label={getResource("common.email")}
             autoComplete="email"
             {...email}
             required
@@ -122,7 +122,7 @@ export const RegisterPage = () => {
             id="password"
             name="password"
             type="password"
-            label={getResource("common.auth.password")}
+            label={getResource("common.password")}
             autoComplete="new-password"
             {...password}
             required
@@ -132,7 +132,7 @@ export const RegisterPage = () => {
             id="confirmPassword"
             name="confirmPassword"
             type="password"
-            label={getResource("common.auth.confirmPassword")}
+            label={getResource("common.confirmPassword")}
             autoComplete="new-password"
             {...confirmPassword}
             required
@@ -140,26 +140,26 @@ export const RegisterPage = () => {
 
           {validationError === "passwordMismatch" && (
             <Alert severity="error" role="alert">
-              {getResource("common.auth.passwordMismatch")}
+              {getResource("common.passwordMismatch")}
             </Alert>
           )}
 
           {hasSubmitError && (
             <Alert severity="error" role="alert">
-              {getResource("common.auth.registrationFailed")}
+              {getResource("common.registrationFailed")}
             </Alert>
           )}
 
           <AppButton type="submit" disabled={isSubmitting} size="large">
             {isSubmitting
-              ? getResource("common.auth.creatingAccount")
-              : getResource("common.auth.createAccount")}
+              ? getResource("common.creatingAccount")
+              : getResource("common.createAccount")}
           </AppButton>
 
           <Typography component="p" color="text.secondary" variant="body2">
-            {getResource("common.auth.alreadyHaveAccountPrompt")}{" "}
+            {getResource("common.alreadyHaveAccountPrompt")}{" "}
             <RouterLink to="/login">
-              {getResource("common.auth.goToSignIn")}
+              {getResource("common.goToSignIn")}
             </RouterLink>
           </Typography>
         </Stack>

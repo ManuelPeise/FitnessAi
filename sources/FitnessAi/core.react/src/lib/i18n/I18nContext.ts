@@ -3,7 +3,7 @@ import { createContext } from "react";
 export type Language = "en" | "de";
 
 export type I18nContextValue = {
-  getResource: (key: string) => string;
+  getResource: (key: string, params?: Record<string, string>) => string;
   toggleLanguage: (language: Language) => void;
 };
 

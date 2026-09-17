@@ -14,10 +14,11 @@ type IconButtonProps = {
   ariaLabel?: string;
   color?: MuiIconButtonProps["color"];
   edge?: MuiIconButtonProps["edge"];
+  disabled?: boolean;
 };
 
 const ButtonWithIcon: React.FC<IconButtonProps> = (props) => {
-  const { onClick, icon, ariaLabel, color, edge } = props;
+  const { onClick, icon, ariaLabel, color, edge, disabled } = props;
 
   const IconComponent = icon;
 
@@ -27,6 +28,7 @@ const ButtonWithIcon: React.FC<IconButtonProps> = (props) => {
       aria-label={ariaLabel}
       color={color}
       edge={edge}
+      disabled={disabled}
     >
       <IconComponent />
     </IconButton>

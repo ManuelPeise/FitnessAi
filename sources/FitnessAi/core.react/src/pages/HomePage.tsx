@@ -7,7 +7,7 @@ export const HomePage = () => {
 
   return (
     <section className="home-content">
-      <p>{getResource("common.auth.signedInAs")}</p>
+      <p>{getResource("common.signedInAs")}</p>
       <h1>{user?.displayName ?? user?.email}</h1>
     </section>
   );

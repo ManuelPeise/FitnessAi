@@ -6,6 +6,7 @@ import {
   AccountBox,
   AdminPanelSettingsRounded,
   Psychology,
+  FitnessCenterRounded,
 } from "@mui/icons-material";
 
 export type SidebarItem = {
@@ -63,14 +64,14 @@ export const getSidebarItems = (
       path: "/ai",
       label: getResource("common.labelAI"),
       icon: Psychology,
-      isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+      isVisible: role === UserRoleEnum.Admin,
       isActive: false,
       isCollapsed: false,
       subItems: [
         {
           path: "/ai/training",
           label: getResource("common.labelAITraining"),
-          isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+          isVisible: role === UserRoleEnum.Admin,
           isActive: false,
           isCollapsed: false,
           subItems: [],
@@ -78,6 +79,17 @@ export const getSidebarItems = (
         },
       ],
       sortOrder: 2,
+      position: "top",
+    },
+    {
+      path: "/training",
+      label: getResource("common.labelTraining"),
+      icon: FitnessCenterRounded,
+      isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+      isActive: false,
+      isCollapsed: false,
+      subItems: [],
+      sortOrder: 4,
       position: "top",
     },
     {

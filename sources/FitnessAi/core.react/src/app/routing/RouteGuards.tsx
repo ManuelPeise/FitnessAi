@@ -13,7 +13,7 @@ export const PrivateRoute = () => {
   const location = useLocation();
 
   if (isInitializing) {
-    return <LoadingIndicator label={getResource("common.auth.checkingSession")} />;
+    return <LoadingIndicator label={getResource("common.checkingSession")} />;
   }
 
   if (!isAuthenticated) {
@@ -35,7 +35,7 @@ export const PublicRoute = () => {
   const location = useLocation();
 
   if (isInitializing) {
-    return <LoadingIndicator label={getResource("common.auth.checkingSession")} />;
+    return <LoadingIndicator label={getResource("common.checkingSession")} />;
   }
 
   if (isAuthenticated) {

@@ -25,6 +25,11 @@ namespace Core.Api.Bundels
             .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
             .ValidateOnStart();
 
+            services
+            .AddOptions<DefaultAdminUserOptions>()
+            .Bind(builder.Configuration.GetSection(DefaultAdminUserOptions.SectionName))
+            .ValidateOnStart();
+
             var connectionString = builder.Configuration.GetConnectionString("AiDbContext") ??
                 throw new InvalidOperationException("Connection string 'AiDbContext' not found.");
 
