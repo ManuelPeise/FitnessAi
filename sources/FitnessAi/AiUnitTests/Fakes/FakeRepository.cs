@@ -52,7 +52,7 @@ namespace AiUnitTests.Fakes
 
         public Task<TModel?> GetByIdAsync(long id, bool asNoTracking = false, List<System.Linq.Expressions.Expression<Func<TModel, object>>>? includeExpressions = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(Items.FirstOrDefault(item => item.Id == id));
         }
 
         public Task<TModel?> GetSingleAsync(DbQueryOptions<TModel> options, bool asNoTracking = false, CancellationToken cancellationToken = default)

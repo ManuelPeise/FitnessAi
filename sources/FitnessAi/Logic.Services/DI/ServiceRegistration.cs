@@ -4,6 +4,7 @@ using Logic.Services.HealthConnect;
 using Logic.Services.Interfaces;
 using Logic.Services.Scheduler;
 using Logic.Services.Seed;
+using Logic.Services.UserProfile;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Interfaces.Authentication;
 
@@ -19,6 +20,7 @@ namespace Logic.Services.DI
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IUserRegistrationService, UserRegistrationService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IScheduledJobService, ScheduledJobService>();
             services.AddScoped<IScheduledTaskService, ScheduledTaskService>();

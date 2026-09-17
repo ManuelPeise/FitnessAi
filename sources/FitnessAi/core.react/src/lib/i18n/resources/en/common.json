@@ -101,5 +101,19 @@
   "workoutIntensity.unknown": "Unknown",
   "workoutIntensity.easy": "Easy",
   "workoutIntensity.medium": "Medium",
-  "workoutIntensity.high": "High"
+  "workoutIntensity.high": "High",
+  "labelBodyData": "Body data",
+  "labelHeight": "Height (cm)",
+  "labelWeight": "Weight (kg)",
+  "labelBodyFatPercentage": "Body fat (%)",
+  "labelWaist": "Waist (cm)",
+  "labelAbdomen": "Abdomen (cm)",
+  "labelShoulderWidth": "Shoulder width (cm)",
+  "labelBmi": "BMI",
+  "labelChangePassword": "Change password",
+  "currentPassword": "Current password",
+  "incorrectCurrentPassword": "The current password is incorrect.",
+  "profileUpdateSuccess": "Profile updated successfully.",
+  "profileUpdateFailed": "We couldn't update your profile. Please try again.",
+  "passwordChangeSuccess": "Password changed successfully."
 }

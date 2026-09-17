@@ -101,5 +101,19 @@
   "workoutIntensity.unknown": "Unbekannt",
   "workoutIntensity.easy": "Leicht",
   "workoutIntensity.medium": "Mittel",
-  "workoutIntensity.high": "Hoch"
+  "workoutIntensity.high": "Hoch",
+  "labelBodyData": "Körperdaten",
+  "labelHeight": "Größe (cm)",
+  "labelWeight": "Gewicht (kg)",
+  "labelBodyFatPercentage": "Körperfett (%)",
+  "labelWaist": "Taille (cm)",
+  "labelAbdomen": "Bauchumfang (cm)",
+  "labelShoulderWidth": "Schulterbreite (cm)",
+  "labelBmi": "BMI",
+  "labelChangePassword": "Passwort ändern",
+  "currentPassword": "Aktuelles Passwort",
+  "incorrectCurrentPassword": "Das aktuelle Passwort ist falsch.",
+  "profileUpdateSuccess": "Profil erfolgreich aktualisiert.",
+  "profileUpdateFailed": "Dein Profil konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+  "passwordChangeSuccess": "Passwort erfolgreich geändert."
 }
