@@ -1,7 +1,11 @@
 export const UserRoleEnum = {
-  User: 0,
-  Admin: 1,
-  Maintenance: 2,
+  None: 0,
+  User: 1,
+  Admin: 2,
+  Maintenance: 4,
 } as const;
 
 export type UserRoleEnum = (typeof UserRoleEnum)[keyof typeof UserRoleEnum];
+
+export const hasRole = (roles: UserRoleEnum, role: UserRoleEnum): boolean =>
+  (roles & role) === role;

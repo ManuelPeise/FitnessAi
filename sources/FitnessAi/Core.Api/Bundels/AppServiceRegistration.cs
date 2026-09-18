@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Shared.Enums.Authentication;
 using Shared.Models.Authentication;
 using System.Text;
 
@@ -80,25 +79,7 @@ namespace Core.Api.Bundels
                     };
                 });
 
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy(
-                    AuthorizationPolicies.ApiAuthentication,
-                    policy =>
-                    {
-                        policy.RequireAuthenticatedUser();
-                        policy.AddRequirements(
-                            new ApiAuthorizationRequirement(UserRoleEnum.UserRole));
-                    });
-                options.AddPolicy(
-                    AuthorizationPolicies.MaintenanceUserAuthentication,
-                    policy =>
-                    {
-                        policy.RequireAuthenticatedUser();
-                        policy.AddRequirements(
-                            new MaintenanceUserAuthorizationRequirement(UserRoleEnum.MaintenanceRole));
-                    });
-            });
+            services.AddAuthorization();
 
             services.AddScoped<IAuthorizationHandler, ApiAuthorizationHandler>();
             services.AddScoped<IAuthorizationHandler, MaintenanceUserAuthorizationHandler>();

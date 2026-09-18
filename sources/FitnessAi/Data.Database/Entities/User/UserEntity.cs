@@ -12,7 +12,9 @@ namespace Data.Database.Entities.User
         public string Email { get; set; } = null!;
         public string AppId { get; set; } = null!;
         public UserRoleEnum UserRole { get; set; }
-        
+        public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
+
         public long CredentialsId { get; set; }
         [ForeignKey(nameof(CredentialsId))]
         public UserCredentialsEntity UserCredentials { get; set; } = null!;

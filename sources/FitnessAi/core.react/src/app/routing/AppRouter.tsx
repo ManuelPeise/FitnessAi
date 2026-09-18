@@ -6,7 +6,8 @@ import { RegisterPage } from "../../pages/RegisterPage";
 import AiTrainingPage from "../../pages/AiTrainingPage";
 import TrainingDataPage from "../../pages/TrainingDataPage";
 import UserProfilePage from "../../pages/UserProfilePage";
-import { PrivateRoute, PublicRoute } from "./RouteGuards";
+import UserAdministrationPage from "../../pages/UserAdministrationPage";
+import { AdminRoute, PrivateRoute, PublicRoute } from "./RouteGuards";
 
 export const AppRouter = () => (
   <BrowserRouter>
@@ -22,6 +23,9 @@ export const AppRouter = () => (
           <Route path="/training/sessions" element={<TrainingDataPage />} />
           <Route path="/user/details" element={<UserProfilePage />} />
           <Route path="/user" element={<Navigate to="/user/details" replace />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/administration/users" element={<UserAdministrationPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>

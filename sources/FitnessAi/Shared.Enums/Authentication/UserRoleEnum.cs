@@ -1,9 +1,11 @@
 ﻿namespace Shared.Enums.Authentication
 {
+    [Flags]
     public enum UserRoleEnum
     {
-        UserRole = 0,
-        AdminRole = 1,
-        MaintenanceRole = 2
+        None = 0,
+        UserRole = 1,
+        AdminRole = 2,
+        MaintenanceRole = 4
     }
 }

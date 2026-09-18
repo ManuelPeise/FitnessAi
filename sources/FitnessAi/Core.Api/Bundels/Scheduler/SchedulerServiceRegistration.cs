@@ -17,6 +17,14 @@ namespace Core.Api.Bundels.Scheduler
                     cronExpression: "0 1 0 * * ?",
                     now: utcNow,
                     minuteOffset: 2);
+
+                // daily at 00:05 AM
+                q.ConfigureWebJob(
+                    url: "UserAdministrationMaintenance/PurgeSoftDeletedUsers",
+                    triggerName: "PurgeSoftDeletedUsersTrigger",
+                    cronExpression: "0 5 0 * * ?",
+                    now: utcNow,
+                    minuteOffset: 6);
             });
 
             services.AddQuartzHostedService(options =>

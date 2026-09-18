@@ -1,5 +1,5 @@
 import type { OverridableComponent } from "@mui/material/OverridableComponent";
-import { UserRoleEnum } from "../../lib/enums/userRoleEnum";
+import { UserRoleEnum, hasRole } from "../../lib/enums/userRoleEnum";
 import type { SvgIconTypeMap } from "@mui/material";
 import {
   Dashboard,
@@ -32,7 +32,8 @@ export const getSidebarItems = (
       path: "/dashboard",
       label: getResource("Dashboard"),
       icon: Dashboard,
-      isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+      isVisible:
+        hasRole(role, UserRoleEnum.Admin) || hasRole(role, UserRoleEnum.User),
       isActive: true,
       isCollapsed: false,
       subItems: [],
@@ -43,14 +44,17 @@ export const getSidebarItems = (
       path: "/administration",
       label: getResource("common.labelAdministration"),
       icon: AdminPanelSettingsRounded,
-      isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+      isVisible:
+        hasRole(role, UserRoleEnum.Admin) || hasRole(role, UserRoleEnum.User),
       isActive: false,
       isCollapsed: false,
       subItems: [
         {
-          path: "/administration/user",
+          path: "/administration/users",
           label: getResource("common.labelUser"),
-          isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+          isVisible:
+            hasRole(role, UserRoleEnum.Admin) ||
+            hasRole(role, UserRoleEnum.User),
           isActive: false,
           isCollapsed: false,
           subItems: [],
@@ -64,14 +68,14 @@ export const getSidebarItems = (
       path: "/ai",
       label: getResource("common.labelAI"),
       icon: Psychology,
-      isVisible: role === UserRoleEnum.Admin,
+      isVisible: hasRole(role, UserRoleEnum.Admin),
       isActive: false,
       isCollapsed: false,
       subItems: [
         {
           path: "/ai/training",
           label: getResource("common.labelAITraining"),
-          isVisible: role === UserRoleEnum.Admin,
+          isVisible: hasRole(role, UserRoleEnum.Admin),
           isActive: false,
           isCollapsed: false,
           subItems: [],
@@ -85,14 +89,14 @@ export const getSidebarItems = (
       path: "/training",
       label: getResource("common.labelTraining"),
       icon: FitnessCenterRounded,
-      isVisible: role === UserRoleEnum.User,
+      isVisible: hasRole(role, UserRoleEnum.User),
       isActive: false,
       isCollapsed: false,
       subItems: [
         {
           path: "/training/sessions",
           label: getResource("common.labelTrainingSessions"),
-          isVisible: role === UserRoleEnum.User,
+          isVisible: hasRole(role, UserRoleEnum.User),
           isActive: false,
           isCollapsed: false,
           subItems: [],
@@ -106,14 +110,17 @@ export const getSidebarItems = (
       path: "/user",
       label: getResource("common.labelProfile"),
       icon: AccountBox,
-      isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+      isVisible:
+        hasRole(role, UserRoleEnum.Admin) || hasRole(role, UserRoleEnum.User),
       isActive: false,
       isCollapsed: false,
       subItems: [
         {
           path: "/user/details",
           label: getResource("common.labelDetails"),
-          isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+          isVisible:
+            hasRole(role, UserRoleEnum.Admin) ||
+            hasRole(role, UserRoleEnum.User),
           isActive: false,
           isCollapsed: false,
           subItems: [],
@@ -122,7 +129,9 @@ export const getSidebarItems = (
         {
           path: "/user/settings",
           label: getResource("common.labelSettings"),
-          isVisible: role === UserRoleEnum.Admin || role === UserRoleEnum.User,
+          isVisible:
+            hasRole(role, UserRoleEnum.Admin) ||
+            hasRole(role, UserRoleEnum.User),
           isActive: false,
           isCollapsed: false,
           subItems: [],

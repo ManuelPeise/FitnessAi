@@ -1,6 +1,7 @@
 ﻿using Data.Database.Entities.User;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Shared.Enums.Authentication;
 using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
 using System.IdentityModel.Tokens.Jwt;
@@ -31,8 +32,9 @@ namespace Logic.Services.Authentication
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Email),
                 new(ClaimTypes.Email, user.Email),
-                new (ClaimTypes.Role, user.UserRole.ToString())
             };
+
+            claims.AddRange(GetRoleClaims(user.UserRole));
 
             var token = new JwtSecurityToken(
                 issuer: _jwtOptions.Issuer,
@@ -49,6 +51,13 @@ namespace Logic.Services.Authentication
         {
             var randomBytes = RandomNumberGenerator.GetBytes(64);
             return Base64UrlEncoder.Encode(randomBytes);
+        }
+
+        private static IEnumerable<Claim> GetRoleClaims(UserRoleEnum roles)
+        {
+            return Enum.GetValues<UserRoleEnum>()
+                .Where(role => role != UserRoleEnum.None && roles.HasFlag(role))
+                .Select(role => new Claim(ClaimTypes.Role, role.ToString()));
         }
     }
 }

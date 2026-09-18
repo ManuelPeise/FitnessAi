@@ -1,5 +1,6 @@
 ﻿using Logic.Shared.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Shared.Enums.Authentication;
 
 namespace Core.Api.AuthorizationAttributes
 {
@@ -25,19 +26,19 @@ namespace Core.Api.AuthorizationAttributes
                 return Task.CompletedTask;
             }
  
-            if (_currentUserService.UserIsInRole(requirement.RequiredRole.ToString()))
+            if (HasAnyRequiredRole(requirement.RequiredRole))
             {
                 context.Succeed(requirement);
             }
 
-            if (_currentUserService.UserId <= 0)
-            {
-                return Task.CompletedTask;
-            }
-
-            context.Succeed(requirement);
-
             return Task.CompletedTask;
+        }
+
+        private bool HasAnyRequiredRole(UserRoleEnum requiredRole)
+        {
+            return Enum.GetValues<UserRoleEnum>()
+                .Where(role => role != UserRoleEnum.None && requiredRole.HasFlag(role))
+                .Any(role => _currentUserService.UserIsInRole(role.ToString()));
         }
     }
 }

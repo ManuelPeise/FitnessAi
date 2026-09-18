@@ -4,7 +4,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import { PageHeader } from "../shared/components/PageHeader";
 import { useAuthenticationState } from "../features/authentication/useAuthenticationState";
-import { UserRoleEnum } from "../lib/enums/userRoleEnum";
+import { UserRoleEnum, hasRole } from "../lib/enums/userRoleEnum";
 import { AiModelTypeEnum } from "../lib/enums/aiModelTypeEnum";
 import { useI18n } from "../lib/i18n/useI18n";
 import { AiModelSelector } from "../features/aiTraining/components/AiModelSelector";
@@ -22,7 +22,7 @@ const AiTrainingPage = () => {
   );
   const { metrics, isLoading, reload } = useCurrentModelState(selectedAiType);
 
-  if (user?.role !== UserRoleEnum.Admin) {
+  if (!hasRole(user?.role ?? UserRoleEnum.None, UserRoleEnum.Admin)) {
     return (
       <Alert severity="warning">
         {getResource("common.accessRestricted")}
