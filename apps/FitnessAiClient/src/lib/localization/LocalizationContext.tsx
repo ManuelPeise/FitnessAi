@@ -14,7 +14,7 @@ const LocalizationContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getResource = useCallback(
     (nameSpace: string, key: string): string => {
-      return t(`${nameSpace}.${key}`);
+      return t(key, { ns: nameSpace });
     },
     [locale],
   );

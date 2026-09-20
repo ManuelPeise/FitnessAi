@@ -45,7 +45,7 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const clientId = DeviceInfo.getUniqueIdSync();
+      const clientId = DeviceInfo.getModel();
       const tokenResponse = await authenticateApi.postAsync({
         body: { email, password, clientId },
       });
@@ -54,7 +54,10 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
         throw new Error("Login failed: no token received.");
       }
 
-      const { token, refreshToken, tokenExpiresAt } = tokenResponse;
+      const { token, refreshToken, tokenExpiresAt, scheduleSettings } =
+        tokenResponse;
+
+      console.log("Schedule Settings:", scheduleSettings);
       const profile = await fetchUserProfile(token);
 
       const localUser = await userDataAccessor.saveUserData({

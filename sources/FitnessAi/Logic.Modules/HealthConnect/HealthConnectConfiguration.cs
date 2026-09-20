@@ -71,6 +71,7 @@ namespace Logic.Modules.HealthConnect
                     throw new Exception("Current user not found.");
                 }
 
+
                 var settingsEntity = await LoadConfigurationFromDatabase(currentUser.Id);
 
                 ArgumentException.ThrowIfNullOrWhiteSpace(settingsEntity?.SettingsJson, nameof(settingsEntity.SettingsJson));

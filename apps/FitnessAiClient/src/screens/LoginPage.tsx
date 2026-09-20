@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useForm } from '../hooks/useForm';
 import { useI18n } from '../hooks/useI18n';
+import { useTheme } from '../hooks/useTheme';
 import useAuthentication from '../hooks/useAuthentication';
 import { LoginFormValues } from '../types/authentication/LoginFormValues';
 import { validateLoginForm } from '../lib/authentication/validateLoginForm';
@@ -10,6 +11,7 @@ import { LoginForm } from '../components/LoginForm';
 export function LoginPage(): React.JSX.Element {
   const { login } = useAuthentication();
   const { getResource } = useI18n();
+  const { theme } = useTheme();
 
   const onSubmit = useCallback(
     (values: LoginFormValues) => login(values.email, values.password),
@@ -34,7 +36,12 @@ export function LoginPage(): React.JSX.Element {
   });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.palette.background.default },
+      ]}
+    >
       <LoginForm form={form} />
     </View>
   );

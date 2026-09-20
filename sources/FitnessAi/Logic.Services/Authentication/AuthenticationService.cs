@@ -5,6 +5,8 @@ using Logic.Modules.Interfaces;
 using Logic.Services.Interfaces;
 using Logic.Shared;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Shared.Enums.Settings;
 using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
 using Shared.Models.Settings;
@@ -127,15 +129,20 @@ namespace Logic.Services.Authentication
                 IssueRefreshToken(userEntity, refreshToken);
 
                 var result = await _applicationUnitOfWork.SaveChangesAsync();
-                var scheduleSettings = await _healthConnectConfiguration.GetClientScheduleSettings(model.ClientId);
+                
+                var scheduleSettings = userEntity.SpecialSettings.SingleOrDefault(x => x.SettingsType == SettingsTypeEnum.HealthConnectSettings);
+                
+                HealthConnectScheduleSettings? healthConnectScheduleSettings = null;
 
-
-                if(scheduleSettings == null)
+                if (scheduleSettings != null && !string.IsNullOrEmpty(scheduleSettings.SettingsJson))
                 {
-                    throw new ArgumentException(nameof(model));
+                    var schedules = JsonConvert.DeserializeObject<List<HealthConnectScheduleSettings>>(scheduleSettings.SettingsJson);
+
+                    healthConnectScheduleSettings = schedules?.FirstOrDefault(x => x.DeviceId == model.ClientId);
+
                 }
 
-                return result > 0 ? BuildClientTokenResponse(userEntity, jwtToken, refreshToken, scheduleSettings) : null;
+                return result > 0 ? BuildClientTokenResponse(userEntity, jwtToken, refreshToken, healthConnectScheduleSettings) : null;
             }
             catch (Exception)
             {
@@ -186,7 +193,7 @@ namespace Logic.Services.Authentication
                 WhereExpression = x => x.Email == email,
                 Includes = new List<System.Linq.Expressions.Expression<Func<UserEntity, object>>>
                 {
-                    x => x.UserCredentials
+                    x => x.UserCredentials, x => x.SpecialSettings
                 }
             });
         }
@@ -207,7 +214,7 @@ namespace Logic.Services.Authentication
             };
         }
 
-        private ClientTokenResponse? BuildClientTokenResponse(UserEntity userEntity, string jwtToken, string refreshToken, HealthConnectScheduleSettings scheduleSettings)
+        private ClientTokenResponse? BuildClientTokenResponse(UserEntity userEntity, string jwtToken, string refreshToken, HealthConnectScheduleSettings? scheduleSettings)
         {
             return new ClientTokenResponse
             {

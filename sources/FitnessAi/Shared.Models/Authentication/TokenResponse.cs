@@ -11,6 +11,6 @@ namespace Shared.Models.Authentication
 
     public class ClientTokenResponse: TokenResponse
     {
-        public HealthConnectScheduleSettings ScheduleSettings { get; set; } = null!;
+        public HealthConnectScheduleSettings? ScheduleSettings { get; set; } 
     }
 }
