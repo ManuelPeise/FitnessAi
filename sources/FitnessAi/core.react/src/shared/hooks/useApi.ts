@@ -54,18 +54,20 @@ const initialApiState = <TModel>(): ApiState<TModel> => ({
   isLoading: false,
 });
 
-type UseApiResult<TModel> = ApiState<TModel> & {
+export type UseApiResult<TModel> = ApiState<TModel> & {
   get: (endpoint: string, config?: AxiosRequestConfig) => Promise<TModel>;
   post: <Body = undefined>(
     endpoint: string,
     body?: Body,
     config?: AxiosRequestConfig,
   ) => Promise<TModel>;
+  error: string | null;
+  isLoading: boolean;
 };
 
 export type InitialApiRequest = {
   endpoint: string;
-  method: "get" | "post";
+  method: "GET" | "POST";
   config?: AxiosRequestConfig;
 };
 
@@ -76,6 +78,8 @@ export const useApi = <TModel>(
     apiReducer<TModel>,
     initialApiState<TModel>(),
   );
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const initialRequestRef = React.useRef(initialRequest);
   const hasInitializedRef = React.useRef(false);
 
@@ -85,13 +89,17 @@ export const useApi = <TModel>(
       request: () => Promise<TModel>,
     ): Promise<TModel> => {
       dispatch({ type: "request", endpoint });
+      setIsLoading(true);
 
       try {
         const response = await request();
         dispatch({ type: "success", endpoint, response });
+        setIsLoading(false);
         return response;
       } catch (error: unknown) {
         dispatch({ type: "failure", endpoint, error });
+        setIsLoading(false);
+        setError(error instanceof Error ? error.message : String(error));
         throw error;
       }
     },
@@ -119,7 +127,7 @@ export const useApi = <TModel>(
   React.useEffect(() => {
     const request = initialRequestRef.current;
 
-    if (hasInitializedRef.current || request?.method !== "get") {
+    if (hasInitializedRef.current || request?.method !== "GET") {
       return;
     }
 
@@ -127,5 +135,14 @@ export const useApi = <TModel>(
     void get(request.endpoint, request.config).catch(() => undefined);
   }, [get]);
 
-  return React.useMemo(() => ({ ...state, get, post }), [state, get, post]);
+  return React.useMemo(
+    () => ({
+      ...state,
+      isLoading,
+      error: error,
+      get,
+      post,
+    }),
+    [state, get, post],
+  );
 };

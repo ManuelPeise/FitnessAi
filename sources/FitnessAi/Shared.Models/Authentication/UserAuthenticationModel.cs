@@ -7,4 +7,9 @@ namespace Shared.Models.Authentication
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
     }
+
+    public class SyncClientAuthenticationModel: UserAuthenticationModel
+    {
+        public string ClientId { get; set; } = null!;
+    }
 }

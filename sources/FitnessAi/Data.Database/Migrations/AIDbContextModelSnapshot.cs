@@ -1184,6 +1184,45 @@ namespace Data.Database.Migrations
                     b.ToTable("SettingsTable");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Settings.SpecialSettingsEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ModuleName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SettingsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SettingsType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SpecialSettingsTable");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.User.UserBodyDataEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -1538,6 +1577,17 @@ namespace Data.Database.Migrations
                     b.Navigation("AiSettings");
                 });
 
+            modelBuilder.Entity("Data.Database.Entities.Settings.SpecialSettingsEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany("SpecialSettings")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Data.Database.Entities.User.UserBodyDataEntity", b =>
                 {
                     b.HasOne("Data.Database.Entities.User.UserEntity", "User")
@@ -1592,6 +1642,8 @@ namespace Data.Database.Migrations
             modelBuilder.Entity("Data.Database.Entities.User.UserEntity", b =>
                 {
                     b.Navigation("HealthData");
+
+                    b.Navigation("SpecialSettings");
 
                     b.Navigation("TrainingData");
                 });

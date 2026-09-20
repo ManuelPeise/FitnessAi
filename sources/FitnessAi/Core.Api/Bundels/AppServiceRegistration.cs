@@ -5,6 +5,7 @@ using Data.Accessor.DI;
 using Data.Database;
 using Logic.Ai.DI;
 using Logic.Services.DI;
+using Logic.Modules.DI;
 using Logic.Shared.DI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Models.Authentication;
 using System.Text;
-
 namespace Core.Api.Bundels
 {
     public static class AppServiceRegistration
@@ -94,6 +94,7 @@ namespace Core.Api.Bundels
             services.AddDataAccessorServices();
             services.AddSharedServices();
             services.AddAiServices();
+            services.RegisterModuleServices();
         }
     }
 }

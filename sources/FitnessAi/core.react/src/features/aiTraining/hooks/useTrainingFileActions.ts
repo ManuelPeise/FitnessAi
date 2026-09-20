@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { aiTrainingApi } from "../aiTrainingApi";
-import { downloadFile } from "../../../shared/lib/downloadFile";
+import { downloadFile } from "../../../lib/downloadFile";
 
-export type ActionStatus = { severity: "success" | "error"; messageKey: string } | null;
+export type ActionStatus = {
+  severity: "success" | "error";
+  messageKey: string;
+} | null;
 
 const defaultInitialTrainingItemsCount = 200;
 
@@ -10,13 +13,18 @@ export function useTrainingFileActions() {
   const [status, setStatus] = useState<ActionStatus>(null);
   const [isBusy, setIsBusy] = useState(false);
 
-  const runAction = async (action: () => Promise<void>, successKey?: string): Promise<void> => {
+  const runAction = async (
+    action: () => Promise<void>,
+    successKey?: string,
+  ): Promise<void> => {
     setIsBusy(true);
     setStatus(null);
 
     try {
       await action();
-      setStatus(successKey ? { severity: "success", messageKey: successKey } : null);
+      setStatus(
+        successKey ? { severity: "success", messageKey: successKey } : null,
+      );
     } catch {
       setStatus({ severity: "error", messageKey: "common.requestFailed" });
     } finally {
@@ -26,7 +34,9 @@ export function useTrainingFileActions() {
 
   const downloadInitial = (): Promise<void> =>
     runAction(async () => {
-      const blob = await aiTrainingApi.downloadInitialTrainingCsv(defaultInitialTrainingItemsCount);
+      const blob = await aiTrainingApi.downloadInitialTrainingCsv(
+        defaultInitialTrainingItemsCount,
+      );
       downloadFile(blob, "training-data-initial.csv");
     });
 

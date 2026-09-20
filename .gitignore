@@ -94,3 +94,32 @@ apps/HealthDataSyncClient/ios/DerivedData/
 
 # React Native generated files
 apps/HealthDataSyncClient/.bundle/
+
+# ============================================================
+# React Native - FitnessAiClient
+# ============================================================
+
+apps/FitnessAiClient/node_modules/
+
+# Metro
+apps/FitnessAiClient/.metro-health-check*
+
+# Android / Gradle
+apps/FitnessAiClient/android/.gradle/
+apps/FitnessAiClient/android/.cxx/
+apps/FitnessAiClient/android/build/
+apps/FitnessAiClient/android/app/build/
+
+# Android local SDK configuration
+apps/FitnessAiClient/android/local.properties
+
+# Android generated native files
+apps/FitnessAiClient/android/app/.cxx/
+
+# iOS dependencies / build output
+apps/FitnessAiClient/ios/Pods/
+apps/FitnessAiClient/ios/build/
+apps/FitnessAiClient/ios/DerivedData/
+
+# React Native generated files
+apps/FitnessAiClient/.bundle/

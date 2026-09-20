@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { I18nContext, type Language } from "./I18nContext";
 import commonDe from "./resources/de/common.de.json";
-import commonEn from "./resources/en/common.json";
+import commonEn from "./resources/en/common.en.json";
 
 type ResourceNamespace = Record<string, string>;
 

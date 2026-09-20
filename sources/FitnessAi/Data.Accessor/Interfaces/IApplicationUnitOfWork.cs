@@ -9,9 +9,10 @@ namespace Data.Accessor.Interfaces
         IRepositoryBase<UserEntity> UserRepository { get; }
         IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository { get; }
         IRepositoryBase<UserBodyDataEntity> UserBodyDataRepository { get; }
-        IRepositoryBase <SettingsEntity> SettingsRepository { get; }
+        IRepositoryBase<SettingsEntity> SettingsRepository { get; }
         IRepositoryBase<AISettingsEntity> AISettingsRepository { get; }
         IRepositoryBase<ScheduledJobEntity> ScheduledJobsRepository { get; }
+        IRepositoryBase<SpecialSettingsEntity> SpecialSettingsRepository { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

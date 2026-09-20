@@ -14,12 +14,16 @@ import {
   ReadHealthDataHistoryPermission,
   AggregateRequest,
   AggregateResultRecordType,
+  aggregateGroupByPeriod,
+  AggregateGroupByPeriodRequest,
+  AggregationGroupResult,
 } from 'react-native-health-connect';
 import {
   HealthConnectPermission,
   HealthConnectReadRange,
 } from './healthConnectTypes';
 import { getResource } from '../../localization';
+import { TimeRangeFilter } from 'react-native-health-connect/lib/typescript/types/base.types';
 
 // Only record types actually read by healthConnectSchedulePayloadFactory.ts
 // (daily aggregates, training-session metrics, exercise sessions). Must stay
@@ -129,13 +133,6 @@ class HealthConnectService {
     return this.areAllRequiredPermissionsGranted(requestedPermissions);
   }
 
-  /**
-   * Initializes Health Connect and requests permissions, but does not require
-   * every single one to be granted. Discovery methods like getAvailableOrigins
-   * already tolerate individual denied permissions, so gating them on
-   * ensurePermissions() (all-or-nothing) would wrongly block all discovery
-   * just because the user denied one of many permission types.
-   */
   async requestPermissionsBestEffort(): Promise<void> {
     const initialized = await this.initialize();
 
@@ -256,6 +253,33 @@ class HealthConnectService {
       timeRangeFilter: this.createReadOptions(readRange).timeRangeFilter,
       dataOriginFilter: [...origins],
     });
+
+    return result;
+  }
+
+  async getAggregateGroupByPeriodResult<
+    TModel extends AggregateResultRecordType,
+  >(
+    recordType: AggregateGroupByPeriodRequest<TModel>['recordType'],
+    startDate: Date,
+    endDate: Date,
+    period: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS',
+    bucketSize: number,
+  ): Promise<AggregationGroupResult<TModel>[]> {
+    const request = {
+      recordType,
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+      },
+      timeRangeSlicer: {
+        period,
+        length: bucketSize,
+      },
+    } as AggregateGroupByPeriodRequest<TModel>;
+
+    const result = await aggregateGroupByPeriod(request);
 
     return result;
   }

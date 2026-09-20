@@ -1,4 +1,5 @@
-﻿using Logic.Services.Interfaces;
+﻿using Logic.Modules.Interfaces;
+using Logic.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Shared.Models.Authentication;
@@ -10,7 +11,9 @@ namespace Core.Api.ApiControllers.Authentication
         private readonly IAuthenticationService _authenticationService;
         private readonly JwtOptions _jwtOptions;
 
-        public UserAuthenticationController(IAuthenticationService authenticationService, IOptions<JwtOptions> jwtOptions)
+        public UserAuthenticationController(
+            IAuthenticationService authenticationService, 
+            IOptions<JwtOptions> jwtOptions)
         {
             _authenticationService = authenticationService;
             _jwtOptions = jwtOptions.Value;
@@ -55,9 +58,29 @@ namespace Core.Api.ApiControllers.Authentication
         }   
 
         [HttpPost(Name = "AuthenticateUserOnMobile")]
-        public async Task<TokenResponse?> AuthenticateUserOnMobile([FromBody] UserAuthenticationModel model)
+        public async Task<IActionResult> AuthenticateUserOnMobile([FromBody] UserAuthenticationModel model)
         {
-            return await _authenticationService.AuthenticateUserOnMobile(model);
+            var tokenResponse = await _authenticationService.AuthenticateUserOnMobile(model);
+
+            if (tokenResponse == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(tokenResponse);
+        }
+
+        [HttpPost(Name = "AuthenticateSyncClient")]
+        public async Task<IActionResult> AuthenticateSyncClient([FromBody] SyncClientAuthenticationModel model)
+        {
+            var tokenResponse = await _authenticationService.AuthenticateSyncClient(model);
+            
+            if (tokenResponse == null)
+            {
+                return Unauthorized();
+            }
+            
+            return Ok(tokenResponse);
         }
 
         [HttpPost(Name = "RefreshToken")]
@@ -70,29 +93,7 @@ namespace Core.Api.ApiControllers.Authentication
                 return Unauthorized();
             }
 
-            Response.Cookies.Append(
-                "access_token",
-                tokenResponse.Token,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
-                });
-
-            Response.Cookies.Append(
-                "refresh_token",
-                tokenResponse.RefreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
-                });
-
-            return Ok();
+            return Ok(tokenResponse);
         }
     }
 }

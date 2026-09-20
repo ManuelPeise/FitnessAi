@@ -30,7 +30,10 @@ export type UseFormResult<TValues> = {
   ) => FieldSubscription<TValues[TField]>;
   useFormState: () => FormState;
   useModel: (model: TValues) => void;
-  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  handleSubmit: (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  ) => void;
+  revertChanges: () => void;
 };
 
 type Listener = () => void;
@@ -201,7 +204,7 @@ export const useForm = <TValues extends Record<string, unknown>>({
   };
 
   const handleSubmit = React.useCallback(
-    (event: React.FormEvent<HTMLFormElement>): void => {
+    (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
       event.preventDefault();
       store.setSubmitError(false);
 
@@ -226,6 +229,10 @@ export const useForm = <TValues extends Record<string, unknown>>({
     [onSubmit, validate, store],
   );
 
+  const revertChanges = React.useCallback((): void => {
+    store.setModel(initialValues);
+  }, [initialValues]);
+
   return {
     getValues: store.getValues,
     setValue: store.setValue,
@@ -233,5 +240,6 @@ export const useForm = <TValues extends Record<string, unknown>>({
     useFormState,
     useModel,
     handleSubmit,
+    revertChanges,
   };
 };

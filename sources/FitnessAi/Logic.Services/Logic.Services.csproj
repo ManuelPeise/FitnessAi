@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Data.Accessor\Data.Accessor.csproj" />
+    <ProjectReference Include="..\Logic.Modules\Logic.Modules.csproj" />
     <ProjectReference Include="..\Logic.Parsing\Logic.Parsing.csproj" />
     <ProjectReference Include="..\Logic.Shared\Logic.Shared.csproj" />
     <ProjectReference Include="..\Shared.Models\Shared.Models.csproj" />

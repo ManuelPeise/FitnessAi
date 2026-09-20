@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Data.Accessor\Data.Accessor.csproj" />
     <ProjectReference Include="..\Logic.Ai\Logic.Ai.csproj" />
+    <ProjectReference Include="..\Logic.Modules\Logic.Modules.csproj" />
     <ProjectReference Include="..\Logic.Services\Logic.Services.csproj" />
   </ItemGroup>
 

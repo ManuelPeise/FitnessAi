@@ -116,8 +116,7 @@ namespace Logic.Services.Authentication
             {
                 Token = jwtToken,
                 RefreshToken = refreshToken,
-                TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
-                AppId = userEntity.AppId
+                TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes)
             } : null;
         }
     }

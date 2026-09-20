@@ -1,11 +1,13 @@
 using Data.Accessor.Interfaces;
 using Data.Accessor.Models;
 using Data.Database.Entities.User;
+using Logic.Modules.Interfaces;
 using Logic.Services.Interfaces;
 using Logic.Shared;
 using Microsoft.Extensions.Options;
 using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
+using Shared.Models.Settings;
 
 namespace Logic.Services.Authentication
 {
@@ -13,15 +15,18 @@ namespace Logic.Services.Authentication
     {
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
+        private readonly IHealthConnectConfiguration _healthConnectConfiguration;
         private readonly JwtOptions _jwtOptions;
 
         public AuthenticationService(
             IJwtTokenService jwtTokenService,
             IApplicationUnitOfWork applicationUnitOfWork,
+            IHealthConnectConfiguration healthConnectConfiguration,
             IOptions<JwtOptions> jwtOptions)
         {
             _jwtTokenService = jwtTokenService;
             _applicationUnitOfWork = applicationUnitOfWork;
+            _healthConnectConfiguration = healthConnectConfiguration;
             _jwtOptions = jwtOptions.Value;
         }
 
@@ -97,6 +102,47 @@ namespace Logic.Services.Authentication
             }
         }
 
+        public async Task<ClientTokenResponse?> AuthenticateSyncClient(SyncClientAuthenticationModel model)
+        {
+            try
+            {
+                ArgumentException.ThrowIfNullOrEmpty(model.Email, nameof(model.Email));
+                ArgumentException.ThrowIfNullOrEmpty(model.Password, nameof(model.Password));
+
+                var userEntity = await GetUserByEmail(model.Email);
+
+                if (userEntity == null)
+                {
+                    throw new ArgumentException(nameof(model));
+                }
+
+                if (!EncryptionHelper.VerifyPassword(model.Password, userEntity.UserCredentials.PasswordHash))
+                {
+                    throw new ArgumentException(nameof(model));
+                }
+
+                var jwtToken = _jwtTokenService.CreateAccessToken(userEntity, DateTime.UtcNow);
+                var refreshToken = _jwtTokenService.CreateRefreshToken();
+
+                IssueRefreshToken(userEntity, refreshToken);
+
+                var result = await _applicationUnitOfWork.SaveChangesAsync();
+                var scheduleSettings = await _healthConnectConfiguration.GetClientScheduleSettings(model.ClientId);
+
+
+                if(scheduleSettings == null)
+                {
+                    throw new ArgumentException(nameof(model));
+                }
+
+                return result > 0 ? BuildClientTokenResponse(userEntity, jwtToken, refreshToken, scheduleSettings) : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public async Task<TokenResponse?> RefreshToken(string refreshToken)
         {
             try
@@ -158,7 +204,17 @@ namespace Logic.Services.Authentication
                 Token = jwtToken,
                 RefreshToken = refreshToken,
                 TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
-                AppId = userEntity.AppId
+            };
+        }
+
+        private ClientTokenResponse? BuildClientTokenResponse(UserEntity userEntity, string jwtToken, string refreshToken, HealthConnectScheduleSettings scheduleSettings)
+        {
+            return new ClientTokenResponse
+            {
+                Token = jwtToken,
+                RefreshToken = refreshToken,
+                TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
+                ScheduleSettings = scheduleSettings
             };
         }
     }

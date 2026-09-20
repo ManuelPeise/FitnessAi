@@ -7,6 +7,7 @@ import {
   AdminPanelSettingsRounded,
   Psychology,
   FitnessCenterRounded,
+  CellTower,
 } from "@mui/icons-material";
 
 export type SidebarItem = {
@@ -83,6 +84,27 @@ export const getSidebarItems = (
         },
       ],
       sortOrder: 2,
+      position: "top",
+    },
+    {
+      path: "/interfaces",
+      label: getResource("common.labelInterfaces"),
+      icon: CellTower,
+      isVisible: hasRole(role, UserRoleEnum.User),
+      isActive: false,
+      isCollapsed: false,
+      subItems: [
+        {
+          path: "/interfaces/health-connect",
+          label: getResource("common.labelHealthConnect"),
+          isVisible: hasRole(role, UserRoleEnum.User),
+          isActive: false,
+          isCollapsed: false,
+          subItems: [],
+          sortOrder: 0,
+        },
+      ],
+      sortOrder: 3,
       position: "top",
     },
     {

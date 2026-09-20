@@ -13,6 +13,7 @@ namespace AiUnitTests.Fakes
         public FakeRepository<SettingsEntity> Settings { get; } = new();
         public FakeRepository<AISettingsEntity> AiSettings { get; } = new();
         public FakeRepository<ScheduledJobEntity> ScheduledJobs { get; } = new();
+        public FakeRepository<SpecialSettingsEntity> SpecialSettings { get; } = new();
         public int SaveChangesCallCount { get; private set; }
 
         public IRepositoryBase<UserEntity> UserRepository => User;
@@ -21,7 +22,8 @@ namespace AiUnitTests.Fakes
         public IRepositoryBase<SettingsEntity> SettingsRepository => Settings;
         public IRepositoryBase<AISettingsEntity> AISettingsRepository => AiSettings;
         public IRepositoryBase<ScheduledJobEntity> ScheduledJobsRepository => ScheduledJobs;
-
+        
+        public IRepositoryBase<SpecialSettingsEntity> SpecialSettingsRepository => SpecialSettings;
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             SaveChangesCallCount++;

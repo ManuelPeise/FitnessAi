@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/02 Logic/">
     <Project Path="Logic.Ai/Logic.Ai.csproj" Id="8966714a-d732-44b9-b423-49e4ab664f60" />
+    <Project Path="Logic.Modules/Logic.Modules.csproj" Id="2834c25a-ebc3-403a-ac35-44454c55c0ae" />
     <Project Path="Logic.Parsing/Logic.Parsing.csproj" Id="bbbf2838-6557-488b-88ca-b4deb49bddd3" />
     <Project Path="Logic.Services/Logic.Services.csproj" Id="3a1a7bce-d000-40c0-8c2e-4d57529595bd" />
     <Project Path="Logic.Shared/Logic.Shared.csproj" Id="fe5af7c0-3e26-406f-afd7-0a1955c1c679" />

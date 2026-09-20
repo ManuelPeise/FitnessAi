@@ -31,7 +31,8 @@ namespace Data.Database
         // settings tables
         public DbSet<SettingsEntity> SettingsTable => Set<SettingsEntity>();
         public DbSet<AISettingsEntity> AiSettingsTable => Set<AISettingsEntity>();
-        
+        public DbSet<SpecialSettingsEntity> SpecialSettingsTable => Set<SpecialSettingsEntity>();
+
         // scheduler tables
         public DbSet<ScheduledJobEntity> ScheduledJobsTable => Set<ScheduledJobEntity>();
         
@@ -78,6 +79,12 @@ namespace Data.Database
             modelBuilder.Entity<UserEntity>()
                 .HasIndex(u => u.AppId)
                 .IsUnique();
+
+            modelBuilder.Entity<UserEntity>()
+                .HasMany(u => u.SpecialSettings)
+                .WithOne(s => s.User)
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<UserBodyDataEntity>()
                 .HasOne(b => b.User)

@@ -4,6 +4,7 @@ import { HomePage } from "../../pages/HomePage";
 import { LoginPage } from "../../pages/LoginPage";
 import { RegisterPage } from "../../pages/RegisterPage";
 import AiTrainingPage from "../../pages/AiTrainingPage";
+import HealthConnectContainer from "../../pages/HealthConnectPage";
 import TrainingDataPage from "../../pages/TrainingDataPage";
 import UserProfilePage from "../../pages/UserProfilePage";
 import UserAdministrationPage from "../../pages/UserAdministrationPage";
@@ -22,9 +23,19 @@ export const AppRouter = () => (
           <Route path="/ai/training" element={<AiTrainingPage />} />
           <Route path="/training/sessions" element={<TrainingDataPage />} />
           <Route path="/user/details" element={<UserProfilePage />} />
-          <Route path="/user" element={<Navigate to="/user/details" replace />} />
+          <Route
+            path="/user"
+            element={<Navigate to="/user/details" replace />}
+          />
+          <Route
+            path="/interfaces/health-connect"
+            element={<HealthConnectContainer />}
+          />
           <Route element={<AdminRoute />}>
-            <Route path="/administration/users" element={<UserAdministrationPage />} />
+            <Route
+              path="/administration/users"
+              element={<UserAdministrationPage />}
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

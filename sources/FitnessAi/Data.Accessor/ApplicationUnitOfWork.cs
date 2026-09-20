@@ -1,7 +1,6 @@
 ﻿using Data.Accessor.Interfaces;
 using Data.Database;
 using Data.Database.Entities;
-using Data.Database.Entities.HealthConnect;
 using Data.Database.Entities.Scheduler;
 using Data.Database.Entities.Settings;
 using Data.Database.Entities.User;
@@ -20,6 +19,7 @@ namespace Data.Accessor
         private IRepositoryBase<SettingsEntity> _settingsRepository;
         private IRepositoryBase<AISettingsEntity> _aiSettingsRepository;
         private IRepositoryBase<ScheduledJobEntity> _scheduledJobsRepository;
+        private IRepositoryBase<SpecialSettingsEntity> _specialSettingsRepository;
 
         public IRepositoryBase<UserEntity> UserRepository => _userRepository ?? new RepositoryBase<UserEntity>(_context);
         public IRepositoryBase<UserCredentialsEntity> UserCredentialsRepository => _userCredentialsRepository ?? new RepositoryBase<UserCredentialsEntity>(_context);
@@ -27,6 +27,7 @@ namespace Data.Accessor
         public IRepositoryBase<SettingsEntity> SettingsRepository => _settingsRepository ?? new RepositoryBase<SettingsEntity>(_context);
         public IRepositoryBase<AISettingsEntity> AISettingsRepository => _aiSettingsRepository ?? new RepositoryBase<AISettingsEntity>(_context);
         public IRepositoryBase<ScheduledJobEntity> ScheduledJobsRepository => _scheduledJobsRepository ?? new RepositoryBase<ScheduledJobEntity>(_context);
+        public IRepositoryBase<SpecialSettingsEntity> SpecialSettingsRepository => _specialSettingsRepository ?? new RepositoryBase<SpecialSettingsEntity>(_context);
 
         public ApplicationUnitOfWork(AIDbContext context, IHttpContextAccessor httpContextAccessor)
         {
@@ -38,6 +39,7 @@ namespace Data.Accessor
             _settingsRepository = new RepositoryBase<SettingsEntity>(_context);
             _aiSettingsRepository = new RepositoryBase<AISettingsEntity>(_context);
             _scheduledJobsRepository = new RepositoryBase<ScheduledJobEntity>(_context);
+            _specialSettingsRepository = new RepositoryBase<SpecialSettingsEntity>(_context);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
