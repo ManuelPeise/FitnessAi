@@ -22,6 +22,8 @@ const migrateDatabaseToV1 = async (db: DB): Promise<void> => {
       jwt TEXT NOT NULL,
       refreshToken TEXT NOT NULL,
       expiresAt TEXT NOT NULL,
+      isCurrent INTEGER NOT NULL DEFAULT 0
+        CHECK (isCurrent IN (0, 1)),
       createdAt TEXT NOT NULL DEFAULT (datetime('now')),
       updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
 
@@ -53,24 +55,15 @@ const migrateDatabaseToV1 = async (db: DB): Promise<void> => {
       type TEXT NOT NULL
         CHECK (
           type IN (
-            'HealthDataExport',
-            'ExerciseDataExport'
+            'HealthConnectDataExport',
+            'HealthConnectDatabaseService'
           )
         ),
-      intervalType INTEGER NOT NULL
-        CHECK (intervalType IN (0, 1, 2)),
-      day INTEGER NULL
-        CHECK (day IS NULL OR day BETWEEN 1 AND 7),
-      hour INTEGER NULL
-        CHECK (hour IS NULL OR hour BETWEEN 0 AND 23),
-      minute INTEGER NULL
-        CHECK (minute IS NULL OR minute BETWEEN 0 AND 59),
-      isActive INTEGER NOT NULL DEFAULT 1
-        CHECK (isActive IN (0, 1)),
-      lastRunAt TEXT NULL,
-      lastSuccessAt TEXT NULL,
+      payloadJson TEXT NOT NULL,
       createdAt TEXT NOT NULL DEFAULT (datetime('now')),
       updatedAt TEXT NOT NULL DEFAULT (datetime('now')),
+
+      UNIQUE (userId, type),
 
       FOREIGN KEY (userId)
         REFERENCES UserDataTable(id)

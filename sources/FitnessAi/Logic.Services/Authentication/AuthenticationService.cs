@@ -5,11 +5,9 @@ using Logic.Modules.Interfaces;
 using Logic.Services.Interfaces;
 using Logic.Shared;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Shared.Enums.Settings;
 using Shared.Interfaces.Authentication;
 using Shared.Models.Authentication;
-using Shared.Models.Settings;
 
 namespace Logic.Services.Authentication
 {
@@ -104,7 +102,7 @@ namespace Logic.Services.Authentication
             }
         }
 
-        public async Task<ClientTokenResponse?> AuthenticateSyncClient(SyncClientAuthenticationModel model)
+        public async Task<TokenResponse?> AuthenticateSyncClient(SyncClientAuthenticationModel model)
         {
             try
             {
@@ -132,17 +130,7 @@ namespace Logic.Services.Authentication
                 
                 var scheduleSettings = userEntity.SpecialSettings.SingleOrDefault(x => x.SettingsType == SettingsTypeEnum.HealthConnectSettings);
                 
-                HealthConnectScheduleSettings? healthConnectScheduleSettings = null;
-
-                if (scheduleSettings != null && !string.IsNullOrEmpty(scheduleSettings.SettingsJson))
-                {
-                    var schedules = JsonConvert.DeserializeObject<List<HealthConnectScheduleSettings>>(scheduleSettings.SettingsJson);
-
-                    healthConnectScheduleSettings = schedules?.FirstOrDefault(x => x.DeviceId == model.ClientId);
-
-                }
-
-                return result > 0 ? BuildClientTokenResponse(userEntity, jwtToken, refreshToken, healthConnectScheduleSettings) : null;
+                return result > 0 ? BuildTokenResponse(userEntity, jwtToken, refreshToken) : null;
             }
             catch (Exception)
             {
@@ -211,17 +199,6 @@ namespace Logic.Services.Authentication
                 Token = jwtToken,
                 RefreshToken = refreshToken,
                 TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
-            };
-        }
-
-        private ClientTokenResponse? BuildClientTokenResponse(UserEntity userEntity, string jwtToken, string refreshToken, HealthConnectScheduleSettings? scheduleSettings)
-        {
-            return new ClientTokenResponse
-            {
-                Token = jwtToken,
-                RefreshToken = refreshToken,
-                TokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
-                ScheduleSettings = scheduleSettings
             };
         }
     }

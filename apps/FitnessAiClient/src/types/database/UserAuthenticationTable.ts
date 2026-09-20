@@ -5,4 +5,5 @@ export type UserAuthenticationTable = TableBase & {
   jwt: string;
   refreshToken: string;
   expiresAt: string;
+  isCurrent: boolean;
 };

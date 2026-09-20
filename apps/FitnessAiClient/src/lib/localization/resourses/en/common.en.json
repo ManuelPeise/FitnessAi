@@ -6,5 +6,8 @@
   "emailRequired": "Email is required.",
   "emailInvalid": "Please enter a valid email address.",
   "passwordRequired": "Password is required.",
-  "captionLogin": "Please log in to continue."
+  "captionLogin": "Please log in to continue.",
+  "healthConnectScheduleSettings": "Health Connect Sync Schedules",
+  "healthConnectDatabaseServiceSchedule": "Database Service",
+  "healthConnectDataExportSchedule": "Data Export Service"
 }

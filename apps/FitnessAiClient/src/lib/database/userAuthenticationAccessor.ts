@@ -15,7 +15,7 @@ const getStoredAuthentication =
     try {
       const result = await queryDbData(
         db,
-        'SELECT * FROM UserAuthenticationTable ORDER BY id DESC LIMIT 1;',
+        'SELECT * FROM UserAuthenticationTable WHERE isCurrent = 1 LIMIT 1;',
       );
       const rows =
         databaseTableModelMapper.mapResultToUserAuthenticationTable(result);
@@ -33,17 +33,20 @@ const saveAuthentication = async ({
 }: SaveAuthenticationInput): Promise<void> => {
   const db = await database();
   try {
-    await queryDbData(
-      db,
-      `INSERT INTO UserAuthenticationTable (userId, jwt, refreshToken, expiresAt)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(userId) DO UPDATE SET
-         jwt = excluded.jwt,
-         refreshToken = excluded.refreshToken,
-         expiresAt = excluded.expiresAt,
-         updatedAt = datetime('now');`,
-      [userId, jwt, refreshToken, expiresAt],
-    );
+    await db.transaction(async (tx) => {
+      await tx.execute('UPDATE UserAuthenticationTable SET isCurrent = 0;');
+      await tx.execute(
+        `INSERT INTO UserAuthenticationTable (userId, jwt, refreshToken, expiresAt, isCurrent)
+         VALUES (?, ?, ?, ?, 1)
+         ON CONFLICT(userId) DO UPDATE SET
+           jwt = excluded.jwt,
+           refreshToken = excluded.refreshToken,
+           expiresAt = excluded.expiresAt,
+           isCurrent = 1,
+           updatedAt = datetime('now');`,
+        [userId, jwt, refreshToken, expiresAt],
+      );
+    });
   } finally {
     await closeDatabase(db);
   }

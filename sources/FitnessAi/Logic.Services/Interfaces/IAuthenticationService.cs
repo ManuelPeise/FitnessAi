@@ -6,7 +6,7 @@ namespace Logic.Services.Interfaces
     {
         Task<TokenResponse?> AuthenticateUser(UserAuthenticationModel model);
         Task<TokenResponse?> AuthenticateUserOnMobile(UserAuthenticationModel model);
-        Task<ClientTokenResponse?> AuthenticateSyncClient(SyncClientAuthenticationModel model);
+        Task<TokenResponse?> AuthenticateSyncClient(SyncClientAuthenticationModel model);
         Task<TokenResponse?> RefreshToken(string refreshToken);
     }
 }

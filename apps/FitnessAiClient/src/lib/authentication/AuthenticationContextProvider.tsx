@@ -11,7 +11,6 @@ import { useApi } from "../../hooks/useApi";
 import { apiClient } from "../api/axiosClient";
 import { userAuthenticationAccessor } from "../database/userAuthenticationAccessor";
 import { userDataAccessor } from "../database/userDataAccessor";
-import DeviceInfo from "react-native-device-info";
 import { TokenResponse } from "../../types/authentication/TokenResponse";
 
 export const AuthenticationContext =
@@ -30,6 +29,7 @@ const fetchUserProfile = async (
 const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
+  const [userId, setUserId] = useState(-1);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const authenticateApi = useApi<TokenResponse>({
@@ -39,15 +39,17 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
   useEffect(() => {
     userAuthenticationAccessor
       .getStoredAuthentication()
-      .then((stored) => setIsAuthenticated(stored != null))
+      .then((stored) => {
+        setIsAuthenticated(stored != null);
+        setUserId(stored?.userId ?? -1);
+      })
       .finally(() => setIsInitializing(false));
   }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const clientId = DeviceInfo.getModel();
       const tokenResponse = await authenticateApi.postAsync({
-        body: { email, password, clientId },
+        body: { email, password },
       });
 
       if (!tokenResponse) {
@@ -57,7 +59,6 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
       const { token, refreshToken, tokenExpiresAt, scheduleSettings } =
         tokenResponse;
 
-      console.log("Schedule Settings:", scheduleSettings);
       const profile = await fetchUserProfile(token);
 
       const localUser = await userDataAccessor.saveUserData({
@@ -74,6 +75,7 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
         expiresAt: tokenExpiresAt,
       });
 
+      setUserId(localUser.id);
       setIsAuthenticated(true);
     },
     [authenticateApi],
@@ -92,8 +94,8 @@ const AuthenticationContextProvider: React.FC<PropsWithChildren> = ({
   }, []);
 
   const contextValue: AuthenticationContextProps = useMemo(
-    () => ({ isAuthenticated, isInitializing, login, logout }),
-    [isAuthenticated, isInitializing, login, logout],
+    () => ({ userId, isAuthenticated, isInitializing, login, logout }),
+    [userId, isAuthenticated, isInitializing, login, logout],
   );
 
   return (

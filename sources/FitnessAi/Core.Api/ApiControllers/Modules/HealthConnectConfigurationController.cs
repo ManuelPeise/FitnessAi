@@ -23,6 +23,13 @@ namespace Core.Api.ApiControllers.Modules
         }
 
         [ApiAuthentication(UserRoleEnum.UserRole)]
+        [HttpPost(Name = "GetClientScheduleSettings")]
+        public async Task<HealthConnectScheduleSettings?> GetClientScheduleSettings([FromBody] GetScheduleRequest request)
+        {
+            return await _healthConnectConfiguration.GetClientScheduleSettings(request?.DeviceId?? "");
+        }
+
+        [ApiAuthentication(UserRoleEnum.UserRole)]
         [HttpPost(Name = "UpdateScheduleSettings")]
         public async Task<List<HealthConnectScheduleSettings>> UpdateScheduleSettings([FromBody] HealthConnectScheduleSettings settingsUpdate)
         {

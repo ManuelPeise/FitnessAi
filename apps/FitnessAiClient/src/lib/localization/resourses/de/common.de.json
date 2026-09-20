@@ -5,5 +5,9 @@
   "loginError": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.",
   "emailRequired": "E-Mail ist erforderlich.",
   "emailInvalid": "Bitte gib eine gültige E-Mail-Adresse ein.",
-  "passwordRequired": "Passwort ist erforderlich."
+  "passwordRequired": "Passwort ist erforderlich.",
+  "captionLogin": "Bitte melde dich an, um fortzufahren.",
+  "healthConnectScheduleSettings": "Health Connect Synchronisierungsplan",
+  "databaseServiceSchedule": "Datenbankdienst",
+  "dataExportSchedule": "Datenexport"
 }

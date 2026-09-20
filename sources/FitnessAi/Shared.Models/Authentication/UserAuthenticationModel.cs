@@ -10,6 +10,6 @@ namespace Shared.Models.Authentication
 
     public class SyncClientAuthenticationModel: UserAuthenticationModel
     {
-        public string ClientId { get; set; } = null!;
+        
     }
 }

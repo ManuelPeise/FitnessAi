@@ -1,10 +1,12 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HomePage } from '../screens/HomePage';
-import { useTheme } from '../hooks/useTheme';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { HomePage } from "../screens/HomePage";
+import { useTheme } from "../hooks/useTheme";
+import InitializationScreen from "../screens/Initialization";
 
 export type AppTabParamList = {
   Home: undefined;
+  Initialization: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
@@ -24,6 +26,7 @@ export function AppNavigator(): React.JSX.Element {
       }}
     >
       <Tab.Screen name="Home" component={HomePage} />
+      <Tab.Screen name="Initialization" component={InitializationScreen} />
     </Tab.Navigator>
   );
 }

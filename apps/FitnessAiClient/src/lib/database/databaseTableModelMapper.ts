@@ -1,35 +1,22 @@
-import { QueryResult, Scalar } from '@op-engineering/op-sqlite';
-import { UserDataTable } from '../../types/database/UserDataTable';
-import { UserAuthenticationTable } from '../../types/database/UserAuthenticationTable';
-import { SettingsTable } from '../../types/database/SettingsTable';
-import { ScheduleTable } from '../../types/database/ScheduleTable';
-import { DailyHealthDataTable } from '../../types/database/DailyHealthDataTable';
-import { HealthConnectValueTypeEnum } from '../../types/enums/HealthConnectValueTypeEnum';
-import { HealthConnectUnitTypeEnum } from '../../types/enums/HealthConnectUnitTypeEnum';
-import { ExerciseTable } from '../../types/database/ExerciseTable';
-import { ExerciseValuesTable } from '../../types/database/ExerciseValuesTable';
-import { IntervalTypeEnum } from '../../types/enums/IntervalTypeEnum';
-import { ScheduleTypeEnum } from '../../types/enums/ScheduleTypeEnum';
-import { LanguageTypeEnum } from '../../types/enums/LanguageTypeEnum';
-import { HealthConnectRecordTypeEnum } from '../../types/enums/HealthConnectRecordTypeEnum';
-
-const getRecordType = (
-  arg0:
-    | string
-    | number
-    | boolean
-    | ArrayBuffer
-    | ArrayBufferView<ArrayBufferLike>
-    | null,
-): any => {
-  throw new Error('Function not implemented.');
-};
+import { QueryResult, Scalar } from "@op-engineering/op-sqlite";
+import { UserDataTable } from "../../types/database/UserDataTable";
+import { UserAuthenticationTable } from "../../types/database/UserAuthenticationTable";
+import { SettingsTable } from "../../types/database/SettingsTable";
+import { ScheduleTable } from "../../types/database/ScheduleTable";
+import { DailyHealthDataTable } from "../../types/database/DailyHealthDataTable";
+import { HealthConnectValueTypeEnum } from "../../types/enums/HealthConnectValueTypeEnum";
+import { HealthConnectUnitTypeEnum } from "../../types/enums/HealthConnectUnitTypeEnum";
+import { ExerciseTable } from "../../types/database/ExerciseTable";
+import { ExerciseValuesTable } from "../../types/database/ExerciseValuesTable";
+import { ScheduleTypeEnum } from "../../types/enums/ScheduleTypeEnum";
+import { LanguageTypeEnum } from "../../types/enums/LanguageTypeEnum";
+import { HealthConnectRecordTypeEnum } from "../../types/enums/HealthConnectRecordTypeEnum";
 
 const databaseTableModelMapper = {
   mapResultToUserDataTableEntries: (
     resultSet: QueryResult,
   ): UserDataTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       firstName: row.firstName as string,
       lastName: row.lastName as string,
@@ -42,18 +29,19 @@ const databaseTableModelMapper = {
   mapResultToUserAuthenticationTable: (
     resultSet: QueryResult,
   ): UserAuthenticationTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       userId: row.userId as number,
       jwt: row.jwt as string,
       refreshToken: row.refreshToken as string,
       expiresAt: row.expiresAt as string,
+      isCurrent: (row.isCurrent as number) === 1,
       createdAt: row.createdAt as string,
       updatedAt: row.updatedAt as string,
     }));
   },
   mapResultToSettingsTable: (resultSet: QueryResult): SettingsTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       userId: row.userId as number,
       lang: row.lang as Scalar as LanguageTypeEnum,
@@ -62,17 +50,11 @@ const databaseTableModelMapper = {
     }));
   },
   mapResultToScheduleTable: (resultSet: QueryResult): ScheduleTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       userId: row.userId as number,
-      intervalType: row.intervalType as Scalar as IntervalTypeEnum,
       type: row.type as Scalar as ScheduleTypeEnum,
-      day: row.day as number | null,
-      hour: row.hour as number | null,
-      minute: row.minute as number | null,
-      isActive: row.isActive as boolean,
-      lastRunAt: row.lastRunAt as string | null,
-      lastSuccessAt: row.lastSuccessAt as string | null,
+      payloadJson: row.payloadJson as string,
       createdAt: row.createdAt as string,
       updatedAt: row.updatedAt as string,
     }));
@@ -80,7 +62,7 @@ const databaseTableModelMapper = {
   mapResultToDailyHealthDataTable: (
     resultSet: QueryResult,
   ): DailyHealthDataTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       userId: row.userId as number,
       recordId: row.recordId as string,
@@ -95,7 +77,7 @@ const databaseTableModelMapper = {
     }));
   },
   mapResultToExerciseTable: (resultSet: QueryResult): ExerciseTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       userId: row.userId as number,
       exerciseId: row.exerciseId as number,
@@ -111,7 +93,7 @@ const databaseTableModelMapper = {
   mapResultToExerciseValuesTable: (
     resultSet: QueryResult,
   ): ExerciseValuesTable[] => {
-    return resultSet.rows.map(row => ({
+    return resultSet.rows.map((row) => ({
       id: row.id as number,
       exerciseId: row.exerciseId as number,
       valueType: row.valueType as HealthConnectValueTypeEnum,

@@ -1,4 +1,4 @@
 export enum ScheduleTypeEnum {
-  HealthDataExport = 'HealthDataExport',
-  ExerciseDataExport = 'ExerciseDataExport',
+  HealthConnectDataExport = "HealthConnectDataExport",
+  HealthConnectDatabaseService = "HealthConnectDatabaseService",
 }
