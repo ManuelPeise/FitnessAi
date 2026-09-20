@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import { View } from 'react-native';
-import LocalizationContextProvider from './src/lib/localization/LocalizationContext';
-import './src/lib/localization/i18n';
+} from "react-native-safe-area-context";
+import { Text, View } from "react-native";
+import LocalizationContextProvider from "./src/lib/localization/LocalizationContext";
+import "./src/lib/localization/i18n";
 
 const AppContent: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -18,7 +18,7 @@ const AppContent: React.FC = () => {
         paddingBottom: insets.bottom,
       }}
     >
-      {/* App content */}
+      <Text>App Content</Text>
     </View>
   );
 };
