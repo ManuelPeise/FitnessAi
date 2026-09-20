@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useCallback } from 'react';
 import { LocalizationContextProps } from '../../types/localization/LocalizationContextProps';
+import { LanguageTypeEnum } from '../../types/enums/LanguageTypeEnum';
 import { useTranslation } from 'react-i18next';
 
 export const LocalizationContext =
@@ -9,7 +10,7 @@ const LocalizationContextProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { t } = useTranslation();
-  const [locale, setLocale] = useState<'en' | 'de'>('en');
+  const [locale, setLocale] = useState<LanguageTypeEnum>(LanguageTypeEnum.EN);
 
   const getResource = useCallback(
     (nameSpace: string, key: string): string => {
@@ -18,7 +19,7 @@ const LocalizationContextProvider: React.FC<{ children: React.ReactNode }> = ({
     [locale],
   );
 
-  const setLocaleAsync = async (newLocale: 'en' | 'de') => {
+  const setLocaleAsync = async (newLocale: LanguageTypeEnum) => {
     // TODO: implement db update later
     setLocale(newLocale);
   };

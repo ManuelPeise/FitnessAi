@@ -21,4 +21,4 @@ const queryDbData = async (
   const result = await db.execute(query, params);
   return result;
 };
-export { database, closeDatabase };
+export { database, closeDatabase, queryDbData };

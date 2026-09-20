@@ -21,6 +21,8 @@
     "react-native-device-info": "^15.0.2",
     "react-native-gesture-handler": "^3.3.0",
     "react-native-health-connect": "^4.1.3",
+    "react-native-nitro-modules": "^0.37.1",
+    "react-native-quick-base64": "^3.0.1",
     "react-native-quick-crypto": "^1.1.7",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.28.0"

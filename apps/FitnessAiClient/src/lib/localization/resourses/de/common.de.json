@@ -1,1 +1,9 @@
-{}
+{
+  "email": "E-Mail",
+  "password": "Passwort",
+  "login": "Anmelden",
+  "loginError": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.",
+  "emailRequired": "E-Mail ist erforderlich.",
+  "emailInvalid": "Bitte gib eine gültige E-Mail-Adresse ein.",
+  "passwordRequired": "Passwort ist erforderlich."
+}
